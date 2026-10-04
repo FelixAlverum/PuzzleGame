@@ -203,6 +203,7 @@
           }
           Sound.clear([...new Set(ev.cells.map(c => c.m))], ev.combo, ev.lines);
           const p = cellCenter(cr, cc);
+          p.x = clamp(p.x, L.inner.x + L.cs * 1.8, L.inner.x + L.inner.w - L.cs * 1.8); // Text nicht am Rand abschneiden
           FX.text('+' + ev.points, p.x, p.y, L.cs * 0.6, '#fffbe8');
           if (ev.combo >= 2) FX.text(`${S.combo} ×${ev.combo}`, p.x, p.y - L.cs * 0.8, L.cs * 0.5, '#d9f7a8', { delay: 0.1 });
           if (ev.lines >= 2) FX.gust(L.inner, L.cs);
@@ -232,7 +233,7 @@
       best = game.score;
       if (!newBestShown && bestAtStart > 0) {
         newBestShown = true;
-        FX.text(S.newBest, L.header.x + L.header.w / 2, L.header.y + L.header.h * 1.2, L.cs * 0.5, '#ffe27a', { dur: 1.6 });
+        FX.text(S.newBest, L.inner.x + L.inner.w / 2, L.inner.y + L.cs * 1.2, L.cs * 0.55, '#ffe27a', { dur: 1.8 });
         Sound.newBest();
       }
     }
@@ -362,9 +363,11 @@
   });
 
   window.addEventListener('resize', resize);
+  // Nur lokal: Auf YouTube übernimmt onPause das Speichern (Page-Visibility-API ist dort verboten)
+  if (!YT.inEnv) window.addEventListener('pagehide', () => { if (ready) saveNow(); });
 
   // Entwickler-Hilfe: index.html?autoplay lässt einen gierigen Bot spielen (Tests, Screenshots)
-  const AUTOPLAY = /[?&]autoplay/.test(location.search);
+  const AUTOPLAY = /[?&]autoplay\b/.test(location.search);
   let botTimer = 1;
   function botMove() {
     let bestMove = null;

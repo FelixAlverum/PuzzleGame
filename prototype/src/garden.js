@@ -123,7 +123,7 @@
     const fr = Math.min((R.w / n) * 0.32, H * 0.2);
     for (let i = 0; i < n; i++) plant(ctx, R.x + R.w * (i + 0.5) / n, soilY + R.h * 0.03, H, view.plots[i], sp, t, i, fr);
 
-    ctx.font = `700 ${Math.max(10, R.h * 0.11)}px ${root.FONT}`;
+    ctx.font = `700 ${Math.max(10, Math.min(R.h * 0.11, R.w * 0.055))}px ${root.FONT}`;
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillStyle = 'rgba(55,80,40,0.85)';
     ctx.fillText(`${label} ${view.level + 1}`, R.x + R.h * 0.08, R.y + R.h * 0.07);
