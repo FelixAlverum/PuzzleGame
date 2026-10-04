@@ -13,6 +13,18 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 
 Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`3` wählen, Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
 
+## Docker
+Öffentliches Image auf Docker Hub: [`alverum/puzzlegame`](https://hub.docker.com/r/alverum/puzzlegame) (amd64 + arm64).
+```
+docker run -d -p 8080:8080 alverum/puzzlegame:latest
+```
+Danach im Browser `http://localhost:8080` öffnen. Ausgeliefert von nginx (unprivilegiert, Port 8080).
+
+Neue Version veröffentlichen (im Ordner `prototype`, Version anpassen):
+```
+docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.1.0 -t alverum/puzzlegame:latest --push .
+```
+
 ## Tests
 ```
 node --test prototype/tests/logic.test.js

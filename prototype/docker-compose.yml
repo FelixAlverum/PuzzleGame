@@ -1,0 +1,7 @@
+services:
+  puzzlegame:
+    image: alverum/puzzlegame:latest
+    container_name: puzzlegame_prod
+    restart: unless-stopped
+    ports:
+      - "8070:8080"
