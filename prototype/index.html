@@ -11,7 +11,7 @@
     :root {
       --paper: #fbf5e6; --paper-2: #f3ead2; --wood: #a8743f; --ink: #4a3424; --ink-soft: rgba(80,60,35,0.8);
       --green: #5d9a3e; --green-dark: #3f7a2a; --red: #b8452f; --shadow: rgba(40,25,10,0.28);
-      --font: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      --font: "Trebuchet MS", "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
     }
     html, body {
       margin: 0; height: 100%; overflow: hidden; background: #efe6cf;
@@ -80,6 +80,23 @@
       font-size: 16px; font-weight: 800; color: var(--ink); cursor: pointer; }
     .seg.on { background: var(--green); border-color: var(--green); color: #fff; }
     .note { margin: 6px 0 0; font-size: 13px; color: var(--ink-soft); }
+    .seg.lang { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .flag { display: inline-flex; width: 30px; height: 20px; border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.25); flex: none; }
+    .flag svg { width: 100%; height: 100%; display: block; }
+
+    .guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+    .guide > .full { grid-column: 1 / -1; }
+    .guide p { margin: 6px 0; line-height: 1.45; }
+    .guide-list { margin: 0; padding-left: 20px; line-height: 1.45; }
+    .guide-list li { margin: 4px 0; }
+    table.points { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+    table.points th { text-align: left; font-weight: 700; padding: 6px 4px; border-bottom: 1px solid rgba(168,116,63,0.25); }
+    table.points td { text-align: right; font-weight: 800; color: #2f5d2a; padding: 6px 4px; border-bottom: 1px solid rgba(168,116,63,0.25); font-variant-numeric: tabular-nums; }
+    .example { background: var(--paper-2); border-radius: 10px; padding: 8px 10px; font-weight: 700; }
+    .guide-biomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 8px; }
+    .guide-biome h3 { margin: 2px 0; font-size: 18px; }
+    .thumb.wide { aspect-ratio: 3 / 1; }
+
     @media (max-width: 600px) { .thumb { aspect-ratio: 5 / 2; } }
     @media (max-height: 480px) { .thumb { aspect-ratio: 3 / 1; } .brand h1 { font-size: 26px; } }
   </style>
@@ -93,11 +110,21 @@
         <div class="brand"><h1 id="menu-title" data-t="title"></h1><p data-t="choose"></p></div>
         <div class="row">
           <button class="pill ghost small" id="size-chip" data-go="settings"></button>
+          <button class="pill ghost" data-go="guide" data-t="guide"></button>
           <button class="pill ghost" data-go="stats" data-t="stats"></button>
           <button class="pill ghost" data-go="settings" data-t="settings"></button>
         </div>
       </div>
       <div class="biomes" id="biomes"></div>
+    </section>
+
+    <section class="screen" id="screen-guide" aria-labelledby="guide-title">
+      <div class="top">
+        <div class="brand"><h1 id="guide-title" data-t="guide"></h1></div>
+        <button class="pill ghost" data-go="menu" data-t="back"></button>
+      </div>
+      <div class="guide" id="guide-body"></div>
+      <div class="row"><button class="pill primary" data-go="menu" data-t="back"></button></div>
     </section>
 
     <section class="screen" id="screen-stats" aria-labelledby="stats-title">
@@ -126,10 +153,15 @@
         <div class="seg-row" id="size-seg" role="radiogroup"></div>
         <p class="note" data-t="sizeNote"></p>
       </div>
+      <div class="card">
+        <h2 data-t="language"></h2>
+        <div class="seg-row" id="lang-seg" role="radiogroup"></div>
+      </div>
     </section>
   </div>
 
   <script src="src/yt.js"></script>
+  <script src="src/i18n.js"></script>
   <script src="src/shapes.js"></script>
   <script src="src/logic.js"></script>
   <script src="src/materials.js"></script>

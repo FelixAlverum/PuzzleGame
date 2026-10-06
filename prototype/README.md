@@ -24,7 +24,9 @@ Im Spiel führt ≡ oben links (oder `M`/`Esc`) zurück ins Menü; der Lauf blei
 
 - **Statistik:** Spiele, gelegte Formen, höchste und niedrigste Punktzahl je Biom und Feldgröße, dazu Summen.
   Als Spiel zählt nur eine Runde mit Game Over; „Zug zurück“ nimmt auch die Statistik zurück.
-- **Einstellungen:** Musik / Soundeffekte / Atmosphäre (0–100 %), Feldgröße 6×6 / 8×8 / 10×10.
+- **Anleitung:** Worum es geht, wie die Punkte entstehen (mit Beispiel), die Biome mit ihren Extra-Formen, Steuerung.
+- **Einstellungen:** Musik / Soundeffekte / Atmosphäre (0–100 %), Feldgröße 6×6 / 8×8 / 10×10, Sprache (Deutsch / English / 中文, mit Flaggen).
+  Ohne Auswahl gilt die Sprache von YouTube bzw. des Browsers.
 
 ## Garten
 Jede aufgelöste Linie lässt eine Pflanze wachsen. Sind alle 5 erblüht, folgt der nächste Garten mit der nächsten Pflanzenart.
@@ -46,7 +48,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.1
 
 ## Tests
 ```
-node --test prototype/tests/logic.test.js
+node --test prototype/tests/logic.test.js prototype/tests/i18n.test.js
 ```
 
 ## Aufbau
@@ -58,7 +60,8 @@ node --test prototype/tests/logic.test.js
 | `src/fx.js` | Partikel und schwebende Texte |
 | `src/garden.js` | Garten-Anzeige (Meta-Fortschritt), Biom-Themen |
 | `src/audio.js` | Synthetisierte Sounds, Musik und Atmosphäre je Biom (Web Audio), Kanäle Musik/Effekte/Atmosphäre |
-| `src/menu.js` | Menü, Statistik, Einstellungen (HTML-Overlay) |
+| `src/menu.js` | Menü, Anleitung, Statistik, Einstellungen (HTML-Overlay) |
+| `src/i18n.js` | Alle Texte in Deutsch, Englisch, Chinesisch |
 | `src/yt.js` | Hülle um das YouTube Playables SDK, lokal mit localStorage als Fallback |
 | `src/main.js` | Layout, Eingabe, Loop, Rendering, Lebenszyklus |
 

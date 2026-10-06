@@ -9,29 +9,8 @@
   const easeOut = k => 1 - Math.pow(1 - k, 3);
   const randSeed = () => (Math.random() * 4294967296) >>> 0;
 
-  const STR = {
-    de: { best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen', newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten',
-      undo: 'Zug zurück', resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten dieses Bioms beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen',
-      title: 'Cozy Garden', choose: 'Wähle dein Biom', play: 'Spielen', cont: 'Weiter', newGame: 'Neues Spiel', sure: 'Sicher? Nochmal tippen',
-      field: 'Feld', stats: 'Statistik', settings: 'Einstellungen', back: 'Zurück', total: 'Alle Biome', sum: 'Summe',
-      games: 'Spiele', tiles: 'Gelegte Formen', bestScore: 'Höchste Punktzahl', worstScore: 'Niedrigste Punktzahl',
-      gamesShort: 'Spiele', tilesShort: 'Formen', bestScoreShort: 'Höchste', worstScoreShort: 'Niedrigste', fieldShort: 'Feld',
-      resetStats: 'Statistik zurücksetzen', sound: 'Ton', music: 'Musik', sfx: 'Soundeffekte', amb: 'Atmosphäre',
-      muted: 'Der Ton ist in YouTube gerade stummgeschaltet.', fieldSize: 'Spielfeldgröße',
-      sizeNote: 'Jede Größe hat eigene Rekorde, eine eigene Statistik und einen eigenen Spielstand.',
-      desc_meadow: 'Pilze, Blüten und Tulpen', desc_pond: 'Seerosen, Schilf und Rohrkolben', desc_tropics: 'Hibiskus, Bambus und Bananenblätter' },
-    en: { best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again', newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden',
-      undo: 'Undo move', resetTitle: 'Reset garden?', resetText: 'All plants and gardens of this biome start over.', resetYes: 'Reset', resetNo: 'Cancel',
-      title: 'Cozy Garden', choose: 'Choose your biome', play: 'Play', cont: 'Continue', newGame: 'New game', sure: 'Sure? Tap again',
-      field: 'Field', stats: 'Stats', settings: 'Settings', back: 'Back', total: 'All biomes', sum: 'Total',
-      games: 'Games played', tiles: 'Tiles placed', bestScore: 'Highest score', worstScore: 'Lowest score',
-      gamesShort: 'Games', tilesShort: 'Tiles', bestScoreShort: 'Highest', worstScoreShort: 'Lowest', fieldShort: 'Field',
-      resetStats: 'Reset stats', sound: 'Sound', music: 'Music', sfx: 'Sound effects', amb: 'Ambience',
-      muted: 'Sound is currently muted in YouTube.', fieldSize: 'Field size',
-      sizeNote: 'Each size keeps its own records, stats and saved game.',
-      desc_meadow: 'Mushrooms, blossoms and tulips', desc_pond: 'Water lilies, reeds and cattails', desc_tropics: 'Hibiscus, bamboo and banana leaves' },
-  };
-  let S = STR.en, lang = 'en';
+  // Texte: siehe i18n.js. lang = aktuelle Sprache, S = ihre Texte
+  let S = I18N.STR.en, lang = 'en';
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -39,7 +18,8 @@
   let bgTheme = null, bgOld = null, bgFade = 0;   // Hintergrund folgt dem Garten-Thema, Wechsel wird überblendet
 
   // Einstellungen (gespeichert). Lautstärken 0..1, size = Kantenlänge des Felds
-  const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, biome: Logic.BIOMES[0] };
+  // lang: null = Sprache von YouTube/Browser übernehmen, sonst vom Spieler gewählt
+  const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, biome: Logic.BIOMES[0], lang: null };
   // Fortschritt (gespeichert): Garten je Biom, Statistik und offener Lauf je Modus („biome-size“)
   let gardens = {}, stats = {}, runs = {}, hintDone = false;
   // Aktueller Modus
@@ -397,6 +377,16 @@
     saveDirty = true;
   }
 
+  // Sprache sofort umschalten: Canvas-Texte lesen S jedes Bild neu, das Menü baut sich neu auf
+  function setLanguage(l, remember) {
+    if (!I18N.LANGS.includes(l)) return;
+    lang = l;
+    S = I18N.STR[l];
+    document.documentElement.lang = I18N.HTML_LANG[l];
+    if (remember) { settings.lang = l; saveDirty = true; }
+    if (ready) Menu.setStrings(S);
+  }
+
   function resetStats() {
     stats = {};
     stat = Logic.newStat();
@@ -412,10 +402,12 @@
     preview: k => Sound.preview(k),
     audioEnabled: () => YT.audioEnabled(),
     resetStats,
+    lang: () => lang,
+    setLanguage: l => setLanguage(l, true),
     biomeInfo(b) {
       const key = Logic.statKey(b, settings.size), run = runs[key];
       return {
-        name: Garden.theme(b).name[lang],
+        name: S['name_' + b],
         level: gardens[b] ? gardens[b].level : 0,
         best: stats[key] ? stats[key].best : 0,
         run: run && !run.over ? run.score : null,
@@ -425,7 +417,7 @@
       const get = (b, n) => stats[Logic.statKey(b, n)] || Logic.newStat();
       const biomes = Logic.BIOMES.map(b => {
         const rows = Logic.SIZES.map(size => ({ size, stat: get(b, size) }));
-        return { name: Garden.theme(b).name[lang], rows, total: Logic.statTotals(rows.map(r => r.stat)) };
+        return { name: S['name_' + b], rows, total: Logic.statTotals(rows.map(r => r.stat)) };
       });
       return { biomes, total: Logic.statTotals(biomes.map(b => b.total)) };
     },
@@ -456,6 +448,7 @@
     for (const k of ['music', 'sfx', 'amb']) if (Number.isFinite(st[k])) settings[k] = Math.max(0, Math.min(1, st[k]));
     if (Logic.SIZES.includes(st.size)) settings.size = st.size;
     if (Logic.BIOMES.includes(st.biome)) settings.biome = st.biome;
+    if (I18N.LANGS.includes(st.lang)) settings.lang = st.lang;
     for (const b of Logic.BIOMES) {
       const g = data.gardens && Logic.restoreGarden(data.gardens[b]);
       if (g) gardens[b] = g;
@@ -967,7 +960,7 @@
 
     drawHeader();
     const lvl = gardenView.level;
-    Garden.draw(ctx, L.garden, gardenView, clock, `${S.garden} ${lvl + 1} · ${Garden.theme(biome).name[lang]}`);
+    Garden.draw(ctx, L.garden, gardenView, clock, `${S.garden} ${lvl + 1} · ${S['name_' + biome]}`);
     drawResetIcon();
     drawBoard(over ? null : currentPreview());
     drawTray();
@@ -999,11 +992,8 @@
 
     Mat.build();
     const [data, language] = await Promise.all([YT.load(), YT.language()]);
-    lang = String(language).toLowerCase().startsWith('de') ? 'de' : 'en';
-    S = STR[lang];
-    document.documentElement.lang = lang;
-
     loadSave(data);
+    setLanguage(settings.lang || I18N.pick(language), false);
     biome = settings.biome;
     gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
     for (const k of ['music', 'sfx', 'amb']) Sound.setVolume(k, settings[k]);

@@ -7,7 +7,7 @@
   const rnd = (a, b) => a + Math.random() * (b - a);
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-  const FONT = '"Trebuchet MS", "Segoe UI", system-ui, sans-serif';
+  const FONT = '"Trebuchet MS", "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif';
 
   const COLORS = {
     wood: ['#c48b4f', '#8a5a2b', '#e0b07a'],
