@@ -144,3 +144,42 @@ test('restore akzeptiert gültige und verwirft kaputte Spielstände', () => {
   assert.equal(Logic.restoreGarden({ level: 2, plots: [1, 2, 3, 4, 5] }).level, 2);
   assert.equal(Logic.restoreGarden({ level: 2, plots: [9] }), null);
 });
+
+test('Zurücknehmen stellt Runde und Garten vor dem Zug wieder her', () => {
+  const s = emptyGame();
+  fillRowExcept(s, 0, 0);
+  fill(s, 5, 5);
+  const g = Logic.newGarden();
+  const history = [];
+  const before = JSON.parse(JSON.stringify(s));
+  Logic.pushHistory(history, s, g);
+  const ev = Logic.place(s, 0, 0, 0);
+  Logic.growGarden(g, ev.find(e => e.type === 'cleared').lines);
+  assert.equal(g.total, 1);
+  Logic.pushHistory(history, s, g);
+  Logic.place(s, 1, 7, 7);
+
+  const one = Logic.popHistory(history);
+  assert.equal(one.game.score, 11);
+  assert.equal(one.game.tray[1].shape, 'kiesel');
+  const two = Logic.popHistory(history);
+  assert.deepEqual(two.game, before);
+  assert.equal(two.garden.total, 0);
+  assert.equal(Logic.popHistory(history), null, 'leerer Verlauf');
+});
+
+test('Verlauf ist begrenzt', () => {
+  const history = [];
+  const s = Logic.newGame(3), g = Logic.newGarden();
+  for (let i = 0; i < 5; i++) { s.score = i; Logic.pushHistory(history, s, g, 3); }
+  assert.equal(history.length, 3);
+  assert.equal(Logic.popHistory(history).game.score, 4);
+  assert.equal(JSON.parse(history[0]).game.score, 2);
+});
+
+test('Garten-Themen wechseln reihum, dann die Pflanzenart', () => {
+  assert.deepEqual(Logic.gardenStyle(0), { theme: 0, species: 0 });
+  assert.deepEqual(Logic.gardenStyle(1), { theme: 1, species: 0 });
+  assert.deepEqual(Logic.gardenStyle(2), { theme: 2, species: 0 });
+  assert.deepEqual(Logic.gardenStyle(3), { theme: 0, species: 1 });
+});

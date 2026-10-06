@@ -9,20 +9,24 @@
   const randSeed = () => (Math.random() * 4294967296) >>> 0;
 
   const STR = {
-    de: { best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen', newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten' },
-    en: { best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again', newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden' },
+    de: { best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen', newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten',
+      undo: 'Zug zurück', resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen' },
+    en: { best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again', newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden',
+      undo: 'Undo move', resetTitle: 'Reset garden?', resetText: 'All plants and gardens start over.', resetYes: 'Reset', resetNo: 'Cancel' },
   };
-  let S = STR.en;
+  let S = STR.en, lang = 'en';
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   let W = 0, H = 0, DPR = 1, L = null, bg = null;
+  let bgTheme = null, bgOld = null, bgFade = 0;   // Hintergrund folgt dem Garten-Thema, Wechsel wird überblendet
 
   // Spielzustand
   let game = null, garden = Logic.newGarden(), best = 0, hintDone = false;
   let bestAtStart = 0, newBestShown = false, shownScore = 0;
+  const history = [];                    // Stände vor den letzten Zügen (Zug zurücknehmen), nicht gespeichert
   // Darstellung
-  let drag = null, returning = null, kb = null, lastPlaced = null, over = null;
+  let drag = null, returning = null, kb = null, lastPlaced = null, over = null, confirm = null;
   const drops = new Map();               // pid → Startzeit der Fall-Animation
   let dying = [];                        // Zellen, die sich gerade auflösen
   let trayPop = [0, 0, 0];               // Einblendzeitpunkt je Ablage-Slot
@@ -68,6 +72,7 @@
     canvas.width = Math.round(W * DPR);
     canvas.height = Math.round(H * DPR);
     L = layout(W, H);
+    bgOld = null;
     if (ready) buildBackground();
   }
 
@@ -78,16 +83,8 @@
     const g = bg.getContext('2d');
     g.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-    const sky = g.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#f4ecd8'); sky.addColorStop(0.6, '#e6e4c6'); sky.addColorStop(1, '#c5d5a0');
-    g.fillStyle = sky; g.fillRect(0, 0, W, H);
-
-    g.globalAlpha = 0.16;   // große, weiche Blattsilhouetten am Rand
-    const big = Math.max(W, H) * 0.35;
-    Mat.leaf(g, -big * 0.1, H * 0.9, big, big * 0.35, -0.9, '#6f9a4a', false);
-    Mat.leaf(g, W + big * 0.1, H * 0.15, big * 0.8, big * 0.3, Math.PI + 0.7, '#6f9a4a', false);
-    Mat.leaf(g, W * 0.9, H + big * 0.05, big * 0.7, big * 0.26, -2.0, '#7fa85a', false);
-    g.globalAlpha = 1;
+    Garden.backdrop(g, W, H, gardenView.level);   // Himmel und Deko je nach Thema
+    bgTheme = Garden.theme(gardenView.level).id;
 
     const b = L.board, B = L.B, f = L.frame, r = B * 0.04;
     const frame = new Path2D();
@@ -143,7 +140,13 @@
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
 
-  const inside = (R, x, y) => x >= R.x && x <= R.x + R.w && y >= R.y && y <= R.y + R.h;
+  const inside = (R, x, y) => !!R && x >= R.x && x <= R.x + R.w && y >= R.y && y <= R.y + R.h;
+  const hitCircle = (b, x, y) => Math.hypot(x - b.x, y - b.y) <= b.r * 1.4;   // großzügig für Touch
+
+  // Runde Knöpfe: Zug zurück links im Kopfbereich, Garten-Reset oben rechts im Garten
+  const undoButton = () => { const R = L.header, r = L.B * 0.042; return { x: R.x + r * 1.1, y: R.y + R.h * 0.38, r }; };
+  const resetButton = () => { const R = L.garden, r = Math.max(11, R.h * 0.1); return { x: R.x + R.w - r * 1.5, y: R.y + r * 1.5, r }; };
+  const canResetGarden = () => garden.level >= 1;   // erst, wenn der erste Garten erblüht ist
 
   function trayOrigin(slot, piece, size) {
     const s = L.tray[slot];
@@ -175,10 +178,40 @@
   // --- Spielaktionen ---------------------------------------------------------------------
 
   function tryPlace(slot, r, c) {
+    const before = JSON.stringify({ game, garden });
     const events = Logic.place(game, slot, r, c);
     if (!events) { Sound.invalid(); return false; }
+    history.push(before);
+    if (history.length > Logic.UNDO_LIMIT) history.shift();
     handle(events);
     return true;
+  }
+
+  // Letzten Zug zurücknehmen: Runde und Garten springen auf den Stand davor (auch nach Game Over)
+  function undo() {
+    const prev = Logic.popHistory(history);
+    if (!prev) { Sound.invalid(); return false; }
+    const trayBefore = game.tray.map(it => JSON.stringify(it));
+    game = prev.game;
+    garden = prev.garden;
+    over = null; drag = null; returning = null; kb = null; lastPlaced = null;
+    dying = []; drops.clear(); FX.reset();
+    gardenView.hold = 0;
+    game.tray.forEach((it, i) => { if (JSON.stringify(it) !== trayBefore[i]) trayPop[i] = clock; });
+    Sound.pickup();
+    saveDirty = true;
+    return true;
+  }
+
+  // Garten komplett zurücksetzen (Stufe, Pflanzen, Thema). Der Verlauf enthält alte Gärten → verwerfen.
+  function resetGarden() {
+    confirm = null;
+    garden = Logic.newGarden();
+    gardenView = { level: 0, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
+    history.length = 0;
+    FX.sparkle(L.garden.x + L.garden.w / 2, L.garden.y + L.garden.h * 0.6, L.cs, 12, ['#fff6b0', '#ffffff', '#c8f08a']);
+    Sound.pickup();
+    saveNow();
   }
 
   function handle(events) {
@@ -271,6 +304,7 @@
   function restart() {
     game = Logic.newGame(randSeed());
     over = null; dying = []; drops.clear(); FX.reset();
+    history.length = 0;
     bestAtStart = best; newBestShown = false; shownScore = 0;
     trayPop = [clock, clock + 0.07, clock + 0.14];
     saveNow();
@@ -292,10 +326,18 @@
     Sound.unlock();
     if (!ready || paused) return;
     const { x, y } = pointer(e);
-    if (over) {
-      if (over.button && inside(over.button, x, y)) restart();
+    if (confirm) {
+      if (inside(confirm.yes, x, y)) resetGarden();
+      else if (confirm.yes) confirm = null;      // „Abbrechen“ oder daneben getippt
       return;
     }
+    if (over) {
+      if (inside(over.button, x, y)) restart();
+      else if (inside(over.undoButton, x, y)) undo();
+      return;
+    }
+    if (hitCircle(undoButton(), x, y)) { undo(); return; }
+    if (canResetGarden() && hitCircle(resetButton(), x, y)) { confirm = { t: clock, yes: null, no: null }; kb = null; return; }
     const slot = L.tray.findIndex(s => inside(s, x, y));
     if (slot < 0 || !game.tray[slot] || (returning && returning.slot === slot)) return;
     drag = { slot, piece: Logic.pieceOf(game.tray[slot]), x, y, t0: clock, touch: e.pointerType !== 'mouse', id: e.pointerId, snap: null };
@@ -329,6 +371,12 @@
     Sound.unlock();
     if (!ready || paused) return;
     const k = e.key;
+    if (confirm) {
+      if (k === 'Escape') confirm = null;
+      else if (k === 'Enter') { resetGarden(); e.preventDefault(); }
+      return;
+    }
+    if (k === 'z' || k === 'Z' || k === 'Backspace') { undo(); e.preventDefault(); return; }
     if (over) {
       if ((k === 'Enter' || k === ' ') && clock - over.t > 1.2) { restart(); e.preventDefault(); }
       return;
@@ -388,7 +436,11 @@
 
   // Entwickler-Hilfe: index.html?debug macht den Zustand für automatisierte Browser-Tests zugänglich
   if (/[?&]debug\b/.test(location.search)) {
-    window.__dbg = { layout: () => L, game: () => game, garden: () => garden, place: tryPlace, ready: () => ready };
+    window.__dbg = {
+      layout: () => L, game: () => game, garden: () => garden, place: tryPlace, ready: () => ready,
+      undo, resetGarden, history: () => history.length,
+      setGarden: g => { garden = g; gardenView = { level: g.level, plots: g.plots.slice(), hold: 0, holdLevel: 0 }; },
+    };
   }
 
   // --- Update ----------------------------------------------------------------------------
@@ -396,7 +448,7 @@
   function update(dt) {
     if (AUTOPLAY) {
       botTimer -= dt;
-      if (botTimer <= 0) { botTimer = 0.45; if (over) { if (clock - over.t > 2.5) restart(); } else botMove(); }
+      if (botTimer <= 0) { botTimer = 0.45; if (confirm) confirm = null; else if (over) { if (clock - over.t > 2.5) restart(); } else botMove(); }
     }
     FX.update(dt);
     Sound.update(dt);
@@ -450,12 +502,116 @@
     ctx.fillStyle = 'rgba(80,60,35,0.85)';
     ctx.fillText(`${S.best} ${best}`, R.x + R.w / 2, R.y + R.h * 0.85);
 
+    drawUndoIcon(undoButton(), history.length > 0 && !over);
+
     if (game.combo >= 2) {
       ctx.font = `800 ${B * 0.034}px ${FONT}`;
       ctx.fillStyle = '#5d9a3e';
       ctx.textAlign = 'right';
       ctx.fillText(`${S.combo} ×${game.combo}`, R.x + R.w, sy);
     }
+  }
+
+  function roundButton(b, enabled) {
+    ctx.save();
+    ctx.globalAlpha *= enabled ? 1 : 0.4;
+    ctx.fillStyle = 'rgba(40,25,10,0.18)';
+    ctx.beginPath(); ctx.arc(b.x, b.y + b.r * 0.1, b.r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,250,235,0.92)';
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(120,85,45,0.45)'; ctx.lineWidth = Math.max(1, b.r * 0.08); ctx.stroke();
+    ctx.strokeStyle = ctx.fillStyle = '#4a3424';
+    ctx.lineWidth = Math.max(1.5, b.r * 0.16); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  }
+
+  // Pfeil nach links, der unten zurückbiegt (↶)
+  function drawUndoIcon(b, enabled) {
+    roundButton(b, enabled);
+    const { x, y, r } = b;
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.3, y - r * 0.18);
+    ctx.lineTo(x + r * 0.08, y - r * 0.18);
+    ctx.arc(x + r * 0.08, y + r * 0.1, r * 0.28, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(x - r * 0.22, y + r * 0.38);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.55, y - r * 0.18);
+    ctx.lineTo(x - r * 0.25, y - r * 0.44);
+    ctx.lineTo(x - r * 0.25, y + r * 0.08);
+    ctx.closePath(); ctx.fill();
+    if (enabled && history.length > 1) {   // wie viele Züge sich zurücknehmen lassen
+      const bx = x + r * 0.75, by = y + r * 0.7, br = r * 0.42;
+      ctx.fillStyle = '#5d9a3e';
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `800 ${br * (history.length > 9 ? 0.95 : 1.25)}px ${FONT}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(history.length), bx, by + br * 0.05);
+    }
+    ctx.restore();
+  }
+
+  // Kreispfeil (↻) für den Garten-Reset
+  function drawResetIcon() {
+    if (!canResetGarden() || over) return;
+    const b = resetButton();
+    roundButton(b, true);
+    const { x, y, r } = b, rr = r * 0.42, a0 = -Math.PI / 2 + 0.6, a1 = -Math.PI / 2 + Math.PI * 2 - 0.2;
+    ctx.beginPath(); ctx.arc(x, y, rr, a0, a1); ctx.stroke();
+    const ex = x + Math.cos(a1) * rr, ey = y + Math.sin(a1) * rr;
+    const tx = -Math.sin(a1), ty = Math.cos(a1), nx = Math.cos(a1), ny = Math.sin(a1), s = r * 0.24;
+    ctx.beginPath();
+    ctx.moveTo(ex + tx * s, ey + ty * s);
+    ctx.lineTo(ex + nx * s - tx * s * 0.3, ey + ny * s - ty * s * 0.3);
+    ctx.lineTo(ex - nx * s - tx * s * 0.3, ey - ny * s - ty * s * 0.3);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  function pillButton(R, label, fill, textColor, outline) {
+    const p = new Path2D(); Mat.rrect(p, R.x, R.y, R.w, R.h, [R.h / 2, R.h / 2, R.h / 2, R.h / 2]);
+    ctx.fillStyle = fill; ctx.fill(p);
+    if (outline) { ctx.strokeStyle = outline; ctx.lineWidth = Math.max(1, R.h * 0.06); ctx.stroke(p); }
+    else { ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(R.x + R.h / 2, R.y + R.h * 0.1, R.w - R.h, R.h * 0.25); }
+    ctx.fillStyle = textColor;
+    ctx.font = `800 ${R.h * 0.42}px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, R.x + R.w / 2, R.y + R.h / 2);
+  }
+
+  function card(cx, cy, w, h) {
+    const x = cx - w / 2, y = cy - h / 2;
+    const p = new Path2D(); Mat.rrect(p, x, y, w, h, [w * 0.06, w * 0.06, w * 0.06, w * 0.06]);
+    ctx.fillStyle = 'rgba(40,25,10,0.3)'; ctx.save(); ctx.translate(0, w * 0.015); ctx.fill(p); ctx.restore();
+    ctx.fillStyle = '#fbf5e6'; ctx.fill(p);
+    ctx.strokeStyle = '#a8743f'; ctx.lineWidth = w * 0.012; ctx.stroke(p);
+    return { x, y };
+  }
+
+  function drawConfirm() {
+    if (!confirm) return;
+    const a = easeOut(clamp((clock - confirm.t) / 0.25));
+    ctx.fillStyle = `rgba(40,30,20,${0.45 * a})`;
+    ctx.fillRect(0, 0, W, H);
+    const w = Math.min(W * 0.86, L.B * 0.9), h = w * 0.62;
+    const cx = L.board.x + L.B / 2, cy = L.board.y + L.B / 2 + (1 - a) * 30;
+    ctx.save();
+    ctx.globalAlpha = a;
+    const { y } = card(cx, cy, w, h);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#4a3424';
+    ctx.font = `800 ${w * 0.075}px ${FONT}`;
+    ctx.fillText(S.resetTitle, cx, y + h * 0.2);
+    ctx.fillStyle = 'rgba(80,60,35,0.85)';
+    ctx.font = `700 ${w * 0.042}px ${FONT}`;
+    ctx.fillText(S.resetText, cx, y + h * 0.4, w * 0.9);
+    const bw = w * 0.4, bh = h * 0.2, by = y + h * 0.62;
+    confirm.no = { x: cx - bw - w * 0.03, y: by, w: bw, h: bh };
+    confirm.yes = { x: cx + w * 0.03, y: by, w: bw, h: bh };
+    pillButton(confirm.no, S.resetNo, '#fbf5e6', '#4a3424', '#a8743f');
+    pillButton(confirm.yes, S.resetYes, '#b8452f', '#ffffff');
+    ctx.restore();
+    if (a < 0.5) confirm.yes = confirm.no = null;   // erst klickbar, wenn sichtbar
   }
 
   function currentPreview() {
@@ -589,15 +745,12 @@
     ctx.fillStyle = `rgba(40,30,20,${0.45 * a})`;
     ctx.fillRect(0, 0, W, H);
 
-    const w = Math.min(W * 0.86, L.B * 0.9), h = w * 0.66;
+    const canUndo = history.length > 0;
+    const w = Math.min(W * 0.86, L.B * 0.9), h = w * 0.66, ch = canUndo ? h * 1.22 : h;
     const cx = L.board.x + L.B / 2, cy = L.board.y + L.B / 2 + (1 - a) * 30;
-    const x = cx - w / 2, y = cy - h / 2;
     ctx.save();
     ctx.globalAlpha = a;
-    const card = new Path2D(); Mat.rrect(card, x, y, w, h, [w * 0.06, w * 0.06, w * 0.06, w * 0.06]);
-    ctx.fillStyle = 'rgba(40,25,10,0.3)'; ctx.save(); ctx.translate(0, w * 0.015); ctx.fill(card); ctx.restore();
-    ctx.fillStyle = '#fbf5e6'; ctx.fill(card);
-    ctx.strokeStyle = '#a8743f'; ctx.lineWidth = w * 0.012; ctx.stroke(card);
+    const { y } = card(cx, cy, w, ch);
 
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#4a3424';
@@ -610,30 +763,38 @@
     ctx.font = `700 ${w * 0.045}px ${FONT}`;
     ctx.fillText(over.newBest ? S.newBest : `${S.best} ${best}`, cx, y + h * 0.58);
 
-    const bw = w * 0.62, bh = h * 0.2, bx = cx - bw / 2, by = y + h * 0.7;
-    const btn = new Path2D(); Mat.rrect(btn, bx, by, bw, bh, [bh / 2, bh / 2, bh / 2, bh / 2]);
-    ctx.fillStyle = '#5d9a3e'; ctx.fill(btn);
-    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(bx + bh / 2, by + bh * 0.1, bw - bh, bh * 0.25);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `800 ${bh * 0.42}px ${FONT}`;
-    ctx.fillText(S.again, cx, by + bh / 2);
+    const bw = w * 0.62, bh = h * 0.2;
+    const main = { x: cx - bw / 2, y: y + h * 0.7, w: bw, h: bh };
+    const back = canUndo ? { x: cx - bw / 2, y: y + h * 0.96, w: bw, h: bh * 0.8 } : null;
+    pillButton(main, S.again, '#5d9a3e', '#ffffff');
+    if (back) pillButton(back, S.undo, '#fbf5e6', '#4a3424', '#a8743f');
     ctx.restore();
-    over.button = a > 0.5 ? { x: bx, y: by, w: bw, h: bh } : null;
+    over.button = a > 0.5 ? main : null;
+    over.undoButton = a > 0.5 ? back : null;
   }
 
   function draw() {
+    if (Garden.theme(gardenView.level).id !== bgTheme) { bgOld = bg; bgFade = clock; buildBackground(); }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(bg, 0, 0);
+    if (bgOld) {
+      const k = clamp((clock - bgFade) / 1.2);
+      if (k >= 1) bgOld = null;
+      else { ctx.globalAlpha = 1 - k; ctx.drawImage(bgOld, 0, 0); ctx.globalAlpha = 1; }
+    }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
     drawHeader();
-    Garden.draw(ctx, L.garden, gardenView, clock, S.garden);
+    const lvl = gardenView.level;
+    Garden.draw(ctx, L.garden, gardenView, clock, `${S.garden} ${lvl + 1} · ${Garden.theme(lvl).name[lang]}`);
+    drawResetIcon();
     drawBoard(over ? null : currentPreview());
     drawTray();
     FX.draw(ctx);
     drawFloatingPiece();
     drawHint();
     drawGameOver();
+    drawConfirm();
   }
 
   function frame(ts) {
@@ -656,9 +817,10 @@
     YT.firstFrameReady();
 
     Mat.build();
-    const [data, lang] = await Promise.all([YT.load(), YT.language()]);
-    S = String(lang).toLowerCase().startsWith('de') ? STR.de : STR.en;
-    document.documentElement.lang = S === STR.de ? 'de' : 'en';
+    const [data, language] = await Promise.all([YT.load(), YT.language()]);
+    lang = String(language).toLowerCase().startsWith('de') ? 'de' : 'en';
+    S = STR[lang];
+    document.documentElement.lang = lang;
 
     if (data && data.v === 1) {
       best = Number.isFinite(data.best) ? Math.max(0, Math.floor(data.best)) : 0;

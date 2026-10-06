@@ -12,6 +12,14 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 | `?debug` | Zustand unter `window.__dbg` für automatisierte Tests |
 
 Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`3` wählen, Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
+Zug zurücknehmen: Knopf ↶ oben links (Zahl = verfügbare Schritte, bis zu 100 pro Runde) oder Taste `Z`/`Backspace` – auch nach Game Over.
+Der Verlauf wird nicht gespeichert und endet mit „Neu pflanzen“.
+
+## Garten
+Jede aufgelöste Linie lässt eine Pflanze wachsen. Sind alle 5 erblüht, folgt der nächste Garten; die Themen wechseln reihum:
+**Wiese** (Mohn, Sonnenblume, …), **Teich** (Seerose, Lotus, Sumpf-Schwertlilie, Rohrkolben, Hechtkraut) und
+**Tropen** (Hibiskus, Strelitzie, Orchidee, Frangipani, Fackelingwer). Hintergrund und Garten-Boden passen sich dem Thema an.
+Ab dem ersten erblühten Garten erscheint oben rechts im Garten ↻ zum kompletten Zurücksetzen (mit Rückfrage).
 
 ## Docker
 Öffentliches Image auf Docker Hub: [`alverum/puzzlegame`](https://hub.docker.com/r/alverum/puzzlegame) (amd64 + arm64).

@@ -15,6 +15,8 @@
   const FRESH_SOIL_BONUS = 300;  // Feld komplett leer geräumt
   const PLOTS = 5;               // Beete im Garten
   const STAGES = 5;              // 0 = Saat … 5 = Blüte
+  const THEMES = 3;              // Wiese, Teich, Tropen – wechseln mit jedem erblühten Garten
+  const UNDO_LIMIT = 100;        // so viele Züge lassen sich zurücknehmen
 
   // mulberry32 – Zustand liegt im Spielstand, damit Runden reproduzierbar und speicherbar sind
   function rand(state) {
@@ -228,10 +230,28 @@
     return events;
   }
 
+  // Garten-Stufe → Thema und Pflanzenart darin: erst alle Themen reihum, dann die nächste Art
+  const gardenStyle = level => ({ theme: level % THEMES, species: Math.floor(level / THEMES) });
+
+  // --- Zug zurücknehmen -------------------------------------------------------
+  // Vor jedem Zug wird der Stand (Runde + Garten) als JSON abgelegt, damit spätere
+  // Änderungen am Live-Zustand die gespeicherten Stände nicht verfälschen.
+
+  function pushHistory(history, game, garden, limit = UNDO_LIMIT) {
+    history.push(JSON.stringify({ game, garden }));
+    if (history.length > limit) history.splice(0, history.length - limit);
+  }
+
+  function popHistory(history) {
+    const s = history.pop();
+    return s ? JSON.parse(s) : null;
+  }
+
   return {
-    N, TRAY, PLOTS, STAGES,
+    N, TRAY, PLOTS, STAGES, THEMES, UNDO_LIMIT,
     pieceOf, canPlace, fits, anyMove, fullLines, previewLines, lineScore,
     newGame, place, refill, restore,
-    newGarden, restoreGarden, growGarden,
+    newGarden, restoreGarden, growGarden, gardenStyle,
+    pushHistory, popHistory,
   };
 });
