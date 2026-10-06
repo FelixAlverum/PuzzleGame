@@ -30,7 +30,7 @@ Danach im Browser `http://localhost:8080` öffnen. Ausgeliefert von nginx (unpri
 
 Neue Version veröffentlichen (im Ordner `prototype`, Version anpassen):
 ```
-docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.1.0 -t alverum/puzzlegame:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.2.0 -t alverum/puzzlegame:latest --push .
 ```
 
 ## Tests

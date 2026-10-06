@@ -3,7 +3,7 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 LABEL org.opencontainers.image.title="PuzzleGame Prototype" \
       org.opencontainers.image.description="Cozy Garden Block Puzzle – Block-Puzzle mit Pflanzenformen aus Naturmaterialien (YouTube-Playables-Prototyp)" \
-      org.opencontainers.image.version="0.1.0"
+      org.opencontainers.image.version="0.2.0"
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html /usr/share/nginx/html/
