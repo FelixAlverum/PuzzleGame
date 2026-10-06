@@ -8,14 +8,15 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (Shapes) {
   'use strict';
 
-  const N = 8;
+  const SIZES = [6, 8, 10];       // wählbare Feldgrößen (Kantenlänge)
+  const DEFAULT_SIZE = 8;
+  const BIOMES = Shapes.BIOMES;
   const TRAY = 3;
   const BIG = 7;                 // ab dieser Zellenzahl gilt eine Form als „groß“
   const COMBO_GRACE = 2;         // Züge ohne Auflösung, die eine Combo überlebt
   const FRESH_SOIL_BONUS = 300;  // Feld komplett leer geräumt
   const PLOTS = 5;               // Beete im Garten
   const STAGES = 5;              // 0 = Saat … 5 = Blüte
-  const THEMES = 3;              // Wiese, Teich, Tropen – wechseln mit jedem erblühten Garten
   const UNDO_LIMIT = 100;        // so viele Züge lassen sich zurücknehmen
 
   // mulberry32 – Zustand liegt im Spielstand, damit Runden reproduzierbar und speicherbar sind
@@ -33,7 +34,11 @@
     return { shape, cells: v.cells, w: v.w, h: v.h, mat: shape.mat, accent: shape.accent || 0 };
   }
 
+  // Die Kantenlänge steckt im Feld selbst – so funktionieren alle Funktionen mit jeder Feldgröße
+  const sizeOf = board => Math.round(Math.sqrt(board.length));
+
   function canPlace(board, piece, r0, c0) {
+    const N = sizeOf(board);
     for (const p of piece.cells) {
       const r = r0 + p.r, c = c0 + p.c;
       if (r < 0 || c < 0 || r >= N || c >= N || board[r * N + c]) return false;
@@ -42,6 +47,7 @@
   }
 
   function fits(board, piece) {
+    const N = sizeOf(board);
     for (let r = 0; r <= N - piece.h; r++) {
       for (let c = 0; c <= N - piece.w; c++) if (canPlace(board, piece, r, c)) return true;
     }
@@ -51,6 +57,7 @@
   const anyMove = state => state.tray.some(it => it && fits(state.board, pieceOf(it)));
 
   function fullLines(board) {
+    const N = sizeOf(board);
     const rows = [], cols = [];
     for (let i = 0; i < N; i++) {
       let rowFull = true, colFull = true;
@@ -66,7 +73,7 @@
 
   // Welche Linien würden sich auflösen, wenn die Form dort läge? (Vorschau beim Ziehen)
   function previewLines(board, piece, r0, c0) {
-    const b = board.slice();
+    const b = board.slice(), N = sizeOf(board);
     for (const p of piece.cells) b[(r0 + p.r) * N + c0 + p.c] = 1;
     return fullLines(b);
   }
@@ -86,7 +93,7 @@
   }
 
   function drawItem(state, fill, allowBig) {
-    const pool = Shapes.SHAPES.filter(s => allowBig || s.size < BIG);
+    const pool = Shapes.pool(state.biome).filter(s => allowBig || s.size < BIG);
     const weights = pool.map(s => weightOf(s, state.score, fill));
     let x = rand(state) * weights.reduce((a, b) => a + b, 0);
     let i = 0;
@@ -95,7 +102,7 @@
   }
 
   function refill(state) {
-    const fill = state.board.filter(Boolean).length / (N * N);
+    const fill = state.board.filter(Boolean).length / state.board.length;
     for (let attempt = 0; attempt < 20; attempt++) {
       let big = 0;
       state.tray = [];
@@ -107,7 +114,7 @@
       if (anyMove(state)) return;
     }
     // Notfall: kleinste passende Form erzwingen, damit nie direkt nach dem Nachfüllen Schluss ist
-    const bySize = Shapes.SHAPES.slice().sort((a, b) => a.size - b.size);
+    const bySize = Shapes.pool(state.biome).slice().sort((a, b) => a.size - b.size);
     for (const s of bySize) {
       for (let v = 0; v < s.variants.length; v++) {
         const item = { shape: s.id, v };
@@ -118,9 +125,12 @@
 
   // --- Spielablauf ------------------------------------------------------------
 
-  function newGame(seed) {
+  // opts: { biome, size } – fehlende oder unbekannte Werte fallen auf Wiese / 8×8 zurück
+  function newGame(seed, opts = {}) {
+    const biome = BIOMES.includes(opts.biome) ? opts.biome : BIOMES[0];
+    const N = SIZES.includes(opts.size) ? opts.size : DEFAULT_SIZE;
     const state = {
-      v: 1, board: new Array(N * N).fill(null), tray: [], score: 0, combo: 0,
+      v: 1, biome, board: new Array(N * N).fill(null), tray: [], score: 0, combo: 0,
       movesSinceClear: 0, rng: seed >>> 0, nextPid: 1, over: false,
     };
     refill(state);
@@ -134,6 +144,7 @@
     if (!canPlace(state.board, piece, r0, c0)) return null;
 
     const events = [];
+    const N = sizeOf(state.board);
     const pid = state.nextPid++;
     const cells = piece.cells.map(p => {
       const r = r0 + p.r, c = c0 + p.c;
@@ -186,22 +197,28 @@
     return events;
   }
 
-  // Gespeicherten Lauf prüfen – kaputte oder fremde Daten führen zu einer neuen Runde
+  // Gespeicherten Lauf prüfen – kaputte oder fremde Daten führen zu einer neuen Runde.
+  // Läufe aus v0.1 haben kein Biom: sie gehören zur Wiese.
   function restore(run) {
     if (!run || run.v !== 1 || run.over) return null;
-    if (!Array.isArray(run.board) || run.board.length !== N * N) return null;
+    const biome = run.biome === undefined ? BIOMES[0] : run.biome;
+    if (!BIOMES.includes(biome)) return null;
+    if (!Array.isArray(run.board) || !SIZES.some(n => n * n === run.board.length)) return null;
     if (!Array.isArray(run.tray) || run.tray.length !== TRAY) return null;
-    const okItem = it => it === null || (it && Shapes.BY_ID[it.shape] &&
+    const pool = Shapes.pool(biome);
+    const okItem = it => it === null || (it && pool.includes(Shapes.BY_ID[it.shape]) &&
       Number.isInteger(it.v) && it.v >= 0 && it.v < Shapes.BY_ID[it.shape].variants.length);
     const okCell = c => c === null || (c && Shapes.MATERIALS.includes(c.m) && Number.isInteger(c.p));
     if (!run.tray.every(okItem) || !run.board.every(okCell)) return null;
     if (![run.score, run.combo, run.movesSinceClear, run.rng, run.nextPid].every(Number.isFinite)) return null;
     const state = JSON.parse(JSON.stringify(run));
+    state.biome = biome;
     if (state.tray.every(t => !t)) refill(state);
     return state;
   }
 
-  // --- Garten (Meta-Fortschritt über alle Runden) -----------------------------
+  // --- Garten (Meta-Fortschritt über alle Runden, ein Garten je Biom) ----------
+  // level zählt die erblühten Gärten des Bioms; jede Stufe bringt die nächste Pflanzenart.
 
   const newGarden = () => ({ level: 0, plots: new Array(PLOTS).fill(0), total: 0 });
 
@@ -230,15 +247,45 @@
     return events;
   }
 
-  // Garten-Stufe → Thema und Pflanzenart darin: erst alle Themen reihum, dann die nächste Art
-  const gardenStyle = level => ({ theme: level % THEMES, species: Math.floor(level / THEMES) });
+  // --- Statistik (je Biom + Feldgröße) ----------------------------------------
+  // Gezählt werden nur Runden, die mit Game Over enden; gelegte Formen zählen sofort.
+
+  const statKey = (biome, size) => `${biome}-${size}`;
+  const newStat = () => ({ games: 0, tiles: 0, best: 0, worst: null });
+
+  function restoreStat(st) {
+    const n = v => (Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+    if (!st || typeof st !== 'object') return newStat();
+    const games = n(st.games);
+    return { games, tiles: n(st.tiles), best: n(st.best), worst: games && Number.isFinite(st.worst) ? n(st.worst) : null };
+  }
+
+  function statPlaced(stat) { stat.tiles += 1; }
+
+  function statGameOver(stat, score) {
+    stat.games += 1;
+    stat.best = Math.max(stat.best, score);
+    stat.worst = stat.worst === null ? score : Math.min(stat.worst, score);
+  }
+
+  // Summe über mehrere Einträge: Spiele/Formen addiert, Rekord = Maximum, Tiefstwert = Minimum
+  function statTotals(stats) {
+    const t = newStat();
+    for (const st of stats) {
+      t.games += st.games;
+      t.tiles += st.tiles;
+      t.best = Math.max(t.best, st.best);
+      if (st.worst !== null) t.worst = t.worst === null ? st.worst : Math.min(t.worst, st.worst);
+    }
+    return t;
+  }
 
   // --- Zug zurücknehmen -------------------------------------------------------
-  // Vor jedem Zug wird der Stand (Runde + Garten) als JSON abgelegt, damit spätere
-  // Änderungen am Live-Zustand die gespeicherten Stände nicht verfälschen.
+  // Vor jedem Zug wird der Stand (z. B. Runde + Garten + Statistik) als JSON abgelegt, damit
+  // spätere Änderungen am Live-Zustand die gespeicherten Stände nicht verfälschen.
 
-  function pushHistory(history, game, garden, limit = UNDO_LIMIT) {
-    history.push(JSON.stringify({ game, garden }));
+  function pushHistory(history, state, limit = UNDO_LIMIT) {
+    history.push(JSON.stringify(state));
     if (history.length > limit) history.splice(0, history.length - limit);
   }
 
@@ -248,10 +295,11 @@
   }
 
   return {
-    N, TRAY, PLOTS, STAGES, THEMES, UNDO_LIMIT,
-    pieceOf, canPlace, fits, anyMove, fullLines, previewLines, lineScore,
+    SIZES, DEFAULT_SIZE, BIOMES, TRAY, PLOTS, STAGES, UNDO_LIMIT,
+    sizeOf, pieceOf, canPlace, fits, anyMove, fullLines, previewLines, lineScore,
     newGame, place, refill, restore,
-    newGarden, restoreGarden, growGarden, gardenStyle,
+    newGarden, restoreGarden, growGarden,
+    statKey, newStat, restoreStat, statPlaced, statGameOver, statTotals,
     pushHistory, popHistory,
   };
 });

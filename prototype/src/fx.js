@@ -17,7 +17,14 @@
     petal: ['#f4a6c3', '#e77aa2', '#fbd3e2'],
     bark: ['#efe7d6', '#d9cfbb', '#ffffff'],
     cap: ['#c4523a', '#e07a5c', '#fbf3e6'],
+    reed: ['#b5a467', '#857a45', '#ddd09a'],
+    lily: ['#4f9a58', '#7cc27a', '#cfeef5'],
+    palm: ['#3e9a4a', '#2c7a38', '#7cc86a'],
+    hibiscus: ['#d93448', '#a81c30', '#f58a96'],
+    bamboo: ['#a3be52', '#7a9638', '#d6e69a'],
   };
+  // Biom-Materialien zerfallen wie ihre nächsten Verwandten
+  const KIND = { reed: 'leaf', lily: 'leaf', palm: 'leaf', hibiscus: 'petal', bamboo: 'wood' };
 
   const FX = {
     parts: [],
@@ -33,7 +40,7 @@
     // Auflösen einer Zelle – Effekt je Material
     burst(mat, x, y, cs) {
       const col = COLORS[mat] || COLORS.wood;
-      switch (mat) {
+      switch (KIND[mat] || mat) {
         case 'wood':
           for (let i = 0; i < 4; i++) this.add({ kind: 'splinter', x, y, size: cs * rnd(0.25, 0.4), color: pick(col), vx: rnd(-1, 1) * cs * 4, vy: -rnd(2, 5) * cs, g: cs * 18, vr: rnd(-12, 12), life: 0.7 });
           break;

@@ -1,8 +1,9 @@
 // Einstieg: Layout, Eingabe, Spiel-Loop, Rendering, YouTube-Playables-Lebenszyklus.
+// Ein Spielmodus = Biom + Feldgröße. Je Modus gibt es einen eigenen Spielstand und eine eigene Statistik,
+// je Biom einen eigenen Garten. Menü, Statistik und Einstellungen liegen in menu.js.
 (function () {
   'use strict';
 
-  const { N } = Logic;
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
   const lerp = (a, b, k) => a + (b - a) * k;
   const easeOut = k => 1 - Math.pow(1 - k, 3);
@@ -10,9 +11,25 @@
 
   const STR = {
     de: { best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen', newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten',
-      undo: 'Zug zurück', resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen' },
+      undo: 'Zug zurück', resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten dieses Bioms beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen',
+      title: 'Cozy Garden', choose: 'Wähle dein Biom', play: 'Spielen', cont: 'Weiter', newGame: 'Neues Spiel', sure: 'Sicher? Nochmal tippen',
+      field: 'Feld', stats: 'Statistik', settings: 'Einstellungen', back: 'Zurück', total: 'Alle Biome', sum: 'Summe',
+      games: 'Spiele', tiles: 'Gelegte Formen', bestScore: 'Höchste Punktzahl', worstScore: 'Niedrigste Punktzahl',
+      gamesShort: 'Spiele', tilesShort: 'Formen', bestScoreShort: 'Höchste', worstScoreShort: 'Niedrigste', fieldShort: 'Feld',
+      resetStats: 'Statistik zurücksetzen', sound: 'Ton', music: 'Musik', sfx: 'Soundeffekte', amb: 'Atmosphäre',
+      muted: 'Der Ton ist in YouTube gerade stummgeschaltet.', fieldSize: 'Spielfeldgröße',
+      sizeNote: 'Jede Größe hat eigene Rekorde, eine eigene Statistik und einen eigenen Spielstand.',
+      desc_meadow: 'Pilze, Blüten und Tulpen', desc_pond: 'Seerosen, Schilf und Rohrkolben', desc_tropics: 'Hibiskus, Bambus und Bananenblätter' },
     en: { best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again', newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden',
-      undo: 'Undo move', resetTitle: 'Reset garden?', resetText: 'All plants and gardens start over.', resetYes: 'Reset', resetNo: 'Cancel' },
+      undo: 'Undo move', resetTitle: 'Reset garden?', resetText: 'All plants and gardens of this biome start over.', resetYes: 'Reset', resetNo: 'Cancel',
+      title: 'Cozy Garden', choose: 'Choose your biome', play: 'Play', cont: 'Continue', newGame: 'New game', sure: 'Sure? Tap again',
+      field: 'Field', stats: 'Stats', settings: 'Settings', back: 'Back', total: 'All biomes', sum: 'Total',
+      games: 'Games played', tiles: 'Tiles placed', bestScore: 'Highest score', worstScore: 'Lowest score',
+      gamesShort: 'Games', tilesShort: 'Tiles', bestScoreShort: 'Highest', worstScoreShort: 'Lowest', fieldShort: 'Field',
+      resetStats: 'Reset stats', sound: 'Sound', music: 'Music', sfx: 'Sound effects', amb: 'Ambience',
+      muted: 'Sound is currently muted in YouTube.', fieldSize: 'Field size',
+      sizeNote: 'Each size keeps its own records, stats and saved game.',
+      desc_meadow: 'Mushrooms, blossoms and tulips', desc_pond: 'Water lilies, reeds and cattails', desc_tropics: 'Hibiscus, bamboo and banana leaves' },
   };
   let S = STR.en, lang = 'en';
 
@@ -21,16 +38,21 @@
   let W = 0, H = 0, DPR = 1, L = null, bg = null;
   let bgTheme = null, bgOld = null, bgFade = 0;   // Hintergrund folgt dem Garten-Thema, Wechsel wird überblendet
 
-  // Spielzustand
-  let game = null, garden = Logic.newGarden(), best = 0, hintDone = false;
+  // Einstellungen (gespeichert). Lautstärken 0..1, size = Kantenlänge des Felds
+  const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, biome: Logic.BIOMES[0] };
+  // Fortschritt (gespeichert): Garten je Biom, Statistik und offener Lauf je Modus („biome-size“)
+  let gardens = {}, stats = {}, runs = {}, hintDone = false;
+  // Aktueller Modus
+  let screen = 'menu', biome = settings.biome, N = Logic.DEFAULT_SIZE, modeKey = null;
+  let game = null, garden = Logic.newGarden(), stat = Logic.newStat();
   let bestAtStart = 0, newBestShown = false, shownScore = 0;
-  const history = [];                    // Stände vor den letzten Zügen (Zug zurücknehmen), nicht gespeichert
+  const history = [];                    // Stände vor den letzten Zügen des aktuellen Modus, nicht gespeichert
   // Darstellung
   let drag = null, returning = null, kb = null, lastPlaced = null, over = null, confirm = null;
   const drops = new Map();               // pid → Startzeit der Fall-Animation
   let dying = [];                        // Zellen, die sich gerade auflösen
   let trayPop = [0, 0, 0];               // Einblendzeitpunkt je Ablage-Slot
-  let gardenView = { level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
+  let gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
   // Ablauf
   let clock = 0, last = 0, raf = 0, paused = false, ready = false, readySignalled = false;
   let saveDirty = false, lastSave = 0;
@@ -61,7 +83,12 @@
     o.frame = f;
     o.inner = { x: o.board.x + f, y: o.board.y + f, w: o.B - 2 * f, h: o.B - 2 * f };
     o.cs = o.inner.w / N;
-    o.trayCs = Math.min(o.cs * 0.55, o.tray[0].w * 0.88 / 5, o.tray[0].h * 0.88 / 5);
+    // Ablage-Formen bleiben unabhängig von der Feldgröße gleich groß (gemessen an 8×8)
+    o.trayCs = Math.min(o.inner.w / Logic.DEFAULT_SIZE * 0.55, o.tray[0].w * 0.88 / 5, o.tray[0].h * 0.88 / 5);
+    // Runde Knöpfe links im Kopfbereich: Menü, daneben Zug zurück (im Querformat untereinander)
+    const r = o.B * 0.042, hd = o.header;
+    o.menuBtn = { x: hd.x + r * 1.1, y: portraitB >= landscapeB ? hd.y + hd.h * 0.38 : hd.y + r * 1.15, r };
+    o.undoBtn = portraitB >= landscapeB ? { x: hd.x + r * 3.6, y: o.menuBtn.y, r } : { x: o.menuBtn.x, y: hd.y + r * 3.55, r };
     return o;
   }
 
@@ -76,21 +103,28 @@
     if (ready) buildBackground();
   }
 
-  // Statischer Hintergrund (Wiese, Holzrahmen, Erdbeet) – einmal pro Größenänderung gemalt
+  // Statischer Hintergrund (Himmel, Rahmen, Erdbeet) – einmal pro Größen- oder Moduswechsel gemalt.
+  // sky enthält nur den Himmel des Bioms (Hintergrund fürs Menü).
+  let sky = null;
   function buildBackground() {
+    sky = document.createElement('canvas');
+    sky.width = canvas.width; sky.height = canvas.height;
+    const sg = sky.getContext('2d');
+    sg.setTransform(DPR, 0, 0, DPR, 0, 0);
+    Garden.backdrop(sg, W, H, gardenView.biome);   // Himmel und Deko je nach Biom
+    bgTheme = gardenView.biome;
+
     bg = document.createElement('canvas');
     bg.width = canvas.width; bg.height = canvas.height;
     const g = bg.getContext('2d');
+    g.drawImage(sky, 0, 0);
     g.setTransform(DPR, 0, 0, DPR, 0, 0);
-
-    Garden.backdrop(g, W, H, gardenView.level);   // Himmel und Deko je nach Thema
-    bgTheme = Garden.theme(gardenView.level).id;
 
     const b = L.board, B = L.B, f = L.frame, r = B * 0.04;
     const frame = new Path2D();
     Mat.rrect(frame, b.x, b.y, B, B, [r, r, r, r]);
     g.save(); g.translate(B * 0.01, B * 0.02); g.fillStyle = 'rgba(60,35,15,0.28)'; g.fill(frame); g.restore();
-    g.fillStyle = Mat.pattern(g, 'wood', b.x, b.y, L.cs * 0.8); g.fill(frame);
+    g.fillStyle = Mat.pattern(g, Garden.theme(gardenView.biome).frame, b.x, b.y, L.B / 10); g.fill(frame);
     g.fillStyle = 'rgba(70,35,12,0.25)'; g.fill(frame);
     g.strokeStyle = 'rgba(255,230,190,0.35)'; g.lineWidth = Math.max(1, f * 0.12); g.stroke(frame);
 
@@ -143,8 +177,9 @@
   const inside = (R, x, y) => !!R && x >= R.x && x <= R.x + R.w && y >= R.y && y <= R.y + R.h;
   const hitCircle = (b, x, y) => Math.hypot(x - b.x, y - b.y) <= b.r * 1.4;   // großzügig für Touch
 
-  // Runde Knöpfe: Zug zurück links im Kopfbereich, Garten-Reset oben rechts im Garten
-  const undoButton = () => { const R = L.header, r = L.B * 0.042; return { x: R.x + r * 1.1, y: R.y + R.h * 0.38, r }; };
+  // Runde Knöpfe: Menü und Zug zurück im Kopfbereich (siehe layout), Garten-Reset oben rechts im Garten
+  const undoButton = () => L.undoBtn;
+  const menuButton = () => L.menuBtn;
   const resetButton = () => { const R = L.garden, r = Math.max(11, R.h * 0.1); return { x: R.x + R.w - r * 1.5, y: R.y + r * 1.5, r }; };
   const canResetGarden = () => garden.level >= 1;   // erst, wenn der erste Garten erblüht ist
 
@@ -178,22 +213,24 @@
   // --- Spielaktionen ---------------------------------------------------------------------
 
   function tryPlace(slot, r, c) {
-    const before = JSON.stringify({ game, garden });
+    const before = JSON.stringify({ game, garden, stat });
     const events = Logic.place(game, slot, r, c);
     if (!events) { Sound.invalid(); return false; }
     history.push(before);
     if (history.length > Logic.UNDO_LIMIT) history.shift();
+    Logic.statPlaced(stat);
     handle(events);
     return true;
   }
 
-  // Letzten Zug zurücknehmen: Runde und Garten springen auf den Stand davor (auch nach Game Over)
+  // Letzten Zug zurücknehmen: Runde, Garten und Statistik springen auf den Stand davor (auch nach Game Over)
   function undo() {
     const prev = Logic.popHistory(history);
     if (!prev) { Sound.invalid(); return false; }
     const trayBefore = game.tray.map(it => JSON.stringify(it));
-    game = prev.game;
-    garden = prev.garden;
+    game = runs[modeKey] = prev.game;
+    garden = gardens[biome] = prev.garden;
+    stat = stats[modeKey] = prev.stat;
     over = null; drag = null; returning = null; kb = null; lastPlaced = null;
     dying = []; drops.clear(); FX.reset();
     gardenView.hold = 0;
@@ -203,11 +240,11 @@
     return true;
   }
 
-  // Garten komplett zurücksetzen (Stufe, Pflanzen, Thema). Der Verlauf enthält alte Gärten → verwerfen.
+  // Garten des Bioms komplett zurücksetzen (Stufe, Pflanzen). Der Verlauf enthält alte Gärten → verwerfen.
   function resetGarden() {
     confirm = null;
-    garden = Logic.newGarden();
-    gardenView = { level: 0, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
+    garden = gardens[biome] = Logic.newGarden();
+    gardenView = { biome, level: 0, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
     history.length = 0;
     FX.sparkle(L.garden.x + L.garden.w / 2, L.garden.y + L.garden.h * 0.6, L.cs, 12, ['#fff6b0', '#ffffff', '#c8f08a']);
     Sound.pickup();
@@ -245,7 +282,7 @@
         }
 
         case 'boardCleared': {
-          const p = cellCenter(3.5, 3.5);
+          const p = cellCenter((N - 1) / 2, (N - 1) / 2);
           FX.text(`${S.fresh} +${ev.points}`, p.x, p.y, L.cs * 0.6, '#ffe9a8', { dur: 1.6, delay: 0.3 });
           FX.petalRain(L.inner, L.cs, 40);
           FX.fireflies(L.inner, L.cs, 12);
@@ -262,13 +299,10 @@
           break;
       }
     }
-    if (game.score > best) {
-      best = game.score;
-      if (!newBestShown && bestAtStart > 0) {
-        newBestShown = true;
-        FX.text(S.newBest, L.inner.x + L.inner.w / 2, L.inner.y + L.cs * 1.2, L.cs * 0.55, '#ffe27a', { dur: 1.8 });
-        Sound.newBest();
-      }
+    if (game.score > bestAtStart && bestAtStart > 0 && !newBestShown) {
+      newBestShown = true;
+      FX.text(S.newBest, L.inner.x + L.inner.w / 2, L.inner.y + L.inner.h * 0.15, L.inner.w * 0.07, '#ffe27a', { dur: 1.8 });
+      Sound.newBest();
     }
     saveDirty = true;
   }
@@ -286,33 +320,153 @@
     } else if (ev.type === 'gardenComplete') {
       gardenView.hold = 2.4;
       gardenView.holdLevel = ev.level;
-      const R = L.garden, sp = Garden.species(ev.level);
+      const R = L.garden, sp = Garden.species(biome, ev.level);
       FX.petalRain(R, L.cs, 30, [sp.petal, sp.dark]);
       FX.text(S.bloom, R.x + R.w / 2, R.y + R.h * 0.4, L.cs * 0.45, '#fff6c8', { dur: 2.2 });
       Sound.gardenComplete();
     }
   }
 
+  // Rekord des aktuellen Modus, wie er im Spiel angezeigt wird (steigt live mit)
+  const shownBest = () => Math.max(stat.best, game ? game.score : 0);
+  // YouTube kennt nur einen Rekord: der höchste über alle Modi (steht als „Alle Biome“ in der Statistik)
+  const overallBest = () => Math.max(Logic.statTotals(Object.values(stats)).best, game && screen === 'game' ? game.score : 0);
+
   function endGame() {
     over = { t: clock, button: null, newBest: game.score > bestAtStart && bestAtStart > 0 };
     drag = null; kb = null;
-    YT.sendScore(best);       // muss dem im Spiel angezeigten Rekord entsprechen
+    Logic.statGameOver(stat, game.score);
+    YT.sendScore(overallBest());
     Sound.gameOver();
     saveNow();
   }
 
   function restart() {
-    game = Logic.newGame(randSeed());
+    game = runs[modeKey] = Logic.newGame(randSeed(), { biome, size: N });
     over = null; dying = []; drops.clear(); FX.reset();
     history.length = 0;
-    bestAtStart = best; newBestShown = false; shownScore = 0;
+    bestAtStart = stat.best; newBestShown = false; shownScore = 0;
     trayPop = [clock, clock + 0.07, clock + 0.14];
     saveNow();
   }
 
-  // --- Speichern -------------------------------------------------------------------------
+  // --- Modus, Menü -----------------------------------------------------------------------
 
-  const snapshot = () => ({ v: 1, best, garden, hintDone, run: game && !game.over ? game : null });
+  // Biom mit der eingestellten Feldgröße starten bzw. fortsetzen. fresh: offenen Lauf verwerfen
+  // (zählt nicht als Spiel – in die Statistik kommen nur Runden mit Game Over).
+  function enterGame(b, fresh = false) {
+    const n = settings.size, key = Logic.statKey(b, n);
+    if (key !== modeKey) history.length = 0;    // Verlauf gehört immer zum zuletzt gespielten Modus
+    modeKey = key; biome = settings.biome = b; N = n;
+    stat = stats[key] || (stats[key] = Logic.newStat());
+    garden = gardens[b] || (gardens[b] = Logic.newGarden());
+    if (fresh || !runs[key] || runs[key].over) {
+      runs[key] = Logic.newGame(randSeed(), { biome: b, size: n });
+      history.length = 0;
+    }
+    game = runs[key];
+
+    over = null; confirm = null; drag = null; returning = null; kb = null; lastPlaced = null;
+    dying = []; drops.clear(); FX.reset();
+    trayPop = [clock, clock + 0.07, clock + 0.14];
+    bestAtStart = stat.best; newBestShown = game.score > stat.best; shownScore = game.score;
+    gardenView = { biome: b, level: garden.level, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
+    L = layout(W, H);
+    bgOld = null;
+    buildBackground();
+    Sound.setBiome(b);
+    screen = 'game';
+    Menu.hide();
+    if (!Logic.anyMove(game)) { game.over = true; endGame(); }
+    saveNow();
+  }
+
+  function showMenu(page = 'menu') {
+    if (screen === 'game') {
+      drag = null; returning = null; kb = null; confirm = null;
+      if (game && game.over) delete runs[modeKey];   // beendete Runde: beim nächsten Mal neu pflanzen
+      saveNow();
+    }
+    screen = 'menu';
+    Menu.show(page);
+  }
+
+  function setSetting(k, v) {
+    if (k === 'size') { if (Logic.SIZES.includes(v)) settings.size = v; }
+    else if (k in settings) { settings[k] = v; Sound.setVolume(k, v); }
+    saveDirty = true;
+  }
+
+  function resetStats() {
+    stats = {};
+    stat = Logic.newStat();
+    if (modeKey) stats[modeKey] = stat;
+    history.length = 0;                          // alte Stände enthalten die alte Statistik
+    saveNow();
+  }
+
+  const menuApi = {
+    play: (b, fresh) => enterGame(b, fresh),
+    settings: () => settings,
+    setSetting,
+    preview: k => Sound.preview(k),
+    audioEnabled: () => YT.audioEnabled(),
+    resetStats,
+    biomeInfo(b) {
+      const key = Logic.statKey(b, settings.size), run = runs[key];
+      return {
+        name: Garden.theme(b).name[lang],
+        level: gardens[b] ? gardens[b].level : 0,
+        best: stats[key] ? stats[key].best : 0,
+        run: run && !run.over ? run.score : null,
+      };
+    },
+    statsData() {
+      const get = (b, n) => stats[Logic.statKey(b, n)] || Logic.newStat();
+      const biomes = Logic.BIOMES.map(b => {
+        const rows = Logic.SIZES.map(size => ({ size, stat: get(b, size) }));
+        return { name: Garden.theme(b).name[lang], rows, total: Logic.statTotals(rows.map(r => r.stat)) };
+      });
+      return { biomes, total: Logic.statTotals(biomes.map(b => b.total)) };
+    },
+  };
+
+  // --- Speichern -------------------------------------------------------------------------
+  // v2: Einstellungen, Gärten je Biom, Statistik und offene Läufe je Modus
+
+  const snapshot = () => ({
+    v: 2, settings, hintDone, gardens, stats,
+    runs: Object.fromEntries(Object.entries(runs).filter(([, g]) => g && !g.over)),
+  });
+
+  function loadSave(data) {
+    if (!data || typeof data !== 'object') return;
+    hintDone = !!data.hintDone;
+    if (data.v === 1) {   // v0.1: ein Rekord, ein Garten (Themen reihum), ein Lauf auf 8×8 → alles zur Wiese
+      const key = Logic.statKey('meadow', Logic.DEFAULT_SIZE);
+      stats[key] = Logic.restoreStat({ games: 0, tiles: 0, best: data.best });
+      const g = Logic.restoreGarden(data.garden);
+      if (g) gardens.meadow = g;
+      const run = Logic.restore(data.run);
+      if (run) runs[key] = run;
+      return;
+    }
+    if (data.v !== 2) return;
+    const st = data.settings || {};
+    for (const k of ['music', 'sfx', 'amb']) if (Number.isFinite(st[k])) settings[k] = Math.max(0, Math.min(1, st[k]));
+    if (Logic.SIZES.includes(st.size)) settings.size = st.size;
+    if (Logic.BIOMES.includes(st.biome)) settings.biome = st.biome;
+    for (const b of Logic.BIOMES) {
+      const g = data.gardens && Logic.restoreGarden(data.gardens[b]);
+      if (g) gardens[b] = g;
+      for (const n of Logic.SIZES) {
+        const key = Logic.statKey(b, n);
+        if (data.stats && data.stats[key]) stats[key] = Logic.restoreStat(data.stats[key]);
+        const run = data.runs && Logic.restore(data.runs[key]);
+        if (run && run.biome === b && Logic.sizeOf(run.board) === n) runs[key] = run;
+      }
+    }
+  }
 
   function saveNow() {
     YT.save(snapshot());
@@ -322,9 +476,11 @@
 
   // --- Eingabe ---------------------------------------------------------------------------
 
+  // Ton freischalten bei jeder ersten Geste – auch im Menü
+  window.addEventListener('pointerdown', () => Sound.unlock(), true);
+
   canvas.addEventListener('pointerdown', e => {
-    Sound.unlock();
-    if (!ready || paused) return;
+    if (!ready || paused || screen !== 'game') return;
     const { x, y } = pointer(e);
     if (confirm) {
       if (inside(confirm.yes, x, y)) resetGarden();
@@ -334,8 +490,10 @@
     if (over) {
       if (inside(over.button, x, y)) restart();
       else if (inside(over.undoButton, x, y)) undo();
+      else if (hitCircle(menuButton(), x, y)) showMenu();
       return;
     }
+    if (hitCircle(menuButton(), x, y)) { showMenu(); return; }
     if (hitCircle(undoButton(), x, y)) { undo(); return; }
     if (canResetGarden() && hitCircle(resetButton(), x, y)) { confirm = { t: clock, yes: null, no: null }; kb = null; return; }
     const slot = L.tray.findIndex(s => inside(s, x, y));
@@ -371,17 +529,23 @@
     Sound.unlock();
     if (!ready || paused) return;
     const k = e.key;
+    if (screen !== 'game') {                     // Menü bedient sich per Tab/Enter selbst
+      if (k === 'Escape') Menu.back();
+      return;
+    }
     if (confirm) {
       if (k === 'Escape') confirm = null;
       else if (k === 'Enter') { resetGarden(); e.preventDefault(); }
       return;
     }
     if (k === 'z' || k === 'Z' || k === 'Backspace') { undo(); e.preventDefault(); return; }
+    if (k === 'm' || k === 'M') { showMenu(); return; }
     if (over) {
       if ((k === 'Enter' || k === ' ') && clock - over.t > 1.2) { restart(); e.preventDefault(); }
+      else if (k === 'Escape') showMenu();
       return;
     }
-    if (k === 'Escape') { kb = null; return; }   // Esc nie per preventDefault blockieren
+    if (k === 'Escape') { if (kb) kb = null; else showMenu(); return; }   // Esc nie per preventDefault blockieren
     const select = slot => {
       const p = Logic.pieceOf(game.tray[slot]);
       kb = { slot, r: Math.floor((N - p.h) / 2), c: Math.floor((N - p.w) / 2) };
@@ -439,20 +603,22 @@
     window.__dbg = {
       layout: () => L, game: () => game, garden: () => garden, place: tryPlace, ready: () => ready,
       undo, resetGarden, history: () => history.length,
-      setGarden: g => { garden = g; gardenView = { level: g.level, plots: g.plots.slice(), hold: 0, holdLevel: 0 }; },
+      setGarden: g => { garden = gardens[biome] = g; gardenView = { biome, level: g.level, plots: g.plots.slice(), hold: 0, holdLevel: 0 }; },
+      enterGame, showMenu, setSetting, screen: () => screen, stats: () => stats, settings: () => settings, snapshot,
     };
   }
 
   // --- Update ----------------------------------------------------------------------------
 
   function update(dt) {
+    FX.update(dt);
+    Sound.update(dt);
+    if (saveDirty && clock - lastSave > 4) saveNow();
+    if (screen !== 'game') return;
     if (AUTOPLAY) {
       botTimer -= dt;
       if (botTimer <= 0) { botTimer = 0.45; if (confirm) confirm = null; else if (over) { if (clock - over.t > 2.5) restart(); } else botMove(); }
     }
-    FX.update(dt);
-    Sound.update(dt);
-
     for (const d of dying) {
       if (!d.burst && clock >= d.start) {
         d.burst = true;
@@ -480,8 +646,6 @@
 
     shownScore += (game.score - shownScore) * Math.min(1, dt * 10);
     if (Math.abs(game.score - shownScore) < 0.5) shownScore = game.score;
-
-    if (saveDirty && clock - lastSave > 4) saveNow();
   }
 
   // --- Zeichnen --------------------------------------------------------------------------
@@ -500,8 +664,9 @@
 
     ctx.font = `700 ${B * 0.032}px ${FONT}`;
     ctx.fillStyle = 'rgba(80,60,35,0.85)';
-    ctx.fillText(`${S.best} ${best}`, R.x + R.w / 2, R.y + R.h * 0.85);
+    ctx.fillText(`${S.best} ${shownBest()}`, R.x + R.w / 2, R.y + R.h * 0.85);
 
+    drawMenuIcon(menuButton());
     drawUndoIcon(undoButton(), history.length > 0 && !over);
 
     if (game.combo >= 2) {
@@ -522,6 +687,16 @@
     ctx.strokeStyle = 'rgba(120,85,45,0.45)'; ctx.lineWidth = Math.max(1, b.r * 0.08); ctx.stroke();
     ctx.strokeStyle = ctx.fillStyle = '#4a3424';
     ctx.lineWidth = Math.max(1.5, b.r * 0.16); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  }
+
+  // Drei Striche (≡) fürs Menü
+  function drawMenuIcon(b) {
+    roundButton(b, true);
+    const { x, y, r } = b;
+    ctx.beginPath();
+    for (const dy of [-0.3, 0, 0.3]) { ctx.moveTo(x - r * 0.4, y + dy * r); ctx.lineTo(x + r * 0.4, y + dy * r); }
+    ctx.stroke();
+    ctx.restore();
   }
 
   // Pfeil nach links, der unten zurückbiegt (↶)
@@ -761,7 +936,7 @@
     ctx.fillText(String(game.score), cx, y + h * 0.4);
     ctx.fillStyle = over.newBest ? '#c27f22' : 'rgba(80,60,35,0.85)';
     ctx.font = `700 ${w * 0.045}px ${FONT}`;
-    ctx.fillText(over.newBest ? S.newBest : `${S.best} ${best}`, cx, y + h * 0.58);
+    ctx.fillText(over.newBest ? S.newBest : `${S.best} ${shownBest()}`, cx, y + h * 0.58);
 
     const bw = w * 0.62, bh = h * 0.2;
     const main = { x: cx - bw / 2, y: y + h * 0.7, w: bw, h: bh };
@@ -774,8 +949,14 @@
   }
 
   function draw() {
-    if (Garden.theme(gardenView.level).id !== bgTheme) { bgOld = bg; bgFade = clock; buildBackground(); }
+    if (gardenView.biome !== bgTheme) { bgOld = bg; bgFade = clock; buildBackground(); }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (screen !== 'game') {                     // Menü: nur der Himmel des zuletzt gespielten Bioms
+      ctx.drawImage(sky, 0, 0);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      FX.draw(ctx);
+      return;
+    }
     ctx.drawImage(bg, 0, 0);
     if (bgOld) {
       const k = clamp((clock - bgFade) / 1.2);
@@ -786,7 +967,7 @@
 
     drawHeader();
     const lvl = gardenView.level;
-    Garden.draw(ctx, L.garden, gardenView, clock, `${S.garden} ${lvl + 1} · ${Garden.theme(lvl).name[lang]}`);
+    Garden.draw(ctx, L.garden, gardenView, clock, `${S.garden} ${lvl + 1} · ${Garden.theme(biome).name[lang]}`);
     drawResetIcon();
     drawBoard(over ? null : currentPreview());
     drawTray();
@@ -822,16 +1003,12 @@
     S = STR[lang];
     document.documentElement.lang = lang;
 
-    if (data && data.v === 1) {
-      best = Number.isFinite(data.best) ? Math.max(0, Math.floor(data.best)) : 0;
-      garden = Logic.restoreGarden(data.garden) || Logic.newGarden();
-      hintDone = !!data.hintDone;
-      game = Logic.restore(data.run);
-    }
-    if (!game) game = Logic.newGame(randSeed());
-    bestAtStart = best;
-    shownScore = game.score;
-    gardenView = { level: garden.level, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
+    loadSave(data);
+    biome = settings.biome;
+    gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
+    for (const k of ['music', 'sfx', 'amb']) Sound.setVolume(k, settings[k]);
+    Sound.setBiome(biome);
+    Menu.init({ S, ...menuApi });
 
     Sound.setEnabled(YT.audioEnabled());
     YT.onAudioChange(on => Sound.setEnabled(on));
@@ -840,7 +1017,7 @@
       drag = null; returning = null;
       cancelAnimationFrame(raf);
       Sound.setPaused(true);
-      YT.sendScore(best);
+      YT.sendScore(overallBest());
       saveNow();
     });
     YT.onResume(() => {
@@ -853,7 +1030,11 @@
 
     ready = true;
     buildBackground();
-    if (!Logic.anyMove(game)) { game.over = true; endGame(); }
+    // Entwickler-Hilfe: ?biome=pond&size=10 startet direkt in einem Modus, ?autoplay ohne Menü
+    const q = new URLSearchParams(location.search);
+    if (Logic.SIZES.includes(Number(q.get('size')))) settings.size = Number(q.get('size'));
+    if (Logic.BIOMES.includes(q.get('biome')) || AUTOPLAY) enterGame(Logic.BIOMES.includes(q.get('biome')) ? q.get('biome') : biome);
+    else showMenu();
     raf = requestAnimationFrame(frame);
   }
 

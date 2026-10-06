@@ -1,6 +1,6 @@
 // Garten-Anzeige: Meta-Fortschritt über alle Runden (Nischen-Feature, siehe Vault: Konkurrenzanalyse).
 // Jede aufgelöste Linie lässt eine Pflanze wachsen; sind alle 5 erblüht, folgt der nächste Garten.
-// Die Gärten wechseln reihum zwischen drei Themen (Wiese, Teich, Tropen), jedes mit eigenen Pflanzen.
+// Jedes Biom (Wiese, Teich, Tropen) hat einen eigenen Garten mit eigenen Pflanzen, Farben und Hintergrund.
 (function (root) {
   'use strict';
 
@@ -8,9 +8,10 @@
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 
   // leaves: 'pair' = Blattpaare am Stiel, 'blade' = Schwertblätter aus dem Grund, 'pad' = Schwimmblätter
+  // frame: Material des Spielfeld-Rahmens
   const THEMES = [
     {
-      id: 'meadow', name: { de: 'Wiese', en: 'Meadow' }, ground: 'soil',
+      id: 'meadow', name: { de: 'Wiese', en: 'Meadow' }, ground: 'soil', frame: 'wood',
       stem: '#4c8a36', leaf: '#5fa548', leafScale: 1, mound: '#7a5538',
       panel: 'rgba(255,255,255,0.32)', label: 'rgba(55,80,40,0.85)',
       sky: ['#f4ecd8', '#e6e4c6', '#c5d5a0'], deco: 'leaves',
@@ -23,7 +24,7 @@
       ],
     },
     {
-      id: 'pond', name: { de: 'Teich', en: 'Pond' }, ground: 'water',
+      id: 'pond', name: { de: 'Teich', en: 'Pond' }, ground: 'water', frame: 'stone',
       stem: '#3f7f4a', leaf: '#4f9a5a', leafScale: 1, mound: '#5d6b4a',
       panel: 'rgba(230,248,255,0.34)', label: 'rgba(30,70,85,0.9)',
       sky: ['#e8f2ee', '#d2e6e2', '#a3cdc8'], deco: 'pads',
@@ -36,7 +37,7 @@
       ],
     },
     {
-      id: 'tropics', name: { de: 'Tropen', en: 'Tropics' }, ground: 'jungle',
+      id: 'tropics', name: { de: 'Tropen', en: 'Tropics' }, ground: 'jungle', frame: 'bamboo',
       stem: '#2f7a3a', leaf: '#2f9a4e', leafScale: 1.45, mound: '#5a3a22',
       panel: 'rgba(255,248,225,0.34)', label: 'rgba(40,75,35,0.9)',
       sky: ['#fbe9cb', '#f1dcb0', '#9fd0a0'], deco: 'palms',
@@ -50,10 +51,11 @@
     },
   ];
 
-  const theme = level => THEMES[Logic.gardenStyle(level).theme % THEMES.length];
-  function species(level) {
-    const st = Logic.gardenStyle(level), th = THEMES[st.theme % THEMES.length];
-    return th.species[st.species % th.species.length];
+  const theme = biome => THEMES.find(th => th.id === biome) || THEMES[0];
+  // Jeder erblühte Garten bringt die nächste Pflanzenart des Bioms, danach geht es von vorn los
+  function species(biome, level) {
+    const th = theme(biome);
+    return th.species[level % th.species.length];
   }
 
   function ellipse(ctx, x, y, rx, ry, color) {
@@ -317,9 +319,9 @@
     }
   }
 
-  // R: Rechteck, view: { level, plots: Wachstum je Beet 0..5 (float) }
+  // R: Rechteck, view: { biome, level, plots: Wachstum je Beet 0..5 (float) }
   function draw(ctx, R, view, t, label) {
-    const sp = species(view.level), th = theme(view.level);
+    const sp = species(view.biome, view.level), th = theme(view.biome);
     const n = view.plots.length;
     ctx.save();
     const panel = new Path2D();
@@ -343,8 +345,8 @@
   }
 
   // Bildschirm-Hintergrund passend zum Thema (wird von main.js in ein Offscreen-Canvas gemalt)
-  function backdrop(g, W, H, level) {
-    const th = theme(level);
+  function backdrop(g, W, H, biome) {
+    const th = theme(biome);
     const sky = g.createLinearGradient(0, 0, 0, H);
     sky.addColorStop(0, th.sky[0]); sky.addColorStop(0.6, th.sky[1]); sky.addColorStop(1, th.sky[2]);
     g.fillStyle = sky; g.fillRect(0, 0, W, H);
