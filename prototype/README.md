@@ -10,6 +10,9 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 |---|---|
 | `?autoplay` | Ein gieriger Bot spielt selbst |
 | `?debug` | Zustand unter `window.__dbg` für automatisierte Tests |
+| `?lang=fr` | Sprache erzwingen (`de`, `en`, `fr`, `es`, `ru`) |
+
+Sprachen: Deutsch, Englisch, Französisch, Spanisch, Russisch – gewählt nach YouTube- bzw. Browsersprache, sonst Englisch.
 
 Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`3` wählen, Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
 Zug zurücknehmen: Knopf ↶ oben links (Zahl = verfügbare Schritte, bis zu 100 pro Runde) oder Taste `Z`/`Backspace` – auch nach Game Over.

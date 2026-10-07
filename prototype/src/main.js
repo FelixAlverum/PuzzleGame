@@ -13,7 +13,16 @@
       undo: 'Zug zurück', resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen' },
     en: { best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again', newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden',
       undo: 'Undo move', resetTitle: 'Reset garden?', resetText: 'All plants and gardens start over.', resetYes: 'Reset', resetNo: 'Cancel' },
+    fr: { best: 'Record', combo: 'Combo', hint: 'Glisse une pièce sur le parterre', over: 'Le jardin se repose', again: 'Replanter', newBest: 'Nouveau record\u202f!', bloom: 'Ton jardin est en fleurs\u202f!', fresh: 'Terre fraîche\u202f!', garden: 'Jardin',
+      undo: 'Annuler le coup', resetTitle: 'Réinitialiser le jardin\u202f?', resetText: 'Toutes les plantes et tous les jardins repartent de zéro.', resetYes: 'Réinitialiser', resetNo: 'Annuler' },
+    es: { best: 'Récord', combo: 'Combo', hint: 'Arrastra una pieza al bancal', over: 'El jardín descansa', again: 'Plantar de nuevo', newBest: '¡Nuevo récord!', bloom: '¡Tu jardín está en flor!', fresh: '¡Tierra fresca!', garden: 'Jardín',
+      undo: 'Deshacer jugada', resetTitle: '¿Reiniciar el jardín?', resetText: 'Todas las plantas y jardines empiezan de cero.', resetYes: 'Reiniciar', resetNo: 'Cancelar' },
+    ru: { best: 'Рекорд', combo: 'Комбо', hint: 'Перетащи фигуру на грядку', over: 'Сад отдыхает', again: 'Посадить снова', newBest: 'Новый рекорд!', bloom: 'Твой сад расцвёл!', fresh: 'Свежая земля!', garden: 'Сад',
+      undo: 'Отменить ход', resetTitle: 'Сбросить сад?', resetText: 'Все растения и сады начнутся заново.', resetYes: 'Сбросить', resetNo: 'Отмена' },
   };
+  // Sprache: ?lang=xx (Entwickler-Hilfe) > YouTube/Browser; unbekannte Sprachen fallen auf Englisch zurück
+  const pickLang = l => { const k = String(l).toLowerCase().slice(0, 2); return STR[k] ? k : 'en'; };
+  const LANG_PARAM = (/[?&]lang=([a-z]{2})/i.exec(location.search) || [])[1];
   let S = STR.en, lang = 'en';
 
   const canvas = document.getElementById('game');
@@ -576,7 +585,7 @@
     ctx.fillStyle = textColor;
     ctx.font = `800 ${R.h * 0.42}px ${FONT}`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(label, R.x + R.w / 2, R.y + R.h / 2);
+    ctx.fillText(label, R.x + R.w / 2, R.y + R.h / 2, R.w - R.h * 0.6);
   }
 
   function card(cx, cy, w, h) {
@@ -601,7 +610,7 @@
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#4a3424';
     ctx.font = `800 ${w * 0.075}px ${FONT}`;
-    ctx.fillText(S.resetTitle, cx, y + h * 0.2);
+    ctx.fillText(S.resetTitle, cx, y + h * 0.2, w * 0.9);
     ctx.fillStyle = 'rgba(80,60,35,0.85)';
     ctx.font = `700 ${w * 0.042}px ${FONT}`;
     ctx.fillText(S.resetText, cx, y + h * 0.4, w * 0.9);
@@ -729,12 +738,12 @@
 
     ctx.font = `700 ${L.B * 0.038}px ${FONT}`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const tw = ctx.measureText(S.hint).width + L.B * 0.06, th = L.B * 0.07;
+    const tw = Math.min(ctx.measureText(S.hint).width + L.B * 0.06, I.w * 0.95), th = L.B * 0.07;
     const tx = I.x + I.w / 2, ty = I.y + I.h * 0.3;
     const pill = new Path2D(); Mat.rrect(pill, tx - tw / 2, ty - th / 2, tw, th, [th / 2, th / 2, th / 2, th / 2]);
     ctx.fillStyle = 'rgba(255,250,235,0.9)'; ctx.fill(pill);
     ctx.fillStyle = '#4a3424';
-    ctx.fillText(S.hint, tx, ty);
+    ctx.fillText(S.hint, tx, ty, tw - L.B * 0.04);
   }
 
   function drawGameOver() {
@@ -755,13 +764,13 @@
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#4a3424';
     ctx.font = `800 ${w * 0.075}px ${FONT}`;
-    ctx.fillText(S.over, cx, y + h * 0.17);
+    ctx.fillText(S.over, cx, y + h * 0.17, w * 0.9);
     ctx.fillStyle = '#2f5d2a';
     ctx.font = `800 ${w * 0.15}px ${FONT}`;
     ctx.fillText(String(game.score), cx, y + h * 0.4);
     ctx.fillStyle = over.newBest ? '#c27f22' : 'rgba(80,60,35,0.85)';
     ctx.font = `700 ${w * 0.045}px ${FONT}`;
-    ctx.fillText(over.newBest ? S.newBest : `${S.best} ${best}`, cx, y + h * 0.58);
+    ctx.fillText(over.newBest ? S.newBest : `${S.best} ${best}`, cx, y + h * 0.58, w * 0.9);
 
     const bw = w * 0.62, bh = h * 0.2;
     const main = { x: cx - bw / 2, y: y + h * 0.7, w: bw, h: bh };
@@ -818,7 +827,7 @@
 
     Mat.build();
     const [data, language] = await Promise.all([YT.load(), YT.language()]);
-    lang = String(language).toLowerCase().startsWith('de') ? 'de' : 'en';
+    lang = pickLang(LANG_PARAM || language);
     S = STR[lang];
     document.documentElement.lang = lang;
 

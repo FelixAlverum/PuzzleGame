@@ -10,7 +10,7 @@
   // leaves: 'pair' = Blattpaare am Stiel, 'blade' = Schwertblätter aus dem Grund, 'pad' = Schwimmblätter
   const THEMES = [
     {
-      id: 'meadow', name: { de: 'Wiese', en: 'Meadow' }, ground: 'soil',
+      id: 'meadow', name: { de: 'Wiese', en: 'Meadow', fr: 'Prairie', es: 'Pradera', ru: 'Луг' }, ground: 'soil',
       stem: '#4c8a36', leaf: '#5fa548', leafScale: 1, mound: '#7a5538',
       panel: 'rgba(255,255,255,0.32)', label: 'rgba(55,80,40,0.85)',
       sky: ['#f4ecd8', '#e6e4c6', '#c5d5a0'], deco: 'leaves',
@@ -23,7 +23,7 @@
       ],
     },
     {
-      id: 'pond', name: { de: 'Teich', en: 'Pond' }, ground: 'water',
+      id: 'pond', name: { de: 'Teich', en: 'Pond', fr: 'Étang', es: 'Estanque', ru: 'Пруд' }, ground: 'water',
       stem: '#3f7f4a', leaf: '#4f9a5a', leafScale: 1, mound: '#5d6b4a',
       panel: 'rgba(230,248,255,0.34)', label: 'rgba(30,70,85,0.9)',
       sky: ['#e8f2ee', '#d2e6e2', '#a3cdc8'], deco: 'pads',
@@ -36,7 +36,7 @@
       ],
     },
     {
-      id: 'tropics', name: { de: 'Tropen', en: 'Tropics' }, ground: 'jungle',
+      id: 'tropics', name: { de: 'Tropen', en: 'Tropics', fr: 'Tropiques', es: 'Trópico', ru: 'Тропики' }, ground: 'jungle',
       stem: '#2f7a3a', leaf: '#2f9a4e', leafScale: 1.45, mound: '#5a3a22',
       panel: 'rgba(255,248,225,0.34)', label: 'rgba(40,75,35,0.9)',
       sky: ['#fbe9cb', '#f1dcb0', '#9fd0a0'], deco: 'palms',
@@ -338,7 +338,7 @@
     ctx.font = `700 ${Math.max(10, Math.min(R.h * 0.11, R.w * 0.055))}px ${root.FONT}`;
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillStyle = th.label;
-    ctx.fillText(label, R.x + R.h * 0.08, R.y + R.h * 0.07);
+    ctx.fillText(label, R.x + R.h * 0.08, R.y + R.h * 0.07, R.w - R.h * 0.45);   // Platz für den Reset-Knopf
     ctx.restore();
   }
 
