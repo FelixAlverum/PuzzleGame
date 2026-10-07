@@ -14,8 +14,15 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 
 Sprachen: Deutsch, Englisch, Französisch, Spanisch, Russisch – gewählt nach YouTube- bzw. Browsersprache, sonst Englisch.
 
-Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`3` wählen, Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
-Zug zurücknehmen: Knopf ↶ oben links (Zahl = verfügbare Schritte, bis zu 100 pro Runde) oder Taste `Z`/`Backspace` – auch nach Game Over.
+Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`4` wählen (`4` = Reservefeld), Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
+
+**Reservefeld:** Eine Form in das gestrichelte Feld neben der Ablage ziehen (Tastatur: Form wählen, dann `H`), um sie für später zu parken.
+Liegt dort schon eine, werden beide getauscht. Von dort lässt sie sich wie jede andere Form aufs Beet ziehen.
+Wird die letzte Form der Ablage geparkt, füllt sich die Ablage neu.
+
+**Zug zurücknehmen:** Knopf ↶ oben links (Zahl = verfügbare Schritte) oder Taste `Z`/`Backspace` – auch nach Game Over.
+Höchstens die letzten 3 Züge lassen sich zurücknehmen; Parken zählt als Zug. Punkte, Rekord und Garten springen mit zurück.
+An YouTube geht nur der Rekord, der sich nicht mehr zurücknehmen lässt (der volle Rekord bei „Neu pflanzen“).
 Der Verlauf wird nicht gespeichert und endet mit „Neu pflanzen“.
 
 ## Garten
@@ -23,6 +30,7 @@ Jede aufgelöste Linie lässt eine Pflanze wachsen. Sind alle 5 erblüht, folgt 
 **Wiese** (Mohn, Sonnenblume, …), **Teich** (Seerose, Lotus, Sumpf-Schwertlilie, Rohrkolben, Hechtkraut) und
 **Tropen** (Hibiskus, Strelitzie, Orchidee, Frangipani, Fackelingwer). Hintergrund und Garten-Boden passen sich dem Thema an.
 Ab dem ersten erblühten Garten erscheint oben rechts im Garten ↻ zum kompletten Zurücksetzen (mit Rückfrage).
+Züge auf dem Feld bleiben danach zurücknehmbar, der Garten bleibt dabei zurückgesetzt.
 
 ## Docker
 Öffentliches Image auf Docker Hub: [`alverum/puzzlegame`](https://hub.docker.com/r/alverum/puzzlegame) (amd64 + arm64).

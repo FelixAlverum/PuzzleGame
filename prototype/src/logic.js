@@ -15,8 +15,8 @@
   const FRESH_SOIL_BONUS = 300;  // Feld komplett leer geräumt
   const PLOTS = 5;               // Beete im Garten
   const STAGES = 5;              // 0 = Saat … 5 = Blüte
-  const THEMES = 3;              // Wiese, Teich, Tropen – wechseln mit jedem erblühten Garten
-  const UNDO_LIMIT = 100;        // so viele Züge lassen sich zurücknehmen
+  const HOLD = TRAY;             // Slot-Nummer des Ablagefelds (Zwischenspeicher für eine Form)
+  const UNDO_LIMIT = 3;          // so viele Züge lassen sich höchstens zurücknehmen
 
   // mulberry32 – Zustand liegt im Spielstand, damit Runden reproduzierbar und speicherbar sind
   function rand(state) {
@@ -48,7 +48,10 @@
     return false;
   }
 
-  const anyMove = state => state.tray.some(it => it && fits(state.board, pieceOf(it)));
+  const itemAt = (state, slot) => (slot === HOLD ? state.hold : state.tray[slot]) || null;
+  const anyMove = state => [...state.tray, state.hold].some(it => it && fits(state.board, pieceOf(it)));
+  // Steckt die Runde fest? Ausnahme: Die letzte Form ins leere Ablagefeld legen füllt die Ablage neu.
+  const stuck = state => !anyMove(state) && !(!state.hold && state.tray.filter(Boolean).length === 1);
 
   function fullLines(board) {
     const rows = [], cols = [];
@@ -121,14 +124,14 @@
   function newGame(seed) {
     const state = {
       v: 1, board: new Array(N * N).fill(null), tray: [], score: 0, combo: 0,
-      movesSinceClear: 0, rng: seed >>> 0, nextPid: 1, over: false,
+      movesSinceClear: 0, rng: seed >>> 0, nextPid: 1, over: false, hold: null,
     };
     refill(state);
     return state;
   }
 
   function place(state, slot, r0, c0) {
-    const item = state.tray[slot];
+    const item = itemAt(state, slot);
     if (state.over || !item) return null;
     const piece = pieceOf(item);
     if (!canPlace(state.board, piece, r0, c0)) return null;
@@ -141,7 +144,7 @@
       state.board[r * N + c] = cell;
       return { r, c, ...cell };
     });
-    state.tray[slot] = null;
+    if (slot === HOLD) state.hold = null; else state.tray[slot] = null;
     state.score += cells.length;
     events.push({ type: 'placed', slot, pid, mat: piece.mat, cells, points: cells.length });
 
@@ -175,15 +178,29 @@
       }
     }
 
+    return finishMove(state, events);
+  }
+
+  function finishMove(state, events) {
     if (state.tray.every(t => !t)) {
       refill(state);
       events.push({ type: 'trayRefilled' });
     }
-    if (!anyMove(state)) {
+    if (stuck(state)) {
       state.over = true;
       events.push({ type: 'gameOver', score: state.score });
     }
     return events;
+  }
+
+  // Form aus der Ablage ins Ablagefeld legen; liegt dort schon eine, werden beide getauscht
+  function hold(state, slot) {
+    const item = state.tray[slot];
+    if (state.over || slot === HOLD || !item) return null;
+    const swapped = state.hold;
+    state.tray[slot] = swapped;
+    state.hold = item;
+    return finishMove(state, [{ type: 'held', slot, swapped: !!swapped }]);
   }
 
   // Gespeicherten Lauf prüfen – kaputte oder fremde Daten führen zu einer neuen Runde
@@ -194,7 +211,8 @@
     const okItem = it => it === null || (it && Shapes.BY_ID[it.shape] &&
       Number.isInteger(it.v) && it.v >= 0 && it.v < Shapes.BY_ID[it.shape].variants.length);
     const okCell = c => c === null || (c && Shapes.MATERIALS.includes(c.m) && Number.isInteger(c.p));
-    if (!run.tray.every(okItem) || !run.board.every(okCell)) return null;
+    if (run.hold === undefined) run = { ...run, hold: null };   // Spielstände von vor dem Ablagefeld
+    if (!run.tray.every(okItem) || !okItem(run.hold) || !run.board.every(okCell)) return null;
     if (![run.score, run.combo, run.movesSinceClear, run.rng, run.nextPid].every(Number.isFinite)) return null;
     const state = JSON.parse(JSON.stringify(run));
     if (state.tray.every(t => !t)) refill(state);
@@ -230,15 +248,16 @@
     return events;
   }
 
-  // Garten-Stufe → Thema und Pflanzenart darin: erst alle Themen reihum, dann die nächste Art
-  const gardenStyle = level => ({ theme: level % THEMES, species: Math.floor(level / THEMES) });
+  // Garten-Stufe → Thema und Pflanzenart darin: erst alle Themen reihum, dann die nächste Art.
+  // Die Anzahl der Themen kommt von der Anzeige (garden.js), damit es nur eine Quelle gibt.
+  const gardenStyle = (level, themes) => ({ theme: level % themes, species: Math.floor(level / themes) });
 
   // --- Zug zurücknehmen -------------------------------------------------------
-  // Vor jedem Zug wird der Stand (Runde + Garten) als JSON abgelegt, damit spätere
+  // Vor jedem Zug wird ein Stand (Runde, Garten, Rekord …) als JSON abgelegt, damit spätere
   // Änderungen am Live-Zustand die gespeicherten Stände nicht verfälschen.
 
-  function pushHistory(history, game, garden, limit = UNDO_LIMIT) {
-    history.push(JSON.stringify({ game, garden }));
+  function pushHistory(history, snap, limit = UNDO_LIMIT) {
+    history.push(JSON.stringify(snap));
     if (history.length > limit) history.splice(0, history.length - limit);
   }
 
@@ -247,11 +266,18 @@
     return s ? JSON.parse(s) : null;
   }
 
+  const peekHistory = (history, i) => (history[i] ? JSON.parse(history[i]) : null);
+
+  // Alle gespeicherten Stände ändern (z. B. neuer Garten nach einem Reset)
+  function mapHistory(history, fn) {
+    for (let i = 0; i < history.length; i++) history[i] = JSON.stringify(fn(JSON.parse(history[i])));
+  }
+
   return {
-    N, TRAY, PLOTS, STAGES, THEMES, UNDO_LIMIT,
-    pieceOf, canPlace, fits, anyMove, fullLines, previewLines, lineScore,
-    newGame, place, refill, restore,
+    N, TRAY, HOLD, PLOTS, STAGES, UNDO_LIMIT,
+    pieceOf, itemAt, canPlace, fits, anyMove, stuck, fullLines, previewLines, lineScore,
+    newGame, place, hold, refill, restore,
     newGarden, restoreGarden, growGarden, gardenStyle,
-    pushHistory, popHistory,
+    pushHistory, popHistory, peekHistory, mapHistory,
   };
 });

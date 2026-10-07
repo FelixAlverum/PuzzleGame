@@ -50,9 +50,9 @@
     },
   ];
 
-  const theme = level => THEMES[Logic.gardenStyle(level).theme % THEMES.length];
+  const theme = level => THEMES[Logic.gardenStyle(level, THEMES.length).theme];
   function species(level) {
-    const st = Logic.gardenStyle(level), th = THEMES[st.theme % THEMES.length];
+    const st = Logic.gardenStyle(level, THEMES.length), th = THEMES[st.theme];
     return th.species[st.species % th.species.length];
   }
 

@@ -9,15 +9,15 @@
   const randSeed = () => (Math.random() * 4294967296) >>> 0;
 
   const STR = {
-    de: { best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen', newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten',
+    de: { hold: 'Reserve', best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen', newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten',
       undo: 'Zug zurück', resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen' },
-    en: { best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again', newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden',
+    en: { hold: 'Hold', best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again', newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden',
       undo: 'Undo move', resetTitle: 'Reset garden?', resetText: 'All plants and gardens start over.', resetYes: 'Reset', resetNo: 'Cancel' },
-    fr: { best: 'Record', combo: 'Combo', hint: 'Glisse une pièce sur le parterre', over: 'Le jardin se repose', again: 'Replanter', newBest: 'Nouveau record\u202f!', bloom: 'Ton jardin est en fleurs\u202f!', fresh: 'Terre fraîche\u202f!', garden: 'Jardin',
+    fr: { hold: 'Réserve', best: 'Record', combo: 'Combo', hint: 'Glisse une pièce sur le parterre', over: 'Le jardin se repose', again: 'Replanter', newBest: 'Nouveau record\u202f!', bloom: 'Ton jardin est en fleurs\u202f!', fresh: 'Terre fraîche\u202f!', garden: 'Jardin',
       undo: 'Annuler le coup', resetTitle: 'Réinitialiser le jardin\u202f?', resetText: 'Toutes les plantes et tous les jardins repartent de zéro.', resetYes: 'Réinitialiser', resetNo: 'Annuler' },
-    es: { best: 'Récord', combo: 'Combo', hint: 'Arrastra una pieza al bancal', over: 'El jardín descansa', again: 'Plantar de nuevo', newBest: '¡Nuevo récord!', bloom: '¡Tu jardín está en flor!', fresh: '¡Tierra fresca!', garden: 'Jardín',
+    es: { hold: 'Reserva', best: 'Récord', combo: 'Combo', hint: 'Arrastra una pieza al bancal', over: 'El jardín descansa', again: 'Plantar de nuevo', newBest: '¡Nuevo récord!', bloom: '¡Tu jardín está en flor!', fresh: '¡Tierra fresca!', garden: 'Jardín',
       undo: 'Deshacer jugada', resetTitle: '¿Reiniciar el jardín?', resetText: 'Todas las plantas y jardines empiezan de cero.', resetYes: 'Reiniciar', resetNo: 'Cancelar' },
-    ru: { best: 'Рекорд', combo: 'Комбо', hint: 'Перетащи фигуру на грядку', over: 'Сад отдыхает', again: 'Посадить снова', newBest: 'Новый рекорд!', bloom: 'Твой сад расцвёл!', fresh: 'Свежая земля!', garden: 'Сад',
+    ru: { hold: 'Запас', best: 'Рекорд', combo: 'Комбо', hint: 'Перетащи фигуру на грядку', over: 'Сад отдыхает', again: 'Посадить снова', newBest: 'Новый рекорд!', bloom: 'Твой сад расцвёл!', fresh: 'Свежая земля!', garden: 'Сад',
       undo: 'Отменить ход', resetTitle: 'Сбросить сад?', resetText: 'Все растения и сады начнутся заново.', resetYes: 'Сбросить', resetNo: 'Отмена' },
   };
   // Sprache: ?lang=xx (Entwickler-Hilfe) > YouTube/Browser; unbekannte Sprachen fallen auf Englisch zurück
@@ -33,12 +33,12 @@
   // Spielzustand
   let game = null, garden = Logic.newGarden(), best = 0, hintDone = false;
   let bestAtStart = 0, newBestShown = false, shownScore = 0;
-  const history = [];                    // Stände vor den letzten Zügen (Zug zurücknehmen), nicht gespeichert
+  const history = [];                    // Stände vor den letzten Zügen (höchstens Logic.UNDO_LIMIT), nicht gespeichert
   // Darstellung
   let drag = null, returning = null, kb = null, lastPlaced = null, over = null, confirm = null;
   const drops = new Map();               // pid → Startzeit der Fall-Animation
   let dying = [];                        // Zellen, die sich gerade auflösen
-  let trayPop = [0, 0, 0];               // Einblendzeitpunkt je Ablage-Slot
+  let trayPop = [0, 0, 0, 0];            // Einblendzeitpunkt je Ablage-Slot (Index 3 = Reservefeld)
   let gardenView = { level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
   // Ablauf
   let clock = 0, last = 0, raf = 0, paused = false, ready = false, readySignalled = false;
@@ -57,20 +57,23 @@
       o.header = { x: x0, y: y0, w: B, h: B * 0.12 };
       o.garden = { x: x0, y: y0 + B * 0.13, w: B, h: B * 0.25 };
       o.board = { x: x0, y: y0 + B * 0.4, size: B };
-      o.tray = [0, 1, 2].map(i => ({ x: x0 + i * B / 3, y: y0 + B * 1.42, w: B / 3, h: B * 0.38 }));
+      o.tray = [0, 1, 2].map(i => ({ x: x0 + i * B * 0.25, y: y0 + B * 1.42, w: B * 0.25, h: B * 0.38 }));
+      o.hold = { x: x0 + B * 0.78, y: y0 + B * 1.46, w: B * 0.22, h: B * 0.3 };
     } else {
       const B = landscapeB, x0 = (w - B * 1.95) / 2, y0 = (h - B) / 2;
       o.B = B;
       o.header = { x: x0, y: y0, w: B * 0.55, h: B * 0.2 };
       o.garden = { x: x0, y: y0 + B * 0.45, w: B * 0.55, h: B * 0.55 };
       o.board = { x: x0 + B * 0.59, y: y0, size: B };
-      o.tray = [0, 1, 2].map(i => ({ x: x0 + B * 1.62, y: y0 + i * B / 3, w: B * 0.33, h: B / 3 }));
+      o.tray = [0, 1, 2].map(i => ({ x: x0 + B * 1.62, y: y0 + i * B * 0.25, w: B * 0.33, h: B * 0.25 }));
+      o.hold = { x: x0 + B * 1.64, y: y0 + B * 0.78, w: B * 0.29, h: B * 0.22 };
     }
     const f = o.B * 0.035;
     o.frame = f;
     o.inner = { x: o.board.x + f, y: o.board.y + f, w: o.B - 2 * f, h: o.B - 2 * f };
     o.cs = o.inner.w / N;
-    o.trayCs = Math.min(o.cs * 0.55, o.tray[0].w * 0.88 / 5, o.tray[0].h * 0.88 / 5);
+    // Index = Slot-Nummer der Logik (Logic.HOLD = 3); im Reservefeld bleibt unten Platz für die Beschriftung
+    o.slots = [...o.tray, { x: o.hold.x, y: o.hold.y, w: o.hold.w, h: o.hold.h * 0.8 }];
     return o;
   }
 
@@ -157,15 +160,21 @@
   const resetButton = () => { const R = L.garden, r = Math.max(11, R.h * 0.1); return { x: R.x + R.w - r * 1.5, y: R.y + r * 1.5, r }; };
   const canResetGarden = () => garden.level >= 1;   // erst, wenn der erste Garten erblüht ist
 
+  // Zellgröße einer Form in ihrem Slot: kleine Formen etwas größer, lange passen trotzdem hinein
+  function traySize(slot, piece) {
+    const s = L.slots[slot];
+    return Math.min(L.cs * 0.55, s.w * 0.88 / Math.max(piece.w, 4), s.h * 0.88 / Math.max(piece.h, 4));
+  }
+
   function trayOrigin(slot, piece, size) {
-    const s = L.tray[slot];
+    const s = L.slots[slot];
     return { x: s.x + s.w / 2 - piece.w * size / 2, y: s.y + s.h / 2 - piece.h * size / 2 };
   }
 
   // Ziehen: Form schwebt bei Touch über dem Finger, damit sie nicht verdeckt wird
   function dragGeom(d, cs) {
     const k = easeOut(clamp((clock - d.t0) / 0.12));
-    const size = cs != null ? cs : lerp(L.trayCs, L.cs, k);
+    const size = cs != null ? cs : lerp(traySize(d.slot, d.piece), L.cs, k);
     const lift = d.touch ? L.cs * 0.7 : 0;
     const p = d.piece;
     return {
@@ -186,38 +195,53 @@
 
   // --- Spielaktionen ---------------------------------------------------------------------
 
+  // Stand vor einem Zug merken – inklusive Rekord, damit Zurücknehmen ihn nicht aufbläht
+  const remember = () => Logic.pushHistory(history, { game, garden, best, newBestShown });
+  // Rekord, der sich nicht mehr zurücknehmen lässt (nur der geht an YouTube)
+  const committedBest = () => { const h = Logic.peekHistory(history, 0); return h ? h.best : best; };
+  const SLOTS = [0, 1, 2, Logic.HOLD];
+
   function tryPlace(slot, r, c) {
-    const before = JSON.stringify({ game, garden });
-    const events = Logic.place(game, slot, r, c);
-    if (!events) { Sound.invalid(); return false; }
-    history.push(before);
-    if (history.length > Logic.UNDO_LIMIT) history.shift();
-    handle(events);
+    const item = Logic.itemAt(game, slot);
+    if (game.over || !item || !Logic.canPlace(game.board, Logic.pieceOf(item), r, c)) { Sound.invalid(); return false; }
+    remember();
+    handle(Logic.place(game, slot, r, c));
     return true;
   }
 
-  // Letzten Zug zurücknehmen: Runde und Garten springen auf den Stand davor (auch nach Game Over)
+  // Form ins Reservefeld legen (oder mit der dortigen tauschen)
+  function tryHold(slot) {
+    if (game.over || slot === Logic.HOLD || !game.tray[slot]) { Sound.invalid(); return false; }
+    remember();
+    handle(Logic.hold(game, slot));
+    return true;
+  }
+
+  // Letzten Zug zurücknehmen: Runde, Garten und Rekord springen auf den Stand davor (auch nach Game Over)
   function undo() {
     const prev = Logic.popHistory(history);
     if (!prev) { Sound.invalid(); return false; }
-    const trayBefore = game.tray.map(it => JSON.stringify(it));
+    const slotsBefore = SLOTS.map(i => JSON.stringify(Logic.itemAt(game, i)));
     game = prev.game;
     garden = prev.garden;
+    best = prev.best;
+    newBestShown = prev.newBestShown;
     over = null; drag = null; returning = null; kb = null; lastPlaced = null;
     dying = []; drops.clear(); FX.reset();
     gardenView.hold = 0;
-    game.tray.forEach((it, i) => { if (JSON.stringify(it) !== trayBefore[i]) trayPop[i] = clock; });
+    SLOTS.forEach(i => { if (JSON.stringify(Logic.itemAt(game, i)) !== slotsBefore[i]) trayPop[i] = clock; });
     Sound.pickup();
     saveDirty = true;
     return true;
   }
 
-  // Garten komplett zurücksetzen (Stufe, Pflanzen, Thema). Der Verlauf enthält alte Gärten → verwerfen.
+  // Garten komplett zurücksetzen (Stufe, Pflanzen, Thema). Züge auf dem Feld bleiben zurücknehmbar,
+  // ihre gespeicherten Stände bekommen aber ebenfalls den neuen Garten.
   function resetGarden() {
     confirm = null;
     garden = Logic.newGarden();
     gardenView = { level: 0, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
-    history.length = 0;
+    Logic.mapHistory(history, h => ({ ...h, garden: Logic.newGarden() }));
     FX.sparkle(L.garden.x + L.garden.w / 2, L.garden.y + L.garden.h * 0.6, L.cs, 12, ['#fff6b0', '#ffffff', '#c8f08a']);
     Sound.pickup();
     saveNow();
@@ -234,6 +258,13 @@
             const p = cellCenter(c.r, c.c);
             FX.dust(p.x, p.y + L.cs * 0.4, L.cs);
           }
+          hintDone = true;
+          break;
+
+        case 'held':
+          trayPop[Logic.HOLD] = clock;
+          if (ev.swapped) trayPop[ev.slot] = clock;
+          Sound.pickup();
           hintDone = true;
           break;
 
@@ -263,7 +294,7 @@
         }
 
         case 'trayRefilled':
-          trayPop = [clock, clock + 0.07, clock + 0.14];
+          trayPop = [clock, clock + 0.07, clock + 0.14, trayPop[Logic.HOLD]];
           break;
 
         case 'gameOver':
@@ -305,17 +336,18 @@
   function endGame() {
     over = { t: clock, button: null, newBest: game.score > bestAtStart && bestAtStart > 0 };
     drag = null; kb = null;
-    YT.sendScore(best);       // muss dem im Spiel angezeigten Rekord entsprechen
+    YT.sendScore(committedBest());   // Punkte der letzten, noch zurücknehmbaren Züge erst bei „Neu pflanzen“
     Sound.gameOver();
     saveNow();
   }
 
   function restart() {
+    YT.sendScore(best);       // Runde ist abgeschlossen → angezeigter Rekord ist endgültig
     game = Logic.newGame(randSeed());
     over = null; dying = []; drops.clear(); FX.reset();
     history.length = 0;
     bestAtStart = best; newBestShown = false; shownScore = 0;
-    trayPop = [clock, clock + 0.07, clock + 0.14];
+    trayPop = [clock, clock + 0.07, clock + 0.14, clock];
     saveNow();
   }
 
@@ -333,7 +365,7 @@
 
   canvas.addEventListener('pointerdown', e => {
     Sound.unlock();
-    if (!ready || paused) return;
+    if (!ready || paused || drag) return;   // zweiter Finger während des Ziehens wird ignoriert
     const { x, y } = pointer(e);
     if (confirm) {
       if (inside(confirm.yes, x, y)) resetGarden();
@@ -347,9 +379,9 @@
     }
     if (hitCircle(undoButton(), x, y)) { undo(); return; }
     if (canResetGarden() && hitCircle(resetButton(), x, y)) { confirm = { t: clock, yes: null, no: null }; kb = null; return; }
-    const slot = L.tray.findIndex(s => inside(s, x, y));
-    if (slot < 0 || !game.tray[slot] || (returning && returning.slot === slot)) return;
-    drag = { slot, piece: Logic.pieceOf(game.tray[slot]), x, y, t0: clock, touch: e.pointerType !== 'mouse', id: e.pointerId, snap: null };
+    const slot = [...L.tray, L.hold].findIndex(s => inside(s, x, y));
+    if (slot < 0 || !Logic.itemAt(game, slot) || (returning && returning.slot === slot)) return;
+    drag = { slot, piece: Logic.pieceOf(Logic.itemAt(game, slot)), x, y, t0: clock, touch: e.pointerType !== 'mouse', id: e.pointerId, snap: null };
     kb = null;
     try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* egal */ }
     Sound.pickup();
@@ -367,6 +399,8 @@
     if (!drag || e.pointerId !== drag.id) return;
     const d = drag;
     drag = null;
+    if (confirm || over) return;
+    if (d.slot !== Logic.HOLD && inside(L.hold, d.x, d.y) && tryHold(d.slot)) return;
     if (d.snap && d.snap.valid && tryPlace(d.slot, d.snap.r, d.snap.c)) return;
     if (d.snap) Sound.invalid();
     const gm = dragGeom(d);
@@ -392,13 +426,13 @@
     }
     if (k === 'Escape') { kb = null; return; }   // Esc nie per preventDefault blockieren
     const select = slot => {
-      const p = Logic.pieceOf(game.tray[slot]);
+      const p = Logic.pieceOf(Logic.itemAt(game, slot));
       kb = { slot, r: Math.floor((N - p.h) / 2), c: Math.floor((N - p.w) / 2) };
       Sound.pickup();
     };
-    if (k >= '1' && k <= '3') {
+    if (k >= '1' && k <= '4') {   // 4 = Reservefeld
       const s = Number(k) - 1;
-      if (game.tray[s]) select(s);
+      if (Logic.itemAt(game, s)) select(s);
       e.preventDefault();
       return;
     }
@@ -409,7 +443,8 @@
       return;
     }
     if (!kb) return;
-    const p = Logic.pieceOf(game.tray[kb.slot]);
+    if (k === 'h' || k === 'H') { if (tryHold(kb.slot)) kb = null; e.preventDefault(); return; }
+    const p = Logic.pieceOf(Logic.itemAt(game, kb.slot));
     if (k === 'ArrowLeft') kb.c = Math.max(0, kb.c - 1);
     else if (k === 'ArrowRight') kb.c = Math.min(N - p.w, kb.c + 1);
     else if (k === 'ArrowUp') kb.r = Math.max(0, kb.r - 1);
@@ -428,7 +463,8 @@
   let botTimer = 1;
   function botMove() {
     let bestMove = null;
-    game.tray.forEach((item, slot) => {
+    SLOTS.forEach(slot => {
+      const item = Logic.itemAt(game, slot);
       if (!item) return;
       const piece = Logic.pieceOf(item);
       for (let r = 0; r <= N - piece.h; r++) {
@@ -441,13 +477,14 @@
       }
     });
     if (bestMove) tryPlace(bestMove.slot, bestMove.r, bestMove.c);
+    else tryHold(game.tray.findIndex(Boolean));   // letzte Form parken → Ablage füllt sich neu
   }
 
   // Entwickler-Hilfe: index.html?debug macht den Zustand für automatisierte Browser-Tests zugänglich
   if (/[?&]debug\b/.test(location.search)) {
     window.__dbg = {
       layout: () => L, game: () => game, garden: () => garden, place: tryPlace, ready: () => ready,
-      undo, resetGarden, history: () => history.length,
+      undo, resetGarden, hold: tryHold, history: () => history.length, best: () => best,
       setGarden: g => { garden = g; gardenView = { level: g.level, plots: g.plots.slice(), hold: 0, holdLevel: 0 }; },
     };
   }
@@ -548,12 +585,12 @@
     ctx.lineTo(x - r * 0.25, y - r * 0.44);
     ctx.lineTo(x - r * 0.25, y + r * 0.08);
     ctx.closePath(); ctx.fill();
-    if (enabled && history.length > 1) {   // wie viele Züge sich zurücknehmen lassen
+    if (enabled) {   // wie viele Züge sich zurücknehmen lassen
       const bx = x + r * 0.75, by = y + r * 0.7, br = r * 0.42;
       ctx.fillStyle = '#5d9a3e';
       ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `800 ${br * (history.length > 9 ? 0.95 : 1.25)}px ${FONT}`;
+      ctx.font = `800 ${br * 1.25}px ${FONT}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(String(history.length), bx, by + br * 0.05);
     }
@@ -625,8 +662,8 @@
 
   function currentPreview() {
     if (drag && drag.snap && drag.snap.valid) return { piece: drag.piece, r: drag.snap.r, c: drag.snap.c, valid: true };
-    if (kb && game.tray[kb.slot]) {
-      const piece = Logic.pieceOf(game.tray[kb.slot]);
+    if (kb && Logic.itemAt(game, kb.slot)) {
+      const piece = Logic.pieceOf(Logic.itemAt(game, kb.slot));
       return { piece, r: kb.r, c: kb.c, valid: Logic.canPlace(game.board, piece, kb.r, kb.c) };
     }
     return null;
@@ -685,12 +722,33 @@
     }
   }
 
+  // Reservefeld: gestrichelter Rahmen mit Beschriftung, leuchtet beim Darüberziehen
+  function drawHoldSlot() {
+    const R = L.hold, rr = Math.min(R.w, R.h) * 0.14;
+    const p = new Path2D(); Mat.rrect(p, R.x + R.w * 0.05, R.y + R.h * 0.05, R.w * 0.9, R.h * 0.9, [rr, rr, rr, rr]);
+    const target = drag && drag.slot !== Logic.HOLD && inside(R, drag.x, drag.y);
+    ctx.save();
+    ctx.fillStyle = target ? 'rgba(255,248,200,0.55)' : 'rgba(255,255,255,0.14)';
+    ctx.fill(p);
+    ctx.setLineDash([L.B * 0.015, L.B * 0.012]);
+    ctx.strokeStyle = target ? 'rgba(194,127,34,0.9)' : 'rgba(110,80,45,0.45)';
+    ctx.lineWidth = Math.max(1, L.B * 0.005);
+    ctx.stroke(p);
+    ctx.setLineDash([]);
+    ctx.font = `700 ${L.B * 0.026}px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(80,60,35,0.7)';
+    ctx.fillText(S.hold, R.x + R.w / 2, R.y + R.h * 0.93, R.w * 0.85);
+    ctx.restore();
+  }
+
   function drawTray() {
-    for (let i = 0; i < 3; i++) {
-      const item = game.tray[i];
+    drawHoldSlot();
+    for (const i of SLOTS) {
+      const item = Logic.itemAt(game, i);
       if (!item || (drag && drag.slot === i) || (returning && returning.slot === i)) continue;
       const piece = Logic.pieceOf(item);
-      const s = L.tray[i], size = L.trayCs;
+      const s = L.slots[i], size = traySize(i, piece);
       const k = clamp((clock - trayPop[i]) / 0.3);
       const pop = k < 1 ? easeOut(k) * (1 + 0.15 * Math.sin(k * Math.PI)) : 1;
       if (pop <= 0) continue;
@@ -715,8 +773,9 @@
     }
     if (returning) {
       const k = easeOut(clamp((clock - returning.t0) / 0.2));
-      const to = trayOrigin(returning.slot, returning.piece, L.trayCs);
-      const size = lerp(returning.size, L.trayCs, k);
+      const ts = traySize(returning.slot, returning.piece);
+      const to = trayOrigin(returning.slot, returning.piece, ts);
+      const size = lerp(returning.size, ts, k);
       Mat.renderCells(ctx, cellsOf(returning.piece), lerp(returning.x, to.x, k), lerp(returning.y, to.y, k), size);
     }
   }
@@ -849,7 +908,7 @@
       drag = null; returning = null;
       cancelAnimationFrame(raf);
       Sound.setPaused(true);
-      YT.sendScore(best);
+      YT.sendScore(committedBest());
       saveNow();
     });
     YT.onResume(() => {
@@ -862,7 +921,7 @@
 
     ready = true;
     buildBackground();
-    if (!Logic.anyMove(game)) { game.over = true; endGame(); }
+    if (Logic.stuck(game)) { game.over = true; endGame(); }
     raf = requestAnimationFrame(frame);
   }
 
