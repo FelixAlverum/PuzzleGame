@@ -185,6 +185,87 @@
     },
   };
 
+  // Senkrechte Streifen über die volle Höhe sind von selbst nahtlos (Schilf, Bambus)
+  function stripes(g, R, n, wMin, wMax, colors) {
+    for (let i = 0; i < n; i++) {
+      const x = R() * TEX, w = wMin + R() * (wMax - wMin);
+      g.fillStyle = colors[Math.floor(R() * colors.length)];
+      for (const dx of [-TEX, 0, TEX]) g.fillRect(x + dx, 0, w, TEX);
+    }
+  }
+
+  // Biom-Materialien: Teich (Schilf, Seerosenblatt) und Tropen (Bananenblatt, Hibiskus, Bambus)
+  Object.assign(GEN, {
+    reed(R, g) {
+      g.fillStyle = '#b5a467'; g.fillRect(0, 0, TEX, TEX);
+      stripes(g, R, 90, 2, 9, ['rgba(120,130,50,0.35)', 'rgba(220,210,140,0.30)', 'rgba(90,85,40,0.25)']);
+      stripes(g, R, 160, 0.6, 1.6, ['rgba(60,60,25,0.35)', 'rgba(250,240,190,0.35)']);
+      for (let i = 0; i < 26; i++) {      // Knoten der Halme
+        const x = R() * TEX, y = R() * TEX, w = 6 + R() * 10;
+        wrapDraw(x, y, w, (X, Y) => {
+          g.fillStyle = 'rgba(90,80,35,0.45)'; g.fillRect(X - w / 2, Y, w, 2);
+          g.fillStyle = 'rgba(250,240,200,0.4)'; g.fillRect(X - w / 2, Y + 2, w, 1);
+        });
+      }
+    },
+
+    lily(R, g) {   // Seerosenblätter: runde Pads mit strahlenförmigen Adern
+      g.fillStyle = '#4f9a58'; g.fillRect(0, 0, TEX, TEX);
+      blotches(g, R, 50, 30, 100, [[120, 190, 110, 0.22], [25, 80, 45, 0.22], [180, 220, 240, 0.08]]);
+      for (let i = 0; i < 16; i++) {
+        const x = R() * TEX, y = R() * TEX, r = 45 + R() * 50, rays = 12 + Math.floor(R() * 6), a0 = R() * TAU;
+        wrapDraw(x, y, r + 4, (X, Y) => {
+          g.strokeStyle = 'rgba(200,240,180,0.22)'; g.lineWidth = 1.4;
+          for (let k = 0; k < rays; k++) {
+            const a = a0 + k / rays * TAU;
+            g.beginPath(); g.moveTo(X, Y); g.lineTo(X + Math.cos(a) * r, Y + Math.sin(a) * r); g.stroke();
+          }
+          g.strokeStyle = 'rgba(30,70,40,0.25)'; g.lineWidth = 2;
+          g.beginPath(); g.arc(X, Y, r, 0, TAU); g.stroke();
+        });
+      }
+      specks(g, R, 260, 1, 2.6, ['rgba(220,245,255,0.35)']);   // Wassertropfen
+    },
+
+    palm(R, g) {   // Bananenblatt: feine parallele Seitenadern, ab und zu ein Riss
+      g.fillStyle = '#3e9a4a'; g.fillRect(0, 0, TEX, TEX);
+      blotches(g, R, 50, 30, 110, [[110, 200, 90, 0.22], [20, 80, 35, 0.22]]);
+      for (let y = 0; y < TEX; y += 8) {
+        g.fillStyle = (y / 8) % 2 ? 'rgba(220,255,190,0.16)' : 'rgba(20,70,30,0.14)';
+        g.fillRect(0, y, TEX, (y / 8) % 4 === 0 ? 2.4 : 1.2);
+      }
+      for (let i = 0; i < 7; i++) {
+        const x = R() * TEX, y = Math.floor(R() * 64) * 8 + 4, w = 30 + R() * 70;
+        wrapDraw(x, y, w, (X, Y) => { g.fillStyle = 'rgba(255,250,200,0.25)'; g.fillRect(X, Y - 1, w, 2); });
+      }
+    },
+
+    hibiscus(R, g) {
+      g.fillStyle = '#d93448'; g.fillRect(0, 0, TEX, TEX);
+      blotches(g, R, 60, 30, 110, [[255, 120, 130, 0.30], [140, 20, 40, 0.30], [255, 230, 230, 0.10]]);
+      g.lineCap = 'round';
+      for (let i = 0; i < 240; i++) {
+        const x = R() * TEX, y = R() * TEX, len = 25 + R() * 45, bend = (R() - 0.5) * 20;
+        g.strokeStyle = R() < 0.55 ? 'rgba(120,10,30,0.22)' : 'rgba(255,200,200,0.18)';
+        g.lineWidth = 0.8 + R();
+        wrapDraw(x, y, len + 20, (X, Y) => {
+          g.beginPath(); g.moveTo(X, Y); g.quadraticCurveTo(X + bend, Y + len / 2, X, Y + len); g.stroke();
+        });
+      }
+    },
+
+    bamboo(R, g) {   // Halme mit Knoten im Abstand einer Zelle (128 px teilt 512 → nahtlos)
+      g.fillStyle = '#a3be52'; g.fillRect(0, 0, TEX, TEX);
+      stripes(g, R, 60, 4, 14, ['rgba(140,160,60,0.30)', 'rgba(250,240,160,0.25)']);
+      stripes(g, R, 120, 0.6, 1.4, ['rgba(80,90,30,0.30)', 'rgba(255,250,210,0.30)']);
+      for (let y = 0; y < TEX; y += 128) {
+        g.fillStyle = 'rgba(95,95,35,0.55)'; g.fillRect(0, y + 60, TEX, 5);
+        g.fillStyle = 'rgba(255,250,210,0.45)'; g.fillRect(0, y + 65, TEX, 2);
+        g.fillStyle = 'rgba(70,70,25,0.18)'; g.fillRect(0, y + 52, TEX, 8);
+      }
+    },
+  });
+
   function build() {
     Object.keys(GEN).forEach((name, i) => {
       const c = document.createElement('canvas');
@@ -349,6 +430,38 @@
         ctx.beginPath(); ctx.moveTo(cx, cy + cs * 0.2); ctx.quadraticCurveTo(cx + cs * 0.05, cy, cx, cy - cs * 0.12); ctx.stroke();
         leaf(ctx, cx, cy - cs * 0.1, cs * 0.3, cs * 0.12, -2.5, '#a6db6e');
         leaf(ctx, cx, cy - cs * 0.1, cs * 0.3, cs * 0.12, -0.65, '#a6db6e');
+        break;
+      case 'lotus': { // Seerosenblüte auf dem Blatt
+        for (let k = 0; k < 8; k++) leaf(ctx, cx, cy, cs * 0.36, cs * 0.12, k / 8 * TAU, '#f2a0bf', false);
+        for (let k = 0; k < 6; k++) leaf(ctx, cx, cy, cs * 0.24, cs * 0.1, k / 6 * TAU + 0.3, '#fdeef3', false);
+        circle(ctx, cx, cy, cs * 0.08, '#f2c230');
+        break;
+      }
+      case 'cattail': { // brauner Kolben, Spitze zeigt vom Halm weg
+        const [dr, dc] = toward;
+        ctx.save();
+        ctx.translate(cx, cy); ctx.rotate(Math.atan2(-dr, -dc));
+        ctx.strokeStyle = '#6f7a46'; ctx.lineWidth = cs * 0.05; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cs * 0.2, 0); ctx.lineTo(cs * 0.44, 0); ctx.stroke();
+        const p = new Path2D(); rrect(p, -cs * 0.34, -cs * 0.13, cs * 0.56, cs * 0.26, [cs * 0.13, cs * 0.13, cs * 0.13, cs * 0.13]);
+        ctx.fillStyle = '#7a4e2c'; ctx.fill(p);
+        ctx.fillStyle = 'rgba(40,20,8,0.35)'; ctx.fillRect(-cs * 0.26, cs * 0.02, cs * 0.42, cs * 0.07);
+        ctx.fillStyle = 'rgba(255,230,190,0.3)'; ctx.fillRect(-cs * 0.26, -cs * 0.09, cs * 0.42, cs * 0.04);
+        ctx.restore();
+        break;
+      }
+      case 'pistil': // Hibiskus: dunkle Mitte, langer Griffel mit Pollen
+        circle(ctx, cx, cy, cs * 0.17, '#7a0f1e');
+        ctx.strokeStyle = '#f7e9b0'; ctx.lineWidth = cs * 0.05; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + cs * 0.3, cy - cs * 0.3); ctx.stroke();
+        for (let k = 0; k < 5; k++) circle(ctx, cx + cs * (0.22 + k * 0.025), cy - cs * (0.32 - k * 0.035), cs * 0.04, '#f6c63a');
+        break;
+      case 'node': // Bambus: kleiner Blattzweig am Knoten
+        ctx.strokeStyle = '#6f8a2a'; ctx.lineWidth = cs * 0.04; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cx - cs * 0.1, cy + cs * 0.1); ctx.lineTo(cx + cs * 0.12, cy - cs * 0.12); ctx.stroke();
+        leaf(ctx, cx + cs * 0.1, cy - cs * 0.1, cs * 0.36, cs * 0.09, -0.4, '#5fae4a');
+        leaf(ctx, cx + cs * 0.1, cy - cs * 0.1, cs * 0.32, cs * 0.08, -1.5, '#4f9a3e');
+        leaf(ctx, cx - cs * 0.02, cy + cs * 0.02, cs * 0.3, cs * 0.08, 2.6, '#6bb54e');
         break;
       case 'lichen': // Flechten auf der Steinplatte
         for (const [dx, dy, r] of [[-0.15, -0.1, 0.12], [0.12, 0.05, 0.09], [-0.02, 0.18, 0.07], [0.2, -0.18, 0.06]]) {

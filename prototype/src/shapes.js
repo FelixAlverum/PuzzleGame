@@ -7,6 +7,8 @@
   'use strict';
 
   // Raster: X = Zelle, o = Zelle mit Akzent-Deko, . = leer
+  // biome: Form erscheint nur in diesem Biom (Grundformen ohne biome gibt es überall).
+  // Die Extras der Biome sind in Zellenzahl und Gewicht aufeinander abgestimmt, damit kein Biom leichter ist.
   const DEFS = [
     { id: 'kiesel',      mat: 'stone', weight: 6,  variants: 'none',          grid: ['X'] },
     { id: 'samen',       mat: 'bark',  weight: 10, variants: 'rotate',        grid: ['XX'] },
@@ -16,17 +18,28 @@
     { id: 'baumstamm',   mat: 'wood',  weight: 3,  variants: 'rotate',        grid: ['oXXXo'], accent: 'rings' },
     { id: 'moospolster', mat: 'moss',  weight: 8,  variants: 'none',          grid: ['XX', 'XX'] },
     { id: 'felsplatte',  mat: 'stone', weight: 2,  variants: 'none',          grid: ['XXX', 'XoX', 'XXX'], accent: 'lichen' },
-    { id: 'pilz',        mat: 'bark',  weight: 7,  variants: 'rotate',        grid: ['ooo', '.X.'], accent: 'cap' },
-    { id: 'bluete',      mat: 'petal', weight: 4,  variants: 'none',          grid: ['.X.', 'XoX', '.X.'], accent: 'stamen' },
-    { id: 'tulpe',       mat: 'petal', weight: 3,  variants: 'rotate',        grid: ['X.X', 'XXX', '.o.'], accent: 'stem' },
     { id: 'ranke',       mat: 'leaf',  weight: 4,  variants: 'rotate',        grid: ['X..', 'XX.', '.XX'] },
     { id: 'zaunecke',    mat: 'wood',  weight: 5,  variants: 'rotate',        grid: ['X..', 'X..', 'XXX'] },
     { id: 'wurzel',      mat: 'bark',  weight: 3,  variants: 'rotate',        grid: ['.X.', 'XXX', 'X.X'] },
     { id: 'farnwedel',   mat: 'leaf',  weight: 2,  variants: 'rotate+mirror', grid: ['.X', 'XX', '.X', 'XX'] },
     { id: 'laubblatt',   mat: 'leaf',  weight: 2,  variants: 'rotate',        grid: ['.XX', 'XXX', 'XX.'] },
+
+    // Wiese
+    { id: 'pilz',         biome: 'meadow',  mat: 'bark',     weight: 7, variants: 'rotate', grid: ['ooo', '.X.'], accent: 'cap' },
+    { id: 'bluete',       biome: 'meadow',  mat: 'petal',    weight: 4, variants: 'none',   grid: ['.X.', 'XoX', '.X.'], accent: 'stamen' },
+    { id: 'tulpe',        biome: 'meadow',  mat: 'petal',    weight: 3, variants: 'rotate', grid: ['X.X', 'XXX', '.o.'], accent: 'stem' },
+    // Teich
+    { id: 'schilf',       biome: 'pond',    mat: 'reed',     weight: 7, variants: 'rotate', grid: ['XXX', '.X.'] },
+    { id: 'seerose',      biome: 'pond',    mat: 'lily',     weight: 4, variants: 'none',   grid: ['.X.', 'XoX', '.X.'], accent: 'lotus' },
+    { id: 'rohrkolben',   biome: 'pond',    mat: 'reed',     weight: 3, variants: 'rotate', grid: ['o.o', 'XXX', '.X.'], accent: 'cattail' },
+    // Tropen
+    { id: 'bananenblatt', biome: 'tropics', mat: 'palm',     weight: 7, variants: 'rotate', grid: ['XXX', '.X.'] },
+    { id: 'hibiskus',     biome: 'tropics', mat: 'hibiscus', weight: 4, variants: 'none',   grid: ['.X.', 'XoX', '.X.'], accent: 'pistil' },
+    { id: 'bambus',       biome: 'tropics', mat: 'bamboo',   weight: 3, variants: 'rotate', grid: ['X.X', 'XoX', '..X'], accent: 'node' },
   ];
 
-  const MATERIALS = ['wood', 'stone', 'moss', 'leaf', 'petal', 'bark'];
+  const BIOMES = ['meadow', 'pond', 'tropics'];
+  const MATERIALS = ['wood', 'stone', 'moss', 'leaf', 'petal', 'bark', 'reed', 'lily', 'palm', 'hibiscus', 'bamboo'];
 
   function normalize(cells) {
     const minR = Math.min(...cells.map(p => p.r));
@@ -67,6 +80,8 @@
   });
 
   const BY_ID = Object.fromEntries(SHAPES.map(s => [s.id, s]));
+  const POOLS = Object.fromEntries(BIOMES.map(b => [b, SHAPES.filter(s => !s.biome || s.biome === b)]));
+  const pool = biome => POOLS[biome] || POOLS[BIOMES[0]];
 
-  return { SHAPES, BY_ID, MATERIALS };
+  return { SHAPES, BY_ID, MATERIALS, BIOMES, pool };
 });

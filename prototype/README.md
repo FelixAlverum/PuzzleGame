@@ -8,7 +8,8 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 
 | Parameter | Wirkung |
 |---|---|
-| `?autoplay` | Ein gieriger Bot spielt selbst |
+| `?autoplay` | Ein gieriger Bot spielt selbst (ohne Menü) |
+| `?biome=pond&size=10` | Startet direkt in einem Modus (`meadow`/`pond`/`tropics`, `6`/`8`/`10`) |
 | `?debug` | Zustand unter `window.__dbg` für automatisierte Tests |
 | `?lang=fr` | Sprache erzwingen (`de`, `en`, `fr`, `es`, `ru`) |
 
@@ -25,12 +26,23 @@ Höchstens die letzten 3 Züge lassen sich zurücknehmen; Parken zählt als Zug.
 An YouTube geht nur der Rekord, der sich nicht mehr zurücknehmen lässt (der volle Rekord bei „Neu pflanzen“).
 Der Verlauf wird nicht gespeichert und endet mit „Neu pflanzen“.
 
+## Menü, Biome, Statistik, Einstellungen
+Beim Start erscheint das Menü: Biom wählen – **Wiese**, **Teich** oder **Tropen**. Das Biom gilt für die ganze Runde und bringt
+eigenen Hintergrund, Rahmen, Garten, Musik, Atmosphäre und **3 Extra-Formen** (Wiese: Pilz, Blüte, Tulpe · Teich: Schilf, Seerose,
+Rohrkolben · Tropen: Bananenblatt, Hibiskus, Bambus). Die übrigen 13 Grundformen gibt es überall.
+Im Spiel führt ≡ oben links (oder `M`/`Esc`) zurück ins Menü; der Lauf bleibt gespeichert – je Biom und Feldgröße einer.
+
+- **Statistik:** Spiele, gelegte Formen, höchste und niedrigste Punktzahl je Biom und Feldgröße, dazu Summen.
+  Als Spiel zählt nur eine Runde mit Game Over; „Zug zurück“ nimmt auch die Statistik zurück.
+- **Anleitung:** Worum es geht, wie die Punkte entstehen (mit Beispiel), die Biome mit ihren Extra-Formen, Steuerung.
+- **Einstellungen:** Musik / Soundeffekte / Atmosphäre (0–100 %), Feldgröße 6×6 / 8×8 / 10×10, Sprache (Deutsch / English / 中文, mit Flaggen).
+  Ohne Auswahl gilt die Sprache von YouTube bzw. des Browsers.
+
 ## Garten
-Jede aufgelöste Linie lässt eine Pflanze wachsen. Sind alle 5 erblüht, folgt der nächste Garten; die Themen wechseln reihum:
-**Wiese** (Mohn, Sonnenblume, …), **Teich** (Seerose, Lotus, Sumpf-Schwertlilie, Rohrkolben, Hechtkraut) und
-**Tropen** (Hibiskus, Strelitzie, Orchidee, Frangipani, Fackelingwer). Hintergrund und Garten-Boden passen sich dem Thema an.
-Ab dem ersten erblühten Garten erscheint oben rechts im Garten ↻ zum kompletten Zurücksetzen (mit Rückfrage).
-Züge auf dem Feld bleiben danach zurücknehmbar, der Garten bleibt dabei zurückgesetzt.
+Jede aufgelöste Linie lässt eine Pflanze wachsen. Sind alle 5 erblüht, folgt der nächste Garten mit der nächsten Pflanzenart.
+Jedes Biom hat seinen eigenen Garten: **Wiese** (Mohn, Sonnenblume, …), **Teich** (Seerose, Lotus, Sumpf-Schwertlilie, Rohrkolben, Hechtkraut),
+**Tropen** (Hibiskus, Strelitzie, Orchidee, Frangipani, Fackelingwer).
+Ab dem ersten erblühten Garten erscheint oben rechts im Garten ↻ zum Zurücksetzen des Gartens dieses Bioms (mit Rückfrage).
 
 ## Docker
 Öffentliches Image auf Docker Hub: [`alverum/puzzlegame`](https://hub.docker.com/r/alverum/puzzlegame) (amd64 + arm64).
@@ -46,7 +58,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.2
 
 ## Tests
 ```
-node --test prototype/tests/logic.test.js
+node --test prototype/tests/logic.test.js prototype/tests/i18n.test.js
 ```
 
 ## Aufbau
@@ -56,8 +68,10 @@ node --test prototype/tests/logic.test.js
 | `src/logic.js` | Spiellogik (pur, deterministisch): Platzieren, Auflösen, Punkte, Generator, Garten |
 | `src/materials.js` | Prozedurale Texturen, Zeichnen der Formen mit Auto-Tiling |
 | `src/fx.js` | Partikel und schwebende Texte |
-| `src/garden.js` | Garten-Anzeige (Meta-Fortschritt) |
-| `src/audio.js` | Synthetisierte Sounds (Web Audio) |
+| `src/garden.js` | Garten-Anzeige (Meta-Fortschritt), Biom-Themen |
+| `src/audio.js` | Synthetisierte Sounds, Musik und Atmosphäre je Biom (Web Audio), Kanäle Musik/Effekte/Atmosphäre |
+| `src/menu.js` | Menü, Anleitung, Statistik, Einstellungen (HTML-Overlay) |
+| `src/i18n.js` | Alle Texte in Deutsch, Englisch, Chinesisch |
 | `src/yt.js` | Hülle um das YouTube Playables SDK, lokal mit localStorage als Fallback |
 | `src/main.js` | Layout, Eingabe, Loop, Rendering, Lebenszyklus |
 
