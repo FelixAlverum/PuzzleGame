@@ -11,9 +11,19 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 | `?autoplay` | Ein gieriger Bot spielt selbst (ohne Menü) |
 | `?biome=pond&size=10` | Startet direkt in einem Modus (`meadow`/`pond`/`tropics`, `6`/`8`/`10`) |
 | `?debug` | Zustand unter `window.__dbg` für automatisierte Tests |
+| `?lang=fr` | Sprache erzwingen (`de`, `en`, `fr`, `es`, `ru`) |
 
-Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`3` wählen, Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
-Zug zurücknehmen: Knopf ↶ oben links (Zahl = verfügbare Schritte, bis zu 100 pro Runde) oder Taste `Z`/`Backspace` – auch nach Game Over.
+Sprachen: Deutsch, Englisch, Französisch, Spanisch, Russisch – gewählt nach YouTube- bzw. Browsersprache, sonst Englisch.
+
+Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`4` wählen (`4` = Reservefeld), Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
+
+**Reservefeld:** Eine Form in das gestrichelte Feld neben der Ablage ziehen (Tastatur: Form wählen, dann `H`), um sie für später zu parken.
+Liegt dort schon eine, werden beide getauscht. Von dort lässt sie sich wie jede andere Form aufs Beet ziehen.
+Wird die letzte Form der Ablage geparkt, füllt sich die Ablage neu.
+
+**Zug zurücknehmen:** Knopf ↶ oben links (Zahl = verfügbare Schritte) oder Taste `Z`/`Backspace` – auch nach Game Over.
+Höchstens die letzten 3 Züge lassen sich zurücknehmen; Parken zählt als Zug. Punkte, Rekord und Garten springen mit zurück.
+An YouTube geht nur der Rekord, der sich nicht mehr zurücknehmen lässt (der volle Rekord bei „Neu pflanzen“).
 Der Verlauf wird nicht gespeichert und endet mit „Neu pflanzen“.
 
 ## Menü, Biome, Statistik, Einstellungen
@@ -43,7 +53,7 @@ Danach im Browser `http://localhost:8080` öffnen. Ausgeliefert von nginx (unpri
 
 Neue Version veröffentlichen (im Ordner `prototype`, Version anpassen):
 ```
-docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.1.0 -t alverum/puzzlegame:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.2.0 -t alverum/puzzlegame:latest --push .
 ```
 
 ## Tests

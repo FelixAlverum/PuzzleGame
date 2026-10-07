@@ -50,14 +50,16 @@
       o.header = { x: x0, y: y0, w: B, h: B * 0.12 };
       o.garden = { x: x0, y: y0 + B * 0.13, w: B, h: B * 0.25 };
       o.board = { x: x0, y: y0 + B * 0.4, size: B };
-      o.tray = [0, 1, 2].map(i => ({ x: x0 + i * B / 3, y: y0 + B * 1.42, w: B / 3, h: B * 0.38 }));
+      o.tray = [0, 1, 2].map(i => ({ x: x0 + i * B * 0.25, y: y0 + B * 1.42, w: B * 0.25, h: B * 0.38 }));
+      o.hold = { x: x0 + B * 0.78, y: y0 + B * 1.46, w: B * 0.22, h: B * 0.3 };
     } else {
       const B = landscapeB, x0 = (w - B * 1.95) / 2, y0 = (h - B) / 2;
       o.B = B;
       o.header = { x: x0, y: y0, w: B * 0.55, h: B * 0.2 };
       o.garden = { x: x0, y: y0 + B * 0.45, w: B * 0.55, h: B * 0.55 };
       o.board = { x: x0 + B * 0.59, y: y0, size: B };
-      o.tray = [0, 1, 2].map(i => ({ x: x0 + B * 1.62, y: y0 + i * B / 3, w: B * 0.33, h: B / 3 }));
+      o.tray = [0, 1, 2].map(i => ({ x: x0 + B * 1.62, y: y0 + i * B * 0.25, w: B * 0.33, h: B * 0.25 }));
+      o.hold = { x: x0 + B * 1.64, y: y0 + B * 0.78, w: B * 0.29, h: B * 0.22 };
     }
     const f = o.B * 0.035;
     o.frame = f;
@@ -163,15 +165,21 @@
   const resetButton = () => { const R = L.garden, r = Math.max(11, R.h * 0.1); return { x: R.x + R.w - r * 1.5, y: R.y + r * 1.5, r }; };
   const canResetGarden = () => garden.level >= 1;   // erst, wenn der erste Garten erblüht ist
 
+  // Zellgröße einer Form in ihrem Slot: kleine Formen etwas größer, lange passen trotzdem hinein
+  function traySize(slot, piece) {
+    const s = L.slots[slot];
+    return Math.min(L.cs * 0.55, s.w * 0.88 / Math.max(piece.w, 4), s.h * 0.88 / Math.max(piece.h, 4));
+  }
+
   function trayOrigin(slot, piece, size) {
-    const s = L.tray[slot];
+    const s = L.slots[slot];
     return { x: s.x + s.w / 2 - piece.w * size / 2, y: s.y + s.h / 2 - piece.h * size / 2 };
   }
 
   // Ziehen: Form schwebt bei Touch über dem Finger, damit sie nicht verdeckt wird
   function dragGeom(d, cs) {
     const k = easeOut(clamp((clock - d.t0) / 0.12));
-    const size = cs != null ? cs : lerp(L.trayCs, L.cs, k);
+    const size = cs != null ? cs : lerp(traySize(d.slot, d.piece), L.cs, k);
     const lift = d.touch ? L.cs * 0.7 : 0;
     const p = d.piece;
     return {
@@ -191,6 +199,12 @@
   }
 
   // --- Spielaktionen ---------------------------------------------------------------------
+
+  // Stand vor einem Zug merken – inklusive Rekord, damit Zurücknehmen ihn nicht aufbläht
+  const remember = () => Logic.pushHistory(history, { game, garden, best, newBestShown });
+  // Rekord, der sich nicht mehr zurücknehmen lässt (nur der geht an YouTube)
+  const committedBest = () => { const h = Logic.peekHistory(history, 0); return h ? h.best : best; };
+  const SLOTS = [0, 1, 2, Logic.HOLD];
 
   function tryPlace(slot, r, c) {
     const before = JSON.stringify({ game, garden, stat });
@@ -214,7 +228,7 @@
     over = null; drag = null; returning = null; kb = null; lastPlaced = null;
     dying = []; drops.clear(); FX.reset();
     gardenView.hold = 0;
-    game.tray.forEach((it, i) => { if (JSON.stringify(it) !== trayBefore[i]) trayPop[i] = clock; });
+    SLOTS.forEach(i => { if (JSON.stringify(Logic.itemAt(game, i)) !== slotsBefore[i]) trayPop[i] = clock; });
     Sound.pickup();
     saveDirty = true;
     return true;
@@ -245,6 +259,13 @@
           hintDone = true;
           break;
 
+        case 'held':
+          trayPop[Logic.HOLD] = clock;
+          if (ev.swapped) trayPop[ev.slot] = clock;
+          Sound.pickup();
+          hintDone = true;
+          break;
+
         case 'cleared': {
           const cr = lastPlaced.reduce((s, c) => s + c.r, 0) / lastPlaced.length;
           const cc = lastPlaced.reduce((s, c) => s + c.c, 0) / lastPlaced.length;
@@ -271,7 +292,7 @@
         }
 
         case 'trayRefilled':
-          trayPop = [clock, clock + 0.07, clock + 0.14];
+          trayPop = [clock, clock + 0.07, clock + 0.14, trayPop[Logic.HOLD]];
           break;
 
         case 'gameOver':
@@ -489,9 +510,9 @@
     if (hitCircle(menuButton(), x, y)) { showMenu(); return; }
     if (hitCircle(undoButton(), x, y)) { undo(); return; }
     if (canResetGarden() && hitCircle(resetButton(), x, y)) { confirm = { t: clock, yes: null, no: null }; kb = null; return; }
-    const slot = L.tray.findIndex(s => inside(s, x, y));
-    if (slot < 0 || !game.tray[slot] || (returning && returning.slot === slot)) return;
-    drag = { slot, piece: Logic.pieceOf(game.tray[slot]), x, y, t0: clock, touch: e.pointerType !== 'mouse', id: e.pointerId, snap: null };
+    const slot = [...L.tray, L.hold].findIndex(s => inside(s, x, y));
+    if (slot < 0 || !Logic.itemAt(game, slot) || (returning && returning.slot === slot)) return;
+    drag = { slot, piece: Logic.pieceOf(Logic.itemAt(game, slot)), x, y, t0: clock, touch: e.pointerType !== 'mouse', id: e.pointerId, snap: null };
     kb = null;
     try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* egal */ }
     Sound.pickup();
@@ -509,6 +530,8 @@
     if (!drag || e.pointerId !== drag.id) return;
     const d = drag;
     drag = null;
+    if (confirm || over) return;
+    if (d.slot !== Logic.HOLD && inside(L.hold, d.x, d.y) && tryHold(d.slot)) return;
     if (d.snap && d.snap.valid && tryPlace(d.slot, d.snap.r, d.snap.c)) return;
     if (d.snap) Sound.invalid();
     const gm = dragGeom(d);
@@ -540,13 +563,13 @@
     }
     if (k === 'Escape') { if (kb) kb = null; else showMenu(); return; }   // Esc nie per preventDefault blockieren
     const select = slot => {
-      const p = Logic.pieceOf(game.tray[slot]);
+      const p = Logic.pieceOf(Logic.itemAt(game, slot));
       kb = { slot, r: Math.floor((N - p.h) / 2), c: Math.floor((N - p.w) / 2) };
       Sound.pickup();
     };
-    if (k >= '1' && k <= '3') {
+    if (k >= '1' && k <= '4') {   // 4 = Reservefeld
       const s = Number(k) - 1;
-      if (game.tray[s]) select(s);
+      if (Logic.itemAt(game, s)) select(s);
       e.preventDefault();
       return;
     }
@@ -557,7 +580,8 @@
       return;
     }
     if (!kb) return;
-    const p = Logic.pieceOf(game.tray[kb.slot]);
+    if (k === 'h' || k === 'H') { if (tryHold(kb.slot)) kb = null; e.preventDefault(); return; }
+    const p = Logic.pieceOf(Logic.itemAt(game, kb.slot));
     if (k === 'ArrowLeft') kb.c = Math.max(0, kb.c - 1);
     else if (k === 'ArrowRight') kb.c = Math.min(N - p.w, kb.c + 1);
     else if (k === 'ArrowUp') kb.r = Math.max(0, kb.r - 1);
@@ -576,7 +600,8 @@
   let botTimer = 1;
   function botMove() {
     let bestMove = null;
-    game.tray.forEach((item, slot) => {
+    SLOTS.forEach(slot => {
+      const item = Logic.itemAt(game, slot);
       if (!item) return;
       const piece = Logic.pieceOf(item);
       for (let r = 0; r <= N - piece.h; r++) {
@@ -589,6 +614,7 @@
       }
     });
     if (bestMove) tryPlace(bestMove.slot, bestMove.r, bestMove.c);
+    else tryHold(game.tray.findIndex(Boolean));   // letzte Form parken → Ablage füllt sich neu
   }
 
   // Entwickler-Hilfe: index.html?debug macht den Zustand für automatisierte Browser-Tests zugänglich
@@ -707,12 +733,12 @@
     ctx.lineTo(x - r * 0.25, y - r * 0.44);
     ctx.lineTo(x - r * 0.25, y + r * 0.08);
     ctx.closePath(); ctx.fill();
-    if (enabled && history.length > 1) {   // wie viele Züge sich zurücknehmen lassen
+    if (enabled) {   // wie viele Züge sich zurücknehmen lassen
       const bx = x + r * 0.75, by = y + r * 0.7, br = r * 0.42;
       ctx.fillStyle = '#5d9a3e';
       ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `800 ${br * (history.length > 9 ? 0.95 : 1.25)}px ${FONT}`;
+      ctx.font = `800 ${br * 1.25}px ${FONT}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(String(history.length), bx, by + br * 0.05);
     }
@@ -744,7 +770,7 @@
     ctx.fillStyle = textColor;
     ctx.font = `800 ${R.h * 0.42}px ${FONT}`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(label, R.x + R.w / 2, R.y + R.h / 2);
+    ctx.fillText(label, R.x + R.w / 2, R.y + R.h / 2, R.w - R.h * 0.6);
   }
 
   function card(cx, cy, w, h) {
@@ -769,7 +795,7 @@
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#4a3424';
     ctx.font = `800 ${w * 0.075}px ${FONT}`;
-    ctx.fillText(S.resetTitle, cx, y + h * 0.2);
+    ctx.fillText(S.resetTitle, cx, y + h * 0.2, w * 0.9);
     ctx.fillStyle = 'rgba(80,60,35,0.85)';
     ctx.font = `700 ${w * 0.042}px ${FONT}`;
     ctx.fillText(S.resetText, cx, y + h * 0.4, w * 0.9);
@@ -784,8 +810,8 @@
 
   function currentPreview() {
     if (drag && drag.snap && drag.snap.valid) return { piece: drag.piece, r: drag.snap.r, c: drag.snap.c, valid: true };
-    if (kb && game.tray[kb.slot]) {
-      const piece = Logic.pieceOf(game.tray[kb.slot]);
+    if (kb && Logic.itemAt(game, kb.slot)) {
+      const piece = Logic.pieceOf(Logic.itemAt(game, kb.slot));
       return { piece, r: kb.r, c: kb.c, valid: Logic.canPlace(game.board, piece, kb.r, kb.c) };
     }
     return null;
@@ -844,12 +870,33 @@
     }
   }
 
+  // Reservefeld: gestrichelter Rahmen mit Beschriftung, leuchtet beim Darüberziehen
+  function drawHoldSlot() {
+    const R = L.hold, rr = Math.min(R.w, R.h) * 0.14;
+    const p = new Path2D(); Mat.rrect(p, R.x + R.w * 0.05, R.y + R.h * 0.05, R.w * 0.9, R.h * 0.9, [rr, rr, rr, rr]);
+    const target = drag && drag.slot !== Logic.HOLD && inside(R, drag.x, drag.y);
+    ctx.save();
+    ctx.fillStyle = target ? 'rgba(255,248,200,0.55)' : 'rgba(255,255,255,0.14)';
+    ctx.fill(p);
+    ctx.setLineDash([L.B * 0.015, L.B * 0.012]);
+    ctx.strokeStyle = target ? 'rgba(194,127,34,0.9)' : 'rgba(110,80,45,0.45)';
+    ctx.lineWidth = Math.max(1, L.B * 0.005);
+    ctx.stroke(p);
+    ctx.setLineDash([]);
+    ctx.font = `700 ${L.B * 0.026}px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(80,60,35,0.7)';
+    ctx.fillText(S.hold, R.x + R.w / 2, R.y + R.h * 0.93, R.w * 0.85);
+    ctx.restore();
+  }
+
   function drawTray() {
-    for (let i = 0; i < 3; i++) {
-      const item = game.tray[i];
+    drawHoldSlot();
+    for (const i of SLOTS) {
+      const item = Logic.itemAt(game, i);
       if (!item || (drag && drag.slot === i) || (returning && returning.slot === i)) continue;
       const piece = Logic.pieceOf(item);
-      const s = L.tray[i], size = L.trayCs;
+      const s = L.slots[i], size = traySize(i, piece);
       const k = clamp((clock - trayPop[i]) / 0.3);
       const pop = k < 1 ? easeOut(k) * (1 + 0.15 * Math.sin(k * Math.PI)) : 1;
       if (pop <= 0) continue;
@@ -874,8 +921,9 @@
     }
     if (returning) {
       const k = easeOut(clamp((clock - returning.t0) / 0.2));
-      const to = trayOrigin(returning.slot, returning.piece, L.trayCs);
-      const size = lerp(returning.size, L.trayCs, k);
+      const ts = traySize(returning.slot, returning.piece);
+      const to = trayOrigin(returning.slot, returning.piece, ts);
+      const size = lerp(returning.size, ts, k);
       Mat.renderCells(ctx, cellsOf(returning.piece), lerp(returning.x, to.x, k), lerp(returning.y, to.y, k), size);
     }
   }
@@ -897,12 +945,12 @@
 
     ctx.font = `700 ${L.B * 0.038}px ${FONT}`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const tw = ctx.measureText(S.hint).width + L.B * 0.06, th = L.B * 0.07;
+    const tw = Math.min(ctx.measureText(S.hint).width + L.B * 0.06, I.w * 0.95), th = L.B * 0.07;
     const tx = I.x + I.w / 2, ty = I.y + I.h * 0.3;
     const pill = new Path2D(); Mat.rrect(pill, tx - tw / 2, ty - th / 2, tw, th, [th / 2, th / 2, th / 2, th / 2]);
     ctx.fillStyle = 'rgba(255,250,235,0.9)'; ctx.fill(pill);
     ctx.fillStyle = '#4a3424';
-    ctx.fillText(S.hint, tx, ty);
+    ctx.fillText(S.hint, tx, ty, tw - L.B * 0.04);
   }
 
   function drawGameOver() {
@@ -923,7 +971,7 @@
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#4a3424';
     ctx.font = `800 ${w * 0.075}px ${FONT}`;
-    ctx.fillText(S.over, cx, y + h * 0.17);
+    ctx.fillText(S.over, cx, y + h * 0.17, w * 0.9);
     ctx.fillStyle = '#2f5d2a';
     ctx.font = `800 ${w * 0.15}px ${FONT}`;
     ctx.fillText(String(game.score), cx, y + h * 0.4);

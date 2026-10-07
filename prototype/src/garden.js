@@ -340,7 +340,7 @@
     ctx.font = `700 ${Math.max(10, Math.min(R.h * 0.11, R.w * 0.055))}px ${root.FONT}`;
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillStyle = th.label;
-    ctx.fillText(label, R.x + R.h * 0.08, R.y + R.h * 0.07);
+    ctx.fillText(label, R.x + R.h * 0.08, R.y + R.h * 0.07, R.w - R.h * 0.45);   // Platz für den Reset-Knopf
     ctx.restore();
   }
 

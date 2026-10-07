@@ -145,7 +145,7 @@ test('restore akzeptiert gültige und verwirft kaputte Spielstände', () => {
   assert.equal(Logic.restoreGarden({ level: 2, plots: [9] }), null);
 });
 
-test('Zurücknehmen stellt Runde und Garten vor dem Zug wieder her', () => {
+test('Zurücknehmen stellt Runde, Garten und Rekord vor dem Zug wieder her', () => {
   const s = emptyGame();
   fillRowExcept(s, 0, 0);
   fill(s, 5, 5);
@@ -161,20 +161,31 @@ test('Zurücknehmen stellt Runde und Garten vor dem Zug wieder her', () => {
 
   const one = Logic.popHistory(history);
   assert.equal(one.game.score, 11);
+  assert.equal(one.best, 11);
   assert.equal(one.game.tray[1].shape, 'kiesel');
   const two = Logic.popHistory(history);
   assert.deepEqual(two.game, before);
   assert.equal(two.garden.total, 0);
+  assert.equal(two.best, 0);
   assert.equal(Logic.popHistory(history), null, 'leerer Verlauf');
 });
 
-test('Verlauf ist begrenzt', () => {
+test('Höchstens 3 Züge lassen sich zurücknehmen', () => {
   const history = [];
   const s = Logic.newGame(3), g = Logic.newGarden();
   for (let i = 0; i < 5; i++) { s.score = i; Logic.pushHistory(history, { game: s, garden: g }, 3); }
   assert.equal(history.length, 3);
-  assert.equal(Logic.popHistory(history).game.score, 4);
-  assert.equal(JSON.parse(history[0]).game.score, 2);
+  assert.equal(Logic.peekHistory(history, 0).best, 2, 'ältester noch zurücknehmbarer Stand');
+  assert.equal(Logic.popHistory(history).best, 4);
+});
+
+test('mapHistory ersetzt den Garten in allen Ständen', () => {
+  const history = [];
+  Logic.pushHistory(history, { garden: { level: 4 }, best: 1 });
+  Logic.pushHistory(history, { garden: { level: 5 }, best: 2 });
+  Logic.mapHistory(history, h => ({ ...h, garden: Logic.newGarden() }));
+  assert.equal(Logic.peekHistory(history, 0).garden.level, 0);
+  assert.equal(Logic.popHistory(history).best, 2);
 });
 
 test('Feldgröße: 6×6 und 10×10 lösen Linien ihrer eigenen Länge auf', () => {

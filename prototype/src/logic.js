@@ -54,7 +54,10 @@
     return false;
   }
 
-  const anyMove = state => state.tray.some(it => it && fits(state.board, pieceOf(it)));
+  const itemAt = (state, slot) => (slot === HOLD ? state.hold : state.tray[slot]) || null;
+  const anyMove = state => [...state.tray, state.hold].some(it => it && fits(state.board, pieceOf(it)));
+  // Steckt die Runde fest? Ausnahme: Die letzte Form ins leere Ablagefeld legen füllt die Ablage neu.
+  const stuck = state => !anyMove(state) && !(!state.hold && state.tray.filter(Boolean).length === 1);
 
   function fullLines(board) {
     const N = sizeOf(board);
@@ -138,7 +141,7 @@
   }
 
   function place(state, slot, r0, c0) {
-    const item = state.tray[slot];
+    const item = itemAt(state, slot);
     if (state.over || !item) return null;
     const piece = pieceOf(item);
     if (!canPlace(state.board, piece, r0, c0)) return null;
@@ -152,7 +155,7 @@
       state.board[r * N + c] = cell;
       return { r, c, ...cell };
     });
-    state.tray[slot] = null;
+    if (slot === HOLD) state.hold = null; else state.tray[slot] = null;
     state.score += cells.length;
     events.push({ type: 'placed', slot, pid, mat: piece.mat, cells, points: cells.length });
 
@@ -186,11 +189,15 @@
       }
     }
 
+    return finishMove(state, events);
+  }
+
+  function finishMove(state, events) {
     if (state.tray.every(t => !t)) {
       refill(state);
       events.push({ type: 'trayRefilled' });
     }
-    if (!anyMove(state)) {
+    if (stuck(state)) {
       state.over = true;
       events.push({ type: 'gameOver', score: state.score });
     }
@@ -209,7 +216,8 @@
     const okItem = it => it === null || (it && pool.includes(Shapes.BY_ID[it.shape]) &&
       Number.isInteger(it.v) && it.v >= 0 && it.v < Shapes.BY_ID[it.shape].variants.length);
     const okCell = c => c === null || (c && Shapes.MATERIALS.includes(c.m) && Number.isInteger(c.p));
-    if (!run.tray.every(okItem) || !run.board.every(okCell)) return null;
+    if (run.hold === undefined) run = { ...run, hold: null };   // Spielstände von vor dem Ablagefeld
+    if (!run.tray.every(okItem) || !okItem(run.hold) || !run.board.every(okCell)) return null;
     if (![run.score, run.combo, run.movesSinceClear, run.rng, run.nextPid].every(Number.isFinite)) return null;
     const state = JSON.parse(JSON.stringify(run));
     state.biome = biome;
@@ -292,6 +300,13 @@
   function popHistory(history) {
     const s = history.pop();
     return s ? JSON.parse(s) : null;
+  }
+
+  const peekHistory = (history, i) => (history[i] ? JSON.parse(history[i]) : null);
+
+  // Alle gespeicherten Stände ändern (z. B. neuer Garten nach einem Reset)
+  function mapHistory(history, fn) {
+    for (let i = 0; i < history.length; i++) history[i] = JSON.stringify(fn(JSON.parse(history[i])));
   }
 
   return {
