@@ -1,4 +1,4 @@
-// Alle Texte des Spiels in Deutsch, Englisch und Chinesisch (vereinfacht).
+// Alle Texte des Spiels in Deutsch, Englisch, Französisch, Spanisch, Russisch und Chinesisch (vereinfacht).
 // Läuft im Browser (window.I18N) und in Node (Test: alle Sprachen haben dieselben Schlüssel).
 (function (root, factory) {
   const api = factory();
@@ -11,7 +11,7 @@
     de: {
       // Spiel (Canvas)
       best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen',
-      newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten', undo: 'Zug zurück',
+      newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten', undo: 'Zug zurück', hold: 'Reserve',
       resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten dieses Bioms beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen',
       name_meadow: 'Wiese', name_pond: 'Teich', name_tropics: 'Tropen',
       // Menü
@@ -32,7 +32,8 @@
         'Ziehe Formen aus dem Korb auf das Beet. Formen lassen sich nicht drehen.',
         'Ist eine Reihe oder Spalte ganz voll, löst sie sich auf – so wird wieder Platz frei.',
         'Jede aufgelöste Linie lässt eine Pflanze in deinem Garten wachsen. Blühen alle 5, beginnt der nächste Garten mit einer neuen Blumenart.',
-        'Das Spiel endet, wenn keine deiner Formen mehr passt. Mit „Zug zurück“ nimmst du Züge zurück – sogar nach dem Game Over.',
+        'Im Reservefeld neben dem Korb kannst du eine Form parken und später legen. Ziehst du eine andere Form darauf, werden beide getauscht.',
+        'Das Spiel endet, wenn keine deiner Formen mehr passt. Mit „Zug zurück“ nimmst du bis zu 3 Züge zurück – sogar nach dem Game Over.',
         'Die Spielfeldgröße (6×6, 8×8, 10×10) stellst du in den Einstellungen ein. Jede Größe hat eigene Rekorde und eine eigene Statistik.',
       ],
       g_scoreH: 'So entstehen die Punkte',
@@ -49,15 +50,15 @@
       g_bio_tropics: 'Bambusrahmen, beschwingte Marimba, exotische Vögel und Zikaden. Im Garten wachsen Hibiskus, Strelitzie, Orchidee, Frangipani und Fackelingwer.',
       g_controlsH: 'Steuerung',
       g_controls: [
-        'Touch / Maus: Form aufs Beet ziehen',
-        'Tastatur: 1–3 Form wählen, Pfeiltasten bewegen, Enter legen, Esc abbrechen',
+        'Touch / Maus: Form aufs Beet ziehen – oder aufs Reservefeld',
+        'Tastatur: 1–3 Form wählen, 4 Reservefeld, Pfeiltasten bewegen, Enter legen, H parken, Esc abbrechen',
         'Z oder Rücktaste: Zug zurück · M oder Esc: Menü',
       ],
     },
 
     en: {
       best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again',
-      newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden', undo: 'Undo move',
+      newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden', undo: 'Undo move', hold: 'Hold',
       resetTitle: 'Reset garden?', resetText: 'All plants and gardens of this biome start over.', resetYes: 'Reset', resetNo: 'Cancel',
       name_meadow: 'Meadow', name_pond: 'Pond', name_tropics: 'Tropics',
       title: 'Cozy Garden', choose: 'Choose your biome', play: 'Play', cont: 'Continue', newGame: 'New game', sure: 'Sure? Tap again',
@@ -74,7 +75,8 @@
         'Drag pieces from the basket onto the garden bed. Pieces can’t be rotated.',
         'Fill a whole row or column and it clears – that makes room for more pieces.',
         'Every cleared line grows a plant in your garden. When all 5 bloom, the next garden begins with a new kind of flower.',
-        'The game ends when none of your pieces fits anymore. “Undo move” takes moves back – even after game over.',
+        'The hold slot next to the basket keeps one piece for later. Drag another piece onto it to swap them.',
+        'The game ends when none of your pieces fits anymore. “Undo move” takes back up to 3 moves – even after game over.',
         'Choose the field size (6×6, 8×8, 10×10) in the settings. Each size keeps its own records and stats.',
       ],
       g_scoreH: 'How your score is formed',
@@ -91,15 +93,15 @@
       g_bio_tropics: 'Bamboo frame, upbeat marimba, exotic birds and cicadas. Your garden grows hibiscus, bird of paradise, orchids, frangipani and torch ginger.',
       g_controlsH: 'Controls',
       g_controls: [
-        'Touch / mouse: drag a piece onto the bed',
-        'Keyboard: 1–3 select a piece, arrow keys move, Enter places, Esc cancels',
+        'Touch / mouse: drag a piece onto the bed – or onto the hold slot',
+        'Keyboard: 1–3 select a piece, 4 the hold slot, arrow keys move, Enter places, H holds, Esc cancels',
         'Z or Backspace: undo · M or Esc: menu',
       ],
     },
 
     zh: {
       best: '最高分', combo: '连击', hint: '把方块拖到花圃上', over: '花园休息了', again: '重新种植',
-      newBest: '新纪录！', bloom: '花园开花了！', fresh: '全新土壤！', garden: '花园', undo: '撤销一步',
+      newBest: '新纪录！', bloom: '花园开花了！', fresh: '全新土壤！', garden: '花园', undo: '撤销一步', hold: '暂存',
       resetTitle: '重置花园？', resetText: '这个生物群系的所有植物和花园都将重新开始。', resetYes: '重置', resetNo: '取消',
       name_meadow: '草地', name_pond: '池塘', name_tropics: '热带',
       title: 'Cozy Garden', choose: '选择你的生物群系', play: '开始', cont: '继续', newGame: '新游戏', sure: '确定吗？再点一次',
@@ -116,7 +118,8 @@
         '把篮子里的方块拖到花圃上。方块不能旋转。',
         '填满一整行或一整列，它就会消除，腾出新的空间。',
         '每消除一行，你的花园里就会长出一株植物。5 株全部开花后，下一个花园开始，并换上新的花种。',
-        '当所有方块都放不下时，游戏结束。用“撤销一步”可以收回操作——游戏结束后也可以。',
+        '篮子旁边的暂存格可以先放一个方块，稍后再用。把另一个方块拖上去，两个方块就会交换。',
+        '当所有方块都放不下时，游戏结束。用“撤销一步”最多可以收回 3 步——游戏结束后也可以。',
         '棋盘大小（6×6、8×8、10×10）可以在设置中调整。每种大小都有独立的纪录和统计。',
       ],
       g_scoreH: '分数怎么算',
@@ -133,25 +136,152 @@
       g_bio_tropics: '竹子边框，欢快的马林巴琴、异域鸟鸣和蝉声。花园里生长着扶桑花、天堂鸟、兰花、鸡蛋花和火炬姜。',
       g_controlsH: '操作',
       g_controls: [
-        '触屏 / 鼠标：把方块拖到花圃上',
-        '键盘：1–3 选择方块，方向键移动，Enter 放置，Esc 取消',
+        '触屏 / 鼠标：把方块拖到花圃上，或拖到暂存格',
+        '键盘：1–3 选择方块，4 选择暂存格，方向键移动，Enter 放置，H 暂存，Esc 取消',
         'Z 或退格键：撤销 · M 或 Esc：菜单',
+      ],
+    },
+
+    fr: {
+      best: 'Record', combo: 'Combo', hint: 'Glisse une pièce sur le parterre', over: 'Le jardin se repose', again: 'Replanter',
+      newBest: 'Nouveau record\u202f!', bloom: 'Ton jardin est en fleurs\u202f!', fresh: 'Terre fraîche\u202f!', garden: 'Jardin', undo: 'Annuler le coup', hold: 'Réserve',
+      resetTitle: 'Réinitialiser le jardin\u202f?', resetText: 'Toutes les plantes et tous les jardins de ce biome repartent de zéro.', resetYes: 'Réinitialiser', resetNo: 'Annuler',
+      name_meadow: 'Prairie', name_pond: 'Étang', name_tropics: 'Tropiques',
+      title: 'Cozy Garden', choose: 'Choisis ton biome', play: 'Jouer', cont: 'Continuer', newGame: 'Nouvelle partie', sure: 'Sûr\u202f? Touche encore',
+      field: 'Plateau', guide: 'Guide', stats: 'Statistiques', settings: 'Réglages', back: 'Retour',
+      desc_meadow: 'Champignons, fleurs et tulipes', desc_pond: 'Nénuphars, roseaux et massettes', desc_tropics: 'Hibiscus, bambou et feuilles de bananier',
+      total: 'Tous les biomes', sum: 'Total', games: 'Parties jouées', tiles: 'Pièces posées', bestScore: 'Meilleur score', worstScore: 'Score le plus bas',
+      gamesShort: 'Parties', tilesShort: 'Pièces', bestScoreShort: 'Meilleur', worstScoreShort: 'Plus bas', fieldShort: 'Plateau',
+      resetStats: 'Réinitialiser les statistiques',
+      sound: 'Son', music: 'Musique', sfx: 'Effets sonores', amb: 'Ambiance', muted: 'Le son est actuellement coupé dans YouTube.',
+      fieldSize: 'Taille du plateau', sizeNote: 'Chaque taille a ses propres records, statistiques et partie sauvegardée.',
+      language: 'Langue',
+      g_aboutH: 'De quoi s’agit-il\u202f?',
+      g_about: [
+        'Glisse les pièces du panier sur le parterre. Les pièces ne peuvent pas être tournées.',
+        'Remplis une ligne ou une colonne entière et elle disparaît – cela libère de la place.',
+        'Chaque ligne effacée fait pousser une plante dans ton jardin. Quand les 5 sont en fleurs, un nouveau jardin commence avec une nouvelle fleur.',
+        'La case Réserve à côté du panier garde une pièce pour plus tard. Glisses-y une autre pièce pour les échanger.',
+        'La partie se termine quand plus aucune pièce ne rentre. «\u00a0Annuler le coup\u00a0» reprend jusqu’à 3 coups – même après la fin de la partie.',
+        'Choisis la taille du plateau (6×6, 8×8, 10×10) dans les réglages. Chaque taille a ses propres records et statistiques.',
+      ],
+      g_scoreH: 'Comment se calcule le score',
+      g_score: [
+        ['Chaque case d’une pièce posée', '+1'], ['1 ligne', '+10'], ['2 lignes à la fois', '+30'],
+        ['3 lignes à la fois', '+60'], ['4 lignes à la fois', '+100'], ['Parterre entièrement vidé (terre fraîche)', '+300'],
+      ],
+      g_combo: 'Combo\u00a0: efface des lignes lors de coups consécutifs pour faire monter le combo. Chaque niveau ajoute 50\u00a0% aux points des lignes\u00a0: combo 2 = ×1,5, combo 3 = ×2, combo 4 = ×2,5 … Le combo survit jusqu’à 2 coups sans effacement.',
+      g_example: 'Exemple\u00a0: une pièce de 4 cases efface 2 lignes pendant le combo 3\u00a0: 4 + 30 × 2 = 64 points.',
+      g_biomesH: 'Les biomes',
+      g_biomes: 'Choisis un biome dans le menu. Il reste le même pendant toute la partie et apporte son propre décor, sa musique, son jardin et 3 pièces spéciales. Toutes les autres pièces apparaissent partout, et les pièces spéciales ont la même taille dans chaque biome – aucun biome n’est plus facile.',
+      g_bio_meadow: 'Cadre en bois, douce musique de kalimba et chants d’oiseaux. Dans ton jardin poussent coquelicots, tournesols, lavande, campanules et marguerites.',
+      g_bio_pond: 'Cadre en pierre, sons de cloches flottants, gouttes d’eau et grenouilles. Dans ton jardin poussent nénuphars, lotus, iris des marais, massettes et pontédéries.',
+      g_bio_tropics: 'Cadre en bambou, marimba entraînant, oiseaux exotiques et cigales. Dans ton jardin poussent hibiscus, oiseaux de paradis, orchidées, frangipaniers et roses de porcelaine.',
+      g_controlsH: 'Commandes',
+      g_controls: [
+        'Tactile / souris\u00a0: glisse une pièce sur le parterre – ou sur la réserve',
+        'Clavier\u00a0: 1–3 choisir une pièce, 4 la réserve, flèches pour déplacer, Entrée pour poser, H pour mettre en réserve, Échap pour annuler',
+        'Z ou Retour arrière\u00a0: annuler · M ou Échap\u00a0: menu',
+      ],
+    },
+
+    es: {
+      best: 'Récord', combo: 'Combo', hint: 'Arrastra una pieza al bancal', over: 'El jardín descansa', again: 'Plantar de nuevo',
+      newBest: '¡Nuevo récord!', bloom: '¡Tu jardín está en flor!', fresh: '¡Tierra fresca!', garden: 'Jardín', undo: 'Deshacer jugada', hold: 'Reserva',
+      resetTitle: '¿Reiniciar el jardín?', resetText: 'Todas las plantas y jardines de este bioma empiezan de cero.', resetYes: 'Reiniciar', resetNo: 'Cancelar',
+      name_meadow: 'Pradera', name_pond: 'Estanque', name_tropics: 'Trópico',
+      title: 'Cozy Garden', choose: 'Elige tu bioma', play: 'Jugar', cont: 'Continuar', newGame: 'Nueva partida', sure: '¿Seguro? Toca otra vez',
+      field: 'Tablero', guide: 'Guía', stats: 'Estadísticas', settings: 'Ajustes', back: 'Volver',
+      desc_meadow: 'Setas, flores y tulipanes', desc_pond: 'Nenúfares, juncos y espadañas', desc_tropics: 'Hibisco, bambú y hojas de plátano',
+      total: 'Todos los biomas', sum: 'Total', games: 'Partidas jugadas', tiles: 'Piezas colocadas', bestScore: 'Puntuación más alta', worstScore: 'Puntuación más baja',
+      gamesShort: 'Partidas', tilesShort: 'Piezas', bestScoreShort: 'Máxima', worstScoreShort: 'Mínima', fieldShort: 'Tablero',
+      resetStats: 'Reiniciar estadísticas',
+      sound: 'Sonido', music: 'Música', sfx: 'Efectos de sonido', amb: 'Ambiente', muted: 'El sonido está silenciado en YouTube.',
+      fieldSize: 'Tamaño del tablero', sizeNote: 'Cada tamaño tiene sus propios récords, estadísticas y partida guardada.',
+      language: 'Idioma',
+      g_aboutH: '¿De qué se trata?',
+      g_about: [
+        'Arrastra piezas de la cesta al bancal. Las piezas no se pueden girar.',
+        'Llena una fila o columna entera y se despejará, dejando sitio para más piezas.',
+        'Cada línea despejada hace crecer una planta en tu jardín. Cuando florecen las 5, empieza el siguiente jardín con una flor nueva.',
+        'La casilla de reserva junto a la cesta guarda una pieza para más tarde. Arrastra otra pieza encima para intercambiarlas.',
+        'La partida termina cuando ya no cabe ninguna pieza. «Deshacer jugada» deshace hasta 3 jugadas, incluso después del final de la partida.',
+        'Elige el tamaño del tablero (6×6, 8×8, 10×10) en los ajustes. Cada tamaño tiene sus propios récords y estadísticas.',
+      ],
+      g_scoreH: 'Cómo se calcula la puntuación',
+      g_score: [
+        ['Cada casilla de una pieza colocada', '+1'], ['1 línea', '+10'], ['2 líneas a la vez', '+30'],
+        ['3 líneas a la vez', '+60'], ['4 líneas a la vez', '+100'], ['Bancal vacío (tierra fresca)', '+300'],
+      ],
+      g_combo: 'Combo: despeja líneas en jugadas seguidas para subir el combo. Cada nivel suma un 50 % a los puntos de línea: combo 2 = ×1,5, combo 3 = ×2, combo 4 = ×2,5… El combo aguanta hasta 2 jugadas sin despejar.',
+      g_example: 'Ejemplo: una pieza de 4 casillas despeja 2 líneas durante el combo 3: 4 + 30 × 2 = 64 puntos.',
+      g_biomesH: 'Los biomas',
+      g_biomes: 'Elige un bioma en el menú. Se mantiene durante toda la partida y trae su propio aspecto, música, jardín y 3 piezas especiales. Las demás piezas aparecen en todas partes, y las piezas especiales tienen el mismo tamaño en cada bioma: ningún bioma es más fácil.',
+      g_bio_meadow: 'Marco de madera, suave música de kalimba y canto de pájaros. En tu jardín crecen amapolas, girasoles, lavanda, campanillas y margaritas.',
+      g_bio_pond: 'Marco de piedra, campanas flotantes, gotas de agua y ranas. En tu jardín crecen nenúfares, lotos, lirios amarillos, espadañas y pontederias.',
+      g_bio_tropics: 'Marco de bambú, marimba alegre, aves exóticas y cigarras. En tu jardín crecen hibiscos, aves del paraíso, orquídeas, frangipanes y bastones del emperador.',
+      g_controlsH: 'Controles',
+      g_controls: [
+        'Táctil / ratón: arrastra una pieza al bancal o a la reserva',
+        'Teclado: 1–3 eligen una pieza, 4 la reserva, flechas para mover, Intro para colocar, H para reservar, Esc para cancelar',
+        'Z o Retroceso: deshacer · M o Esc: menú',
+      ],
+    },
+
+    ru: {
+      best: 'Рекорд', combo: 'Комбо', hint: 'Перетащи фигуру на грядку', over: 'Сад отдыхает', again: 'Посадить снова',
+      newBest: 'Новый рекорд!', bloom: 'Твой сад расцвёл!', fresh: 'Свежая земля!', garden: 'Сад', undo: 'Отменить ход', hold: 'Запас',
+      resetTitle: 'Сбросить сад?', resetText: 'Все растения и сады этого биома начнутся заново.', resetYes: 'Сбросить', resetNo: 'Отмена',
+      name_meadow: 'Луг', name_pond: 'Пруд', name_tropics: 'Тропики',
+      title: 'Cozy Garden', choose: 'Выбери биом', play: 'Играть', cont: 'Продолжить', newGame: 'Новая игра', sure: 'Точно? Нажми ещё раз',
+      field: 'Поле', guide: 'Как играть', stats: 'Статистика', settings: 'Настройки', back: 'Назад',
+      desc_meadow: 'Грибы, цветы и тюльпаны', desc_pond: 'Кувшинки, камыш и рогоз', desc_tropics: 'Гибискус, бамбук и банановые листья',
+      total: 'Все биомы', sum: 'Итого', games: 'Сыграно игр', tiles: 'Поставлено фигур', bestScore: 'Лучший счёт', worstScore: 'Худший счёт',
+      gamesShort: 'Игры', tilesShort: 'Фигуры', bestScoreShort: 'Лучший', worstScoreShort: 'Худший', fieldShort: 'Поле',
+      resetStats: 'Сбросить статистику',
+      sound: 'Звук', music: 'Музыка', sfx: 'Звуковые эффекты', amb: 'Атмосфера', muted: 'Звук сейчас отключён в YouTube.',
+      fieldSize: 'Размер поля', sizeNote: 'У каждого размера свои рекорды, статистика и сохранённая игра.',
+      language: 'Язык',
+      g_aboutH: 'О чём игра?',
+      g_about: [
+        'Перетаскивай фигуры из корзины на грядку. Фигуры нельзя поворачивать.',
+        'Заполни целый ряд или столбец — и он исчезнет, освободив место.',
+        'Каждая убранная линия выращивает растение в твоём саду. Когда расцветут все 5, начнётся новый сад с новым цветком.',
+        'Ячейка «Запас» рядом с корзиной хранит одну фигуру на потом. Перетащи на неё другую фигуру, чтобы поменять их местами.',
+        'Игра заканчивается, когда ни одна фигура больше не помещается. «Отменить ход» возвращает до 3 ходов — даже после конца игры.',
+        'Размер поля (6×6, 8×8, 10×10) выбирается в настройках. У каждого размера свои рекорды и статистика.',
+      ],
+      g_scoreH: 'Как считаются очки',
+      g_score: [
+        ['Каждая клетка поставленной фигуры', '+1'], ['1 линия', '+10'], ['2 линии сразу', '+30'],
+        ['3 линии сразу', '+60'], ['4 линии сразу', '+100'], ['Грядка полностью очищена (свежая земля)', '+300'],
+      ],
+      g_combo: 'Комбо: убирай линии несколько ходов подряд, чтобы растить комбо. Каждый уровень добавляет 50 % к очкам за линии: комбо 2 = ×1,5, комбо 3 = ×2, комбо 4 = ×2,5 … Комбо сохраняется, если пропустить до 2 ходов без линий.',
+      g_example: 'Пример: фигура из 4 клеток убирает 2 линии при комбо 3: 4 + 30 × 2 = 64 очка.',
+      g_biomesH: 'Биомы',
+      g_biomes: 'Выбери биом в меню. Он остаётся на всю игру и приносит свой вид, музыку, сад и 3 особые фигуры. Все остальные фигуры встречаются везде, а особые фигуры в каждом биоме одного размера — ни один биом не проще других.',
+      g_bio_meadow: 'Деревянная рамка, мягкая музыка калимбы и пение птиц. В твоём саду растут маки, подсолнухи, лаванда, колокольчики и ромашки.',
+      g_bio_pond: 'Каменная рамка, парящие звуки колоколов, капли воды и лягушки. В твоём саду растут кувшинки, лотосы, жёлтые ирисы, рогоз и понтедерия.',
+      g_bio_tropics: 'Бамбуковая рамка, весёлая маримба, экзотические птицы и цикады. В твоём саду растут гибискус, стрелиция, орхидеи, франжипани и факельный имбирь.',
+      g_controlsH: 'Управление',
+      g_controls: [
+        'Касание / мышь: перетащи фигуру на грядку или в запас',
+        'Клавиатура: 1–3 — выбрать фигуру, 4 — запас, стрелки — двигать, Enter — поставить, H — в запас, Esc — отмена',
+        'Z или Backspace: отменить ход · M или Esc: меню',
       ],
     },
   };
 
-  const LANGS = ['de', 'en', 'zh'];
+  const LANGS = ['de', 'en', 'fr', 'es', 'ru', 'zh'];
   // Name jeder Sprache in sich selbst (für die Sprachauswahl)
-  const NATIVE = { de: 'Deutsch', en: 'English', zh: '中文' };
+  const NATIVE = { de: 'Deutsch', en: 'English', fr: 'Français', es: 'Español', ru: 'Русский', zh: '中文' };
   // HTML-lang-Attribut
-  const HTML_LANG = { de: 'de', en: 'en', zh: 'zh-CN' };
+  const HTML_LANG = { de: 'de', en: 'en', fr: 'fr', es: 'es', ru: 'ru', zh: 'zh-CN' };
 
-  // Sprachcode von YouTube/Browser (z. B. „de-AT“, „zh-Hans-CN“) → unterstützte Sprache
+  // Sprachcode von YouTube/Browser (z. B. „de-AT“, „zh-Hans-CN“) → unterstützte Sprache, sonst Englisch
   function pick(code) {
-    const c = String(code || '').toLowerCase();
-    if (c.startsWith('de')) return 'de';
-    if (c.startsWith('zh')) return 'zh';
-    return 'en';
+    const c = String(code || '').toLowerCase().slice(0, 2);
+    return LANGS.includes(c) ? c : 'en';
   }
 
   return { STR, LANGS, NATIVE, HTML_LANG, pick };

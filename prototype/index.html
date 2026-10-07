@@ -337,11 +337,18 @@
       color: var(--ink-soft);
     }
 
+    /* Sechs Sprachen: Raster statt Zeile, damit die Knöpfe gleich breit bleiben */
+    #lang-seg {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
     .seg.lang {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 10px;
+      padding: 0 12px;
     }
 
     .flag {

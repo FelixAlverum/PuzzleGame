@@ -17,7 +17,8 @@
   const FRESH_SOIL_BONUS = 300;  // Feld komplett leer geräumt
   const PLOTS = 5;               // Beete im Garten
   const STAGES = 5;              // 0 = Saat … 5 = Blüte
-  const UNDO_LIMIT = 100;        // so viele Züge lassen sich zurücknehmen
+  const HOLD = TRAY;             // Slot-Nummer des Ablagefelds (Zwischenspeicher für eine Form)
+  const UNDO_LIMIT = 3;          // so viele Züge lassen sich höchstens zurücknehmen
 
   // mulberry32 – Zustand liegt im Spielstand, damit Runden reproduzierbar und speicherbar sind
   function rand(state) {
@@ -134,7 +135,7 @@
     const N = SIZES.includes(opts.size) ? opts.size : DEFAULT_SIZE;
     const state = {
       v: 1, biome, board: new Array(N * N).fill(null), tray: [], score: 0, combo: 0,
-      movesSinceClear: 0, rng: seed >>> 0, nextPid: 1, over: false,
+      movesSinceClear: 0, rng: seed >>> 0, nextPid: 1, over: false, hold: null,
     };
     refill(state);
     return state;
@@ -202,6 +203,16 @@
       events.push({ type: 'gameOver', score: state.score });
     }
     return events;
+  }
+
+  // Form aus der Ablage ins Ablagefeld legen; liegt dort schon eine, werden beide getauscht
+  function hold(state, slot) {
+    const item = state.tray[slot];
+    if (state.over || slot === HOLD || !item) return null;
+    const swapped = state.hold;
+    state.tray[slot] = swapped;
+    state.hold = item;
+    return finishMove(state, [{ type: 'held', slot, swapped: !!swapped }]);
   }
 
   // Gespeicherten Lauf prüfen – kaputte oder fremde Daten führen zu einer neuen Runde.
@@ -310,11 +321,11 @@
   }
 
   return {
-    SIZES, DEFAULT_SIZE, BIOMES, TRAY, PLOTS, STAGES, UNDO_LIMIT,
-    sizeOf, pieceOf, canPlace, fits, anyMove, fullLines, previewLines, lineScore,
-    newGame, place, refill, restore,
+    SIZES, DEFAULT_SIZE, BIOMES, TRAY, HOLD, PLOTS, STAGES, UNDO_LIMIT,
+    sizeOf, pieceOf, itemAt, canPlace, fits, anyMove, stuck, fullLines, previewLines, lineScore,
+    newGame, place, hold, refill, restore,
     newGarden, restoreGarden, growGarden,
     statKey, newStat, restoreStat, statPlaced, statGameOver, statTotals,
-    pushHistory, popHistory,
+    pushHistory, popHistory, peekHistory, mapHistory,
   };
 });

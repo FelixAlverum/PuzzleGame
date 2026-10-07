@@ -152,11 +152,11 @@ test('Zurücknehmen stellt Runde, Garten und Rekord vor dem Zug wieder her', () 
   const g = Logic.newGarden();
   const history = [];
   const before = JSON.parse(JSON.stringify(s));
-  Logic.pushHistory(history, { game: s, garden: g });
+  Logic.pushHistory(history, { game: s, garden: g, best: 0 });
   const ev = Logic.place(s, 0, 0, 0);
   Logic.growGarden(g, ev.find(e => e.type === 'cleared').lines);
   assert.equal(g.total, 1);
-  Logic.pushHistory(history, { game: s, garden: g });
+  Logic.pushHistory(history, { game: s, garden: g, best: 11 });
   Logic.place(s, 1, 7, 7);
 
   const one = Logic.popHistory(history);
@@ -172,8 +172,8 @@ test('Zurücknehmen stellt Runde, Garten und Rekord vor dem Zug wieder her', () 
 
 test('Höchstens 3 Züge lassen sich zurücknehmen', () => {
   const history = [];
-  const s = Logic.newGame(3), g = Logic.newGarden();
-  for (let i = 0; i < 5; i++) { s.score = i; Logic.pushHistory(history, { game: s, garden: g }, 3); }
+  for (let i = 0; i < 5; i++) Logic.pushHistory(history, { best: i });
+  assert.equal(Logic.UNDO_LIMIT, 3);
   assert.equal(history.length, 3);
   assert.equal(Logic.peekHistory(history, 0).best, 2, 'ältester noch zurücknehmbarer Stand');
   assert.equal(Logic.popHistory(history).best, 4);
@@ -248,4 +248,54 @@ test('Statistik: Spiele, Formen, Rekord und Tiefstwert', () => {
   assert.deepEqual(Logic.restoreStat({ games: 2, tiles: -5, best: 'x', worst: 7.6 }), { games: 2, tiles: 0, best: 0, worst: 7 });
   assert.equal(Logic.restoreStat({ games: 0, worst: 5 }).worst, null);
   assert.equal(Logic.statKey('pond', 10), 'pond-10');
+});
+
+test('Reservefeld: Form parken, tauschen und von dort legen', () => {
+  const s = emptyGame(['kiesel', 'ast', 'moospolster']);
+  assert.equal(s.hold, null);
+  const ev = Logic.hold(s, 0);
+  assert.equal(ev[0].type, 'held');
+  assert.equal(s.hold.shape, 'kiesel');
+  assert.equal(s.tray[0], null);
+  Logic.hold(s, 1);                        // tauschen
+  assert.equal(s.hold.shape, 'ast');
+  assert.equal(s.tray[1].shape, 'kiesel');
+  assert.equal(Logic.hold(s, 0), null, 'leerer Slot');
+  assert.equal(Logic.hold(s, Logic.HOLD), null, 'Reservefeld selbst');
+  const placed = Logic.place(s, Logic.HOLD, 0, 0);
+  assert.equal(placed[0].type, 'placed');
+  assert.equal(s.hold, null);
+  assert.equal(s.score, 4);
+});
+
+test('Letzte Form ins Reservefeld füllt die Ablage neu', () => {
+  const s = emptyGame();
+  s.tray = [null, null, item('ast')];
+  const ev = Logic.hold(s, 2);
+  assert.ok(ev.some(e => e.type === 'trayRefilled'));
+  assert.ok(s.tray.every(Boolean));
+  assert.equal(s.hold.shape, 'ast');
+});
+
+test('Game Over berücksichtigt das Reservefeld', () => {
+  const s = emptyGame();
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if ((r + c) % 2 === 0) fill(s, r, c);
+  s.tray = [item('felsplatte'), item('felsplatte'), null];
+  s.hold = item('kiesel');
+  assert.ok(!Logic.stuck(s), 'Kiesel im Reservefeld passt noch');
+  s.hold = item('ast');
+  assert.ok(Logic.stuck(s));
+  s.tray = [item('felsplatte'), null, null];
+  s.hold = null;
+  assert.ok(!Logic.stuck(s), 'letzte Form parken ist noch ein Zug');
+});
+
+test('restore übernimmt das Reservefeld, alte Stände ohne und prüft das Biom', () => {
+  const s = Logic.newGame(9, { biome: 'pond' });
+  Logic.hold(s, 0);
+  assert.deepEqual(Logic.restore(JSON.parse(JSON.stringify(s))).hold, s.hold);
+  const old = JSON.parse(JSON.stringify(s)); delete old.hold;
+  assert.equal(Logic.restore(old).hold, null);
+  assert.equal(Logic.restore({ ...s, hold: item('gibtsnicht') }), null);
+  assert.equal(Logic.restore({ ...s, hold: item('tulpe') }), null, 'Tulpe gibt es nur auf der Wiese');
 });

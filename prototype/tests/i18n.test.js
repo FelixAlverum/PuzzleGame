@@ -4,6 +4,11 @@ const assert = require('node:assert/strict');
 const I18N = require('../src/i18n.js');
 const Logic = require('../src/logic.js');
 
+test('Sechs Sprachen: de, en, fr, es, ru, zh', () => {
+  assert.deepEqual(I18N.LANGS, ['de', 'en', 'fr', 'es', 'ru', 'zh']);
+  for (const l of I18N.LANGS) assert.ok(I18N.NATIVE[l] && I18N.HTML_LANG[l], l);
+});
+
 test('Alle Sprachen haben dieselben Texte', () => {
   const keys = Object.keys(I18N.STR.en).sort();
   for (const l of I18N.LANGS) {
@@ -33,6 +38,9 @@ test('Sprachcode wird erkannt', () => {
   assert.equal(I18N.pick('de-AT'), 'de');
   assert.equal(I18N.pick('zh-Hans-CN'), 'zh');
   assert.equal(I18N.pick('zh-TW'), 'zh');
-  assert.equal(I18N.pick('fr'), 'en');
+  assert.equal(I18N.pick('fr-CA'), 'fr');
+  assert.equal(I18N.pick('es-419'), 'es');
+  assert.equal(I18N.pick('ru'), 'ru');
+  assert.equal(I18N.pick('it'), 'en', 'nicht unterstützt → Englisch');
   assert.equal(I18N.pick(undefined), 'en');
 });

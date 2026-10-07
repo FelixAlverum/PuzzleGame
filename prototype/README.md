@@ -11,11 +11,11 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 | `?autoplay` | Ein gieriger Bot spielt selbst (ohne Menü) |
 | `?biome=pond&size=10` | Startet direkt in einem Modus (`meadow`/`pond`/`tropics`, `6`/`8`/`10`) |
 | `?debug` | Zustand unter `window.__dbg` für automatisierte Tests |
-| `?lang=fr` | Sprache erzwingen (`de`, `en`, `fr`, `es`, `ru`) |
+| `?lang=fr` | Sprache erzwingen, ohne sie zu speichern (`de`, `en`, `fr`, `es`, `ru`, `zh`) |
 
-Sprachen: Deutsch, Englisch, Französisch, Spanisch, Russisch – gewählt nach YouTube- bzw. Browsersprache, sonst Englisch.
+Sprachen: Deutsch, Englisch, Französisch, Spanisch, Russisch, Chinesisch – in den Einstellungen wählbar; ohne Auswahl nach YouTube- bzw. Browsersprache, sonst Englisch.
 
-Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`4` wählen (`4` = Reservefeld), Pfeiltasten bewegen, `Enter` legen, `Esc` abbrechen.
+Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`4` wählen (`4` = Reservefeld), Pfeiltasten bewegen, `Enter` legen, `H` parken, `Esc` abbrechen, `M` Menü.
 
 **Reservefeld:** Eine Form in das gestrichelte Feld neben der Ablage ziehen (Tastatur: Form wählen, dann `H`), um sie für später zu parken.
 Liegt dort schon eine, werden beide getauscht. Von dort lässt sie sich wie jede andere Form aufs Beet ziehen.
@@ -23,8 +23,9 @@ Wird die letzte Form der Ablage geparkt, füllt sich die Ablage neu.
 
 **Zug zurücknehmen:** Knopf ↶ oben links (Zahl = verfügbare Schritte) oder Taste `Z`/`Backspace` – auch nach Game Over.
 Höchstens die letzten 3 Züge lassen sich zurücknehmen; Parken zählt als Zug. Punkte, Rekord und Garten springen mit zurück.
-An YouTube geht nur der Rekord, der sich nicht mehr zurücknehmen lässt (der volle Rekord bei „Neu pflanzen“).
-Der Verlauf wird nicht gespeichert und endet mit „Neu pflanzen“.
+Die Statistik springt mit zurück (auch ein Game Over). An YouTube geht nur der Rekord, der sich nicht mehr zurücknehmen lässt –
+endgültig wird ein Game Over bei „Neu pflanzen“, beim Gang ins Menü oder beim Moduswechsel.
+Der Verlauf wird nicht gespeichert; ein Garten-Reset ersetzt den Garten auch in den gemerkten Ständen.
 
 ## Menü, Biome, Statistik, Einstellungen
 Beim Start erscheint das Menü: Biom wählen – **Wiese**, **Teich** oder **Tropen**. Das Biom gilt für die ganze Runde und bringt
@@ -35,7 +36,7 @@ Im Spiel führt ≡ oben links (oder `M`/`Esc`) zurück ins Menü; der Lauf blei
 - **Statistik:** Spiele, gelegte Formen, höchste und niedrigste Punktzahl je Biom und Feldgröße, dazu Summen.
   Als Spiel zählt nur eine Runde mit Game Over; „Zug zurück“ nimmt auch die Statistik zurück.
 - **Anleitung:** Worum es geht, wie die Punkte entstehen (mit Beispiel), die Biome mit ihren Extra-Formen, Steuerung.
-- **Einstellungen:** Musik / Soundeffekte / Atmosphäre (0–100 %), Feldgröße 6×6 / 8×8 / 10×10, Sprache (Deutsch / English / 中文, mit Flaggen).
+- **Einstellungen:** Musik / Soundeffekte / Atmosphäre (0–100 %), Feldgröße 6×6 / 8×8 / 10×10, Sprache (6 Sprachen, mit Flaggen).
   Ohne Auswahl gilt die Sprache von YouTube bzw. des Browsers.
 
 ## Garten
@@ -53,7 +54,7 @@ Danach im Browser `http://localhost:8080` öffnen. Ausgeliefert von nginx (unpri
 
 Neue Version veröffentlichen (im Ordner `prototype`, Version anpassen):
 ```
-docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.2.0 -t alverum/puzzlegame:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.3.0 -t alverum/puzzlegame:latest --push .
 ```
 
 ## Tests

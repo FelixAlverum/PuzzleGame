@@ -31,7 +31,7 @@
   let drag = null, returning = null, kb = null, lastPlaced = null, over = null, confirm = null;
   const drops = new Map();               // pid → Startzeit der Fall-Animation
   let dying = [];                        // Zellen, die sich gerade auflösen
-  let trayPop = [0, 0, 0];               // Einblendzeitpunkt je Ablage-Slot
+  let trayPop = [0, 0, 0, 0];            // Einblendzeitpunkt je Slot (Ablage 0–2, Reservefeld 3)
   let gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
   // Ablauf
   let clock = 0, last = 0, raf = 0, paused = false, ready = false, readySignalled = false;
@@ -65,8 +65,7 @@
     o.frame = f;
     o.inner = { x: o.board.x + f, y: o.board.y + f, w: o.B - 2 * f, h: o.B - 2 * f };
     o.cs = o.inner.w / N;
-    // Ablage-Formen bleiben unabhängig von der Feldgröße gleich groß (gemessen an 8×8)
-    o.trayCs = Math.min(o.inner.w / Logic.DEFAULT_SIZE * 0.55, o.tray[0].w * 0.88 / 5, o.tray[0].h * 0.88 / 5);
+    o.slots = [...o.tray, o.hold];   // Index = Slot-Nummer, Logic.HOLD ist das Reservefeld
     // Runde Knöpfe links im Kopfbereich: Menü, daneben Zug zurück (im Querformat untereinander)
     const r = o.B * 0.042, hd = o.header;
     o.menuBtn = { x: hd.x + r * 1.1, y: portraitB >= landscapeB ? hd.y + hd.h * 0.38 : hd.y + r * 1.15, r };
@@ -165,10 +164,11 @@
   const resetButton = () => { const R = L.garden, r = Math.max(11, R.h * 0.1); return { x: R.x + R.w - r * 1.5, y: R.y + r * 1.5, r }; };
   const canResetGarden = () => garden.level >= 1;   // erst, wenn der erste Garten erblüht ist
 
-  // Zellgröße einer Form in ihrem Slot: kleine Formen etwas größer, lange passen trotzdem hinein
+  // Zellgröße einer Form in ihrem Slot: kleine Formen etwas größer, lange passen trotzdem hinein.
+  // Gemessen an 8×8, damit die Formen im Korb auf jeder Feldgröße gleich groß bleiben.
   function traySize(slot, piece) {
     const s = L.slots[slot];
-    return Math.min(L.cs * 0.55, s.w * 0.88 / Math.max(piece.w, 4), s.h * 0.88 / Math.max(piece.h, 4));
+    return Math.min(L.inner.w / Logic.DEFAULT_SIZE * 0.55, s.w * 0.88 / Math.max(piece.w, 4), s.h * 0.88 / Math.max(piece.h, 4));
   }
 
   function trayOrigin(slot, piece, size) {
@@ -200,19 +200,27 @@
 
   // --- Spielaktionen ---------------------------------------------------------------------
 
-  // Stand vor einem Zug merken – inklusive Rekord, damit Zurücknehmen ihn nicht aufbläht
-  const remember = () => Logic.pushHistory(history, { game, garden, best, newBestShown });
-  // Rekord, der sich nicht mehr zurücknehmen lässt (nur der geht an YouTube)
-  const committedBest = () => { const h = Logic.peekHistory(history, 0); return h ? h.best : best; };
   const SLOTS = [0, 1, 2, Logic.HOLD];
+  // Stand vor einem Zug (Runde, Garten, Statistik des Modus) – als Kopie, weil der Zug ihn gleich ändert
+  const snapshotMove = () => JSON.parse(JSON.stringify({ game, garden, stat, newBestShown }));
 
   function tryPlace(slot, r, c) {
-    const before = JSON.stringify({ game, garden, stat });
+    const before = snapshotMove();
     const events = Logic.place(game, slot, r, c);
     if (!events) { Sound.invalid(); return false; }
-    history.push(before);
-    if (history.length > Logic.UNDO_LIMIT) history.shift();
+    Logic.pushHistory(history, before);          // höchstens Logic.UNDO_LIMIT (3) Stände
     Logic.statPlaced(stat);
+    handle(events);
+    return true;
+  }
+
+  // Form ins Reservefeld legen (liegt dort schon eine, wird getauscht). Zählt als Zug, ist also zurücknehmbar.
+  function tryHold(slot) {
+    if (slot < 0 || slot === Logic.HOLD) return false;
+    const before = snapshotMove();
+    const events = Logic.hold(game, slot);
+    if (!events) { Sound.invalid(); return false; }
+    Logic.pushHistory(history, before);
     handle(events);
     return true;
   }
@@ -221,10 +229,11 @@
   function undo() {
     const prev = Logic.popHistory(history);
     if (!prev) { Sound.invalid(); return false; }
-    const trayBefore = game.tray.map(it => JSON.stringify(it));
+    const slotsBefore = SLOTS.map(i => JSON.stringify(Logic.itemAt(game, i)));
     game = runs[modeKey] = prev.game;
     garden = gardens[biome] = prev.garden;
     stat = stats[modeKey] = prev.stat;
+    newBestShown = prev.newBestShown;
     over = null; drag = null; returning = null; kb = null; lastPlaced = null;
     dying = []; drops.clear(); FX.reset();
     gardenView.hold = 0;
@@ -234,12 +243,13 @@
     return true;
   }
 
-  // Garten des Bioms komplett zurücksetzen (Stufe, Pflanzen). Der Verlauf enthält alte Gärten → verwerfen.
+  // Garten des Bioms komplett zurücksetzen (Stufe, Pflanzen). Die Züge bleiben zurücknehmbar,
+  // in den gemerkten Ständen wird nur der Garten ersetzt – sonst käme der alte Garten per Undo zurück.
   function resetGarden() {
     confirm = null;
     garden = gardens[biome] = Logic.newGarden();
     gardenView = { biome, level: 0, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
-    history.length = 0;
+    Logic.mapHistory(history, h => ({ ...h, garden: Logic.newGarden() }));
     FX.sparkle(L.garden.x + L.garden.w / 2, L.garden.y + L.garden.h * 0.6, L.cs, 12, ['#fff6b0', '#ffffff', '#c8f08a']);
     Sound.pickup();
     saveNow();
@@ -330,8 +340,13 @@
 
   // Rekord des aktuellen Modus, wie er im Spiel angezeigt wird (steigt live mit)
   const shownBest = () => Math.max(stat.best, game ? game.score : 0);
-  // YouTube kennt nur einen Rekord: der höchste über alle Modi (steht als „Alle Biome“ in der Statistik)
-  const overallBest = () => Math.max(Logic.statTotals(Object.values(stats)).best, game && screen === 'game' ? game.score : 0);
+  // YouTube kennt nur einen Rekord: der höchste über alle Modi. Gesendet wird nur, was sich nicht mehr
+  // zurücknehmen lässt – für den aktuellen Modus also die Statistik aus dem ältesten Stand im Verlauf.
+  function overallBest() {
+    const h = modeKey && Logic.peekHistory(history, 0);
+    const committed = h ? { ...stats, [modeKey]: h.stat } : stats;
+    return Logic.statTotals(Object.values(committed)).best;
+  }
 
   function endGame() {
     over = { t: clock, button: null, newBest: game.score > bestAtStart && bestAtStart > 0 };
@@ -346,8 +361,9 @@
     game = runs[modeKey] = Logic.newGame(randSeed(), { biome, size: N });
     over = null; dying = []; drops.clear(); FX.reset();
     history.length = 0;
+    YT.sendScore(overallBest());                 // das letzte Game Over ist jetzt endgültig
     bestAtStart = stat.best; newBestShown = false; shownScore = 0;
-    trayPop = [clock, clock + 0.07, clock + 0.14];
+    trayPop = [clock, clock + 0.07, clock + 0.14, clock];
     saveNow();
   }
 
@@ -357,7 +373,7 @@
   // (zählt nicht als Spiel – in die Statistik kommen nur Runden mit Game Over).
   function enterGame(b, fresh = false) {
     const n = settings.size, key = Logic.statKey(b, n);
-    if (key !== modeKey) history.length = 0;    // Verlauf gehört immer zum zuletzt gespielten Modus
+    if (key !== modeKey) { history.length = 0; YT.sendScore(overallBest()); }   // Verlauf gehört immer zum zuletzt gespielten Modus
     modeKey = key; biome = settings.biome = b; N = n;
     stat = stats[key] || (stats[key] = Logic.newStat());
     garden = gardens[b] || (gardens[b] = Logic.newGarden());
@@ -369,7 +385,7 @@
 
     over = null; confirm = null; drag = null; returning = null; kb = null; lastPlaced = null;
     dying = []; drops.clear(); FX.reset();
-    trayPop = [clock, clock + 0.07, clock + 0.14];
+    trayPop = [clock, clock + 0.07, clock + 0.14, clock];
     bestAtStart = stat.best; newBestShown = game.score > stat.best; shownScore = game.score;
     gardenView = { biome: b, level: garden.level, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
     L = layout(W, H);
@@ -378,14 +394,18 @@
     Sound.setBiome(b);
     screen = 'game';
     Menu.hide();
-    if (!Logic.anyMove(game)) { game.over = true; endGame(); }
+    if (Logic.stuck(game)) { game.over = true; endGame(); }
     saveNow();
   }
 
   function showMenu(page = 'menu') {
     if (screen === 'game') {
       drag = null; returning = null; kb = null; confirm = null;
-      if (game && game.over) delete runs[modeKey];   // beendete Runde: beim nächsten Mal neu pflanzen
+      if (game && game.over) {                   // beendete Runde: beim nächsten Mal neu pflanzen, Rekord ist endgültig
+        delete runs[modeKey];
+        history.length = 0;
+        YT.sendScore(overallBest());
+      }
       saveNow();
     }
     screen = 'menu';
@@ -1041,7 +1061,9 @@
     Mat.build();
     const [data, language] = await Promise.all([YT.load(), YT.language()]);
     loadSave(data);
-    setLanguage(settings.lang || I18N.pick(language), false);
+    // Entwickler-Hilfe: ?lang=fr erzwingt eine Sprache (ohne sie zu speichern)
+    const forced = new URLSearchParams(location.search).get('lang');
+    setLanguage(I18N.LANGS.includes(forced) ? forced : settings.lang || I18N.pick(language), false);
     biome = settings.biome;
     gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
     for (const k of ['music', 'sfx', 'amb']) Sound.setVolume(k, settings[k]);
