@@ -1,6 +1,6 @@
 // Einstieg: Layout, Eingabe, Spiel-Loop, Rendering, YouTube-Playables-Lebenszyklus.
-// Ein Spielmodus = Biom + Feldgröße. Je Modus gibt es einen eigenen Spielstand und eine eigene Statistik,
-// je Biom einen eigenen Garten. Menü, Statistik und Einstellungen liegen in menu.js.
+// Ein Spielmodus = Biom + Feldgröße + Schwierigkeit. Je Modus gibt es einen eigenen Spielstand und eine
+// eigene Statistik, je Biom einen eigenen Garten. Menü, Statistik und Einstellungen liegen in menu.js.
 (function () {
   'use strict';
 
@@ -17,11 +17,12 @@
   let W = 0, H = 0, DPR = 1, L = null, bg = null;
   let bgTheme = null, bgOld = null, bgFade = 0;   // Hintergrund folgt dem Garten-Thema, Wechsel wird überblendet
 
-  // Einstellungen (gespeichert). Lautstärken 0..1, size = Kantenlänge des Felds
+  // Einstellungen (gespeichert). Lautstärken 0..1, size = Kantenlänge des Felds, diff = gewählte Schwierigkeit
   // lang: null = Sprache von YouTube/Browser übernehmen, sonst vom Spieler gewählt
-  const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, biome: Logic.BIOMES[0], lang: null };
-  // Fortschritt (gespeichert): Garten je Biom, Statistik und offener Lauf je Modus („biome-size“)
-  let gardens = {}, stats = {}, runs = {}, hintDone = false;
+  const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, diff: Logic.DEFAULT_DIFF, biome: Logic.BIOMES[0], lang: null };
+  // Fortschritt (gespeichert): Garten je Biom, Statistik und offener Lauf je Modus („biome-size-diff“),
+  // unlocked = Index der höchsten freigeschalteten Schwierigkeit (bleibt auch nach „Statistik zurücksetzen“)
+  let gardens = {}, stats = {}, runs = {}, hintDone = false, unlocked = 0;
   // Aktueller Modus
   let screen = 'menu', biome = settings.biome, N = Logic.DEFAULT_SIZE, modeKey = null;
   let game = null, garden = Logic.newGarden(), stat = Logic.newStat();
@@ -31,6 +32,8 @@
   let drag = null, returning = null, kb = null, lastPlaced = null, over = null, confirm = null;
   const drops = new Map();               // pid → Startzeit der Fall-Animation
   let dying = [];                        // Zellen, die sich gerade auflösen
+  let beams = [];                        // Lichtstreifen über aufgelösten Reihen/Spalten
+  let shake = null;                      // { t0, amp } – kurzes Wackeln bei großen Auflösungen
   let trayPop = [0, 0, 0, 0];            // Einblendzeitpunkt je Slot (Ablage 0–2, Reservefeld 3)
   let gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
   // Ablauf
@@ -235,7 +238,7 @@
     stat = stats[modeKey] = prev.stat;
     newBestShown = prev.newBestShown;
     over = null; drag = null; returning = null; kb = null; lastPlaced = null;
-    dying = []; drops.clear(); FX.reset();
+    dying = []; beams = []; shake = null; drops.clear(); FX.reset();
     gardenView.hold = 0;
     SLOTS.forEach(i => { if (JSON.stringify(Logic.itemAt(game, i)) !== slotsBefore[i]) trayPop[i] = clock; });
     Sound.pickup();
@@ -285,9 +288,31 @@
           Sound.clear([...new Set(ev.cells.map(c => c.m))], ev.combo, ev.lines);
           const p = cellCenter(cr, cc);
           p.x = clamp(p.x, L.inner.x + L.cs * 1.8, L.inner.x + L.inner.w - L.cs * 1.8); // Text nicht am Rand abschneiden
-          FX.text('+' + ev.points, p.x, p.y, L.cs * 0.6, '#fffbe8');
-          if (ev.combo >= 2) FX.text(`${S.combo} ×${ev.combo}`, p.x, p.y - L.cs * 0.8, L.cs * 0.5, '#d9f7a8', { delay: 0.1 });
-          if (ev.lines >= 2) FX.gust(L.inner, L.cs);
+          // Je mehr Punkte, desto prächtiger: Stufe 0 (10) … 4 (ab 200)
+          const tier = ev.points >= 200 ? 4 : ev.points >= 100 ? 3 : ev.points >= 50 ? 2 : ev.points >= 20 ? 1 : 0;
+          const gold = ['#fff6b0', '#ffffff', '#ffe27a'];
+          FX.text('+' + ev.points, p.x, p.y, L.cs * (0.6 + 0.14 * tier), tier >= 3 ? '#ffe27a' : '#fffbe8', { dur: 1.1 + 0.15 * tier });
+          if (ev.combo >= 2) FX.text(`${S.combo} ×${ev.combo}`, p.x, p.y - L.cs * (0.8 + 0.12 * tier), L.cs * (0.5 + 0.06 * tier), '#d9f7a8', { delay: 0.1 });
+          if (tier >= 1) {
+            for (const c of ev.cells) {   // Funkeln folgt der Welle
+              const q = cellCenter(c.r, c.c);
+              FX.sparkle(q.x, q.y, L.cs, tier, gold);
+            }
+          }
+          if (tier >= 2) {
+            beams.push({ rows: ev.rows, cols: ev.cols, t0: clock, tier });
+            shake = { t0: clock, amp: L.cs * 0.04 * tier };
+          }
+          if (ev.lines >= 2 || tier >= 2) FX.gust(L.inner, L.cs);
+          if (tier >= 3) {
+            FX.ring(p.x, p.y, L.cs * 3.5, '#fff3b8');
+            const sp = Garden.species(biome, garden.level);
+            FX.petalRain(L.inner, L.cs, 14 * (tier - 2), [sp.petal, sp.dark]);
+          }
+          if (tier >= 4) {
+            FX.ring(p.x, p.y, L.cs * 6, '#ffffff', 0.9);
+            FX.fireflies(L.inner, L.cs, 10);
+          }
           for (const gev of Logic.growGarden(garden, ev.lines)) gardenEvent(gev);
           break;
         }
@@ -314,6 +339,16 @@
       newBestShown = true;
       FX.text(S.newBest, L.inner.x + L.inner.w / 2, L.inner.y + L.inner.h * 0.15, L.inner.w * 0.07, '#ffe27a', { dur: 1.8 });
       Sound.newBest();
+    }
+    const next = Logic.unlockFor(unlocked, game.diff, game.score);
+    if (next) {
+      unlocked += 1;
+      const I = L.inner;
+      FX.text(S.unlocked.replace('{d}', S['diff_' + next]), I.x + I.w / 2, I.y + I.h * 0.3, Math.min(I.w * 0.065, L.cs * 0.7), '#fff3a8', { dur: 2.6, delay: 0.4, rise: L.cs * 0.6 });
+      FX.petalRain(I, L.cs, 30, ['#ffe27a', '#fff6c8', '#f5a3c0']);
+      FX.sparkle(I.x + I.w / 2, I.y + I.h * 0.3, L.cs, 14, ['#fff6b0', '#ffffff', '#ffe27a']);
+      Sound.gardenComplete();
+      saveNow();
     }
     saveDirty = true;
   }
@@ -358,8 +393,8 @@
   }
 
   function restart() {
-    game = runs[modeKey] = Logic.newGame(randSeed(), { biome, size: N });
-    over = null; dying = []; drops.clear(); FX.reset();
+    game = runs[modeKey] = Logic.newGame(randSeed(), { biome, size: N, diff: game.diff });
+    over = null; dying = []; beams = []; shake = null; drops.clear(); FX.reset();
     history.length = 0;
     YT.sendScore(overallBest());                 // das letzte Game Over ist jetzt endgültig
     bestAtStart = stat.best; newBestShown = false; shownScore = 0;
@@ -371,20 +406,26 @@
 
   // Biom mit der eingestellten Feldgröße starten bzw. fortsetzen. fresh: offenen Lauf verwerfen
   // (zählt nicht als Spiel – in die Statistik kommen nur Runden mit Game Over).
+  // Gewählte Schwierigkeit, falls freigeschaltet – sonst die höchste freie
+  const playDiff = () => {
+    const i = Logic.DIFFS.indexOf(settings.diff);
+    return i >= 0 && i <= unlocked ? settings.diff : Logic.DIFFS[unlocked];
+  };
+
   function enterGame(b, fresh = false) {
-    const n = settings.size, key = Logic.statKey(b, n);
+    const n = settings.size, d = settings.diff = playDiff(), key = Logic.statKey(b, n, d);
     if (key !== modeKey) { history.length = 0; YT.sendScore(overallBest()); }   // Verlauf gehört immer zum zuletzt gespielten Modus
     modeKey = key; biome = settings.biome = b; N = n;
     stat = stats[key] || (stats[key] = Logic.newStat());
     garden = gardens[b] || (gardens[b] = Logic.newGarden());
     if (fresh || !runs[key] || runs[key].over) {
-      runs[key] = Logic.newGame(randSeed(), { biome: b, size: n });
+      runs[key] = Logic.newGame(randSeed(), { biome: b, size: n, diff: d });
       history.length = 0;
     }
     game = runs[key];
 
     over = null; confirm = null; drag = null; returning = null; kb = null; lastPlaced = null;
-    dying = []; drops.clear(); FX.reset();
+    dying = []; beams = []; shake = null; drops.clear(); FX.reset();
     trayPop = [clock, clock + 0.07, clock + 0.14, clock];
     bestAtStart = stat.best; newBestShown = game.score > stat.best; shownScore = game.score;
     gardenView = { biome: b, level: garden.level, plots: garden.plots.slice(), hold: 0, holdLevel: 0 };
@@ -414,6 +455,7 @@
 
   function setSetting(k, v) {
     if (k === 'size') { if (Logic.SIZES.includes(v)) settings.size = v; }
+    else if (k === 'diff') { if (Logic.DIFFS.includes(v) && Logic.DIFFS.indexOf(v) <= unlocked) settings.diff = v; }
     else if (k in settings) { settings[k] = v; Sound.setVolume(k, v); }
     saveDirty = true;
   }
@@ -445,8 +487,17 @@
     resetStats,
     lang: () => lang,
     setLanguage: l => setLanguage(l, true),
+    // Schwierigkeiten fürs Menü: frei/gesperrt, gewählte, und was für die nächste fehlt
+    diffInfo() {
+      const cur = Logic.DIFFS[unlocked], next = Logic.DIFFS[unlocked + 1] || null;
+      return {
+        list: Logic.DIFFS.map((d, i) => ({ id: d, name: S['diff_' + d], locked: i > unlocked })),
+        current: playDiff(),
+        need: next && { n: Logic.UNLOCK_SCORE, d: S['diff_' + cur], next: S['diff_' + next], best: bestOfDiff(cur) },
+      };
+    },
     biomeInfo(b) {
-      const key = Logic.statKey(b, settings.size), run = runs[key];
+      const key = Logic.statKey(b, settings.size, playDiff()), run = runs[key];
       return {
         name: S['name_' + b],
         level: gardens[b] ? gardens[b].level : 0,
@@ -454,8 +505,9 @@
         run: run && !run.over ? run.score : null,
       };
     },
-    statsData() {
-      const get = (b, n) => stats[Logic.statKey(b, n)] || Logic.newStat();
+    // diff: nur diese Schwierigkeit, null = über alle summiert
+    statsData(diff) {
+      const get = (b, n) => Logic.statTotals((diff ? [diff] : Logic.DIFFS).map(d => stats[Logic.statKey(b, n, d)] || Logic.newStat()));
       const biomes = Logic.BIOMES.map(b => {
         const rows = Logic.SIZES.map(size => ({ size, stat: get(b, size) }));
         return { name: S['name_' + b], rows, total: Logic.statTotals(rows.map(r => r.stat)) };
@@ -465,41 +517,57 @@
   };
 
   // --- Speichern -------------------------------------------------------------------------
-  // v2: Einstellungen, Gärten je Biom, Statistik und offene Läufe je Modus
+  // v3: Einstellungen, Gärten je Biom, Statistik und offene Läufe je Modus (mit Schwierigkeit), Freischaltung.
+  // v2 kannte keine Schwierigkeit: alles dort wurde mit dem heutigen „Mittel“ gespielt.
+
+  // Höchster Rekord einer Schwierigkeit über alle Biome und Feldgrößen
+  const bestOfDiff = d =>
+    Logic.statTotals(Logic.BIOMES.flatMap(b => Logic.SIZES.map(n => stats[Logic.statKey(b, n, d)] || Logic.newStat()))).best;
 
   const snapshot = () => ({
-    v: 2, settings, hintDone, gardens, stats,
+    v: 3, settings, hintDone, gardens, stats, unlocked,
     runs: Object.fromEntries(Object.entries(runs).filter(([, g]) => g && !g.over)),
   });
 
   function loadSave(data) {
     if (!data || typeof data !== 'object') return;
     hintDone = !!data.hintDone;
-    if (data.v === 1) {   // v0.1: ein Rekord, ein Garten (Themen reihum), ein Lauf auf 8×8 → alles zur Wiese
-      const key = Logic.statKey('meadow', Logic.DEFAULT_SIZE);
+    if (data.v === 1) {   // v0.1: ein Rekord, ein Garten (Themen reihum), ein Lauf auf 8×8 → alles zur Wiese, Mittel
+      const key = Logic.statKey('meadow', Logic.DEFAULT_SIZE, 'normal');
       stats[key] = Logic.restoreStat({ games: 0, tiles: 0, best: data.best });
       const g = Logic.restoreGarden(data.garden);
       if (g) gardens.meadow = g;
       const run = Logic.restore(data.run);
       if (run) runs[key] = run;
+      unlocked = Logic.unlockedFrom(1, { normal: stats[key].best });
+      settings.diff = 'normal';
       return;
     }
-    if (data.v !== 2) return;
+    if (data.v !== 2 && data.v !== 3) return;
+    const legacy = data.v === 2;                 // Schlüssel ohne Schwierigkeit → Mittel
     const st = data.settings || {};
     for (const k of ['music', 'sfx', 'amb']) if (Number.isFinite(st[k])) settings[k] = Math.max(0, Math.min(1, st[k]));
     if (Logic.SIZES.includes(st.size)) settings.size = st.size;
+    if (Logic.DIFFS.includes(st.diff)) settings.diff = st.diff;
     if (Logic.BIOMES.includes(st.biome)) settings.biome = st.biome;
     if (I18N.LANGS.includes(st.lang)) settings.lang = st.lang;
     for (const b of Logic.BIOMES) {
       const g = data.gardens && Logic.restoreGarden(data.gardens[b]);
       if (g) gardens[b] = g;
       for (const n of Logic.SIZES) {
-        const key = Logic.statKey(b, n);
-        if (data.stats && data.stats[key]) stats[key] = Logic.restoreStat(data.stats[key]);
-        const run = data.runs && Logic.restore(data.runs[key]);
-        if (run && run.biome === b && Logic.sizeOf(run.board) === n) runs[key] = run;
+        for (const d of Logic.DIFFS) {
+          if (legacy && d !== 'normal') continue;
+          const key = Logic.statKey(b, n, d), from = legacy ? `${b}-${n}` : key;
+          if (data.stats && data.stats[from]) stats[key] = Logic.restoreStat(data.stats[from]);
+          const run = data.runs && Logic.restore(data.runs[from]);
+          if (run && run.biome === b && Logic.sizeOf(run.board) === n && run.diff === d) runs[key] = run;
+        }
       }
     }
+    // Rekorde ab 1000 schalten frei, auch wenn der gespeicherte Stand das noch nicht wusste
+    const bestByDiff = Object.fromEntries(Logic.DIFFS.map(d => [d, bestOfDiff(d)]));
+    unlocked = Logic.unlockedFrom(legacy ? 1 : data.unlocked, bestByDiff);
+    if (legacy) settings.diff = 'normal';        // dort weiterspielen, wo die alten Spielstände liegen
   }
 
   function saveNow() {
@@ -644,6 +712,7 @@
       undo, resetGarden, history: () => history.length,
       setGarden: g => { garden = gardens[biome] = g; gardenView = { biome, level: g.level, plots: g.plots.slice(), hold: 0, holdLevel: 0 }; },
       enterGame, showMenu, setSetting, screen: () => screen, stats: () => stats, settings: () => settings, snapshot,
+      unlocked: () => unlocked, setUnlocked: u => { unlocked = u; },
     };
   }
 
@@ -888,6 +957,42 @@
       Mat.renderCells(ctx, [{ r: 0, c: 0, m: d.m, p: d.p, a: d.a }], -cs / 2, -cs / 2, cs, { alpha: 1 - k * 0.5, noShadow: true });
       ctx.restore();
     }
+    drawBeams();
+  }
+
+  // Große Auflösungen: Sonnenlicht streift über die Reihen, ab Stufe 4 leuchtet das ganze Feld kurz auf
+  function drawBeams() {
+    beams = beams.filter(b => clock - b.t0 < 0.7);
+    if (!beams.length) return;
+    const I = L.inner, cs = L.cs;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const b of beams) {
+      const k = (clock - b.t0) / 0.7, a = (1 - k) * (1 - k) * (0.25 + 0.1 * b.tier);
+      const half = cs * (0.5 + 0.5 * k);
+      const band = (x0, y0, x1, y1) => {
+        const g = ctx.createLinearGradient(x0, y0, x1, y1);
+        g.addColorStop(0, 'rgba(255,240,170,0)');
+        g.addColorStop(0.5, `rgba(255,248,210,${a})`);
+        g.addColorStop(1, 'rgba(255,240,170,0)');
+        return g;
+      };
+      for (const r of b.rows) {
+        const cy = I.y + (r + 0.5) * cs;
+        ctx.fillStyle = band(0, cy - half, 0, cy + half);
+        ctx.fillRect(I.x, cy - half, I.w, half * 2);
+      }
+      for (const c of b.cols) {
+        const cx = I.x + (c + 0.5) * cs;
+        ctx.fillStyle = band(cx - half, 0, cx + half, 0);
+        ctx.fillRect(cx - half, I.y, half * 2, I.h);
+      }
+      if (b.tier >= 4) {
+        ctx.fillStyle = `rgba(255,250,225,${0.3 * (1 - k) * (1 - k)})`;
+        ctx.fillRect(I.x, I.y, I.w, I.h);
+      }
+    }
+    ctx.restore();
   }
 
   // Reservefeld: gestrichelter Rahmen mit Beschriftung, leuchtet beim Darüberziehen
@@ -1025,10 +1130,18 @@
       else { ctx.globalAlpha = 1 - k; ctx.drawImage(bgOld, 0, 0); ctx.globalAlpha = 1; }
     }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    if (shake) {   // gedämpftes Wackeln, abklingend
+      const k = (clock - shake.t0) / 0.35;
+      if (k >= 1) shake = null;
+      else {
+        const a = shake.amp * (1 - k) * (1 - k);
+        ctx.translate(Math.sin(clock * 90) * a, Math.cos(clock * 77) * a);
+      }
+    }
 
     drawHeader();
     const lvl = gardenView.level;
-    Garden.draw(ctx, L.garden, gardenView, clock, `${S.garden} ${lvl + 1} · ${S['name_' + biome]}`);
+    Garden.draw(ctx, L.garden, gardenView, clock, `${S.garden} ${lvl + 1} · ${S['name_' + biome]} · ${S['diff_' + game.diff]}`);
     drawResetIcon();
     drawBoard(over ? null : currentPreview());
     drawTray();
@@ -1090,9 +1203,11 @@
 
     ready = true;
     buildBackground();
-    // Entwickler-Hilfe: ?biome=pond&size=10 startet direkt in einem Modus, ?autoplay ohne Menü
+    // Entwickler-Hilfe: ?biome=pond&size=10&diff=hard startet direkt in einem Modus, ?autoplay ohne Menü
+    // (diff nur, wenn die Stufe schon frei ist)
     const q = new URLSearchParams(location.search);
     if (Logic.SIZES.includes(Number(q.get('size')))) settings.size = Number(q.get('size'));
+    if (q.get('diff')) setSetting('diff', q.get('diff'));
     if (Logic.BIOMES.includes(q.get('biome')) || AUTOPLAY) enterGame(Logic.BIOMES.includes(q.get('biome')) ? q.get('biome') : biome);
     else showMenu();
     raf = requestAnimationFrame(frame);

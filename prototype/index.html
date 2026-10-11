@@ -337,6 +337,25 @@
       color: var(--ink-soft);
     }
 
+    /* Schwierigkeit im Hauptmenü: gesperrte Stufen mit Schloss */
+    .diffs .note {
+      font-weight: 700;
+    }
+
+    .seg.locked {
+      opacity: 0.55;
+      cursor: not-allowed;
+      border-style: dashed;
+    }
+
+    .seg .lock {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin-right: 6px;
+      vertical-align: -1px;
+    }
+
     /* Sechs Sprachen: Raster statt Zeile, damit die Knöpfe gleich breit bleiben */
     #lang-seg {
       display: grid;
@@ -472,6 +491,10 @@
           <button class="pill ghost" data-go="settings" data-t="settings"></button>
         </div>
       </div>
+      <div class="diffs">
+        <div class="seg-row" id="diff-seg" role="radiogroup"></div>
+        <p class="note" id="diff-note"></p>
+      </div>
       <div class="biomes" id="biomes"></div>
     </section>
 
@@ -493,6 +516,7 @@
         </div>
         <button class="pill ghost" data-go="menu" data-t="back"></button>
       </div>
+      <div class="seg-row" id="stats-diff-seg" role="radiogroup"></div>
       <div class="stats-grid" id="stats-body"></div>
       <div class="row"><button class="pill ghost small" id="reset-stats" data-t="resetStats"></button></div>
     </section>

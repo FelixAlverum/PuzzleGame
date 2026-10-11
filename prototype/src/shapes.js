@@ -8,7 +8,8 @@
 
   // Raster: X = Zelle, o = Zelle mit Akzent-Deko, . = leer
   // biome: Form erscheint nur in diesem Biom (Grundformen ohne biome gibt es überall).
-  // Die Extras der Biome sind in Zellenzahl und Gewicht aufeinander abgestimmt, damit kein Biom leichter ist.
+  // Die Extras der Biome sind in Zellenzahl und Gewicht aufeinander abgestimmt, damit kein Biom leichter ist,
+  // haben aber jeweils eigene Formen (keine Form kommt doppelt vor).
   const DEFS = [
     { id: 'kiesel',      mat: 'stone', weight: 6,  variants: 'none',          grid: ['X'] },
     { id: 'samen',       mat: 'bark',  weight: 10, variants: 'rotate',        grid: ['XX'] },
@@ -27,14 +28,14 @@
     // Wiese
     { id: 'pilz',         biome: 'meadow',  mat: 'bark',     weight: 7, variants: 'rotate', grid: ['ooo', '.X.'], accent: 'cap' },
     { id: 'bluete',       biome: 'meadow',  mat: 'petal',    weight: 4, variants: 'none',   grid: ['.X.', 'XoX', '.X.'], accent: 'stamen' },
-    { id: 'tulpe',        biome: 'meadow',  mat: 'petal',    weight: 3, variants: 'rotate', grid: ['X.X', 'XXX', '.o.'], accent: 'stem' },
+    { id: 'tulpe',        biome: 'meadow',  mat: 'petal',    weight: 3, variants: 'rotate', grid: ['XX', 'XX', '.o', '.o'], accent: 'stem' },
     // Teich
-    { id: 'schilf',       biome: 'pond',    mat: 'reed',     weight: 7, variants: 'rotate', grid: ['XXX', '.X.'] },
-    { id: 'seerose',      biome: 'pond',    mat: 'lily',     weight: 4, variants: 'none',   grid: ['.X.', 'XoX', '.X.'], accent: 'lotus' },
-    { id: 'rohrkolben',   biome: 'pond',    mat: 'reed',     weight: 3, variants: 'rotate', grid: ['o.o', 'XXX', '.X.'], accent: 'cattail' },
+    { id: 'schilf',       biome: 'pond',    mat: 'reed',     weight: 7, variants: 'rotate+mirror', grid: ['X.', 'X.', 'XX'] },
+    { id: 'seerose',      biome: 'pond',    mat: 'lily',     weight: 4, variants: 'rotate', grid: ['X.X', 'XoX'], accent: 'lotus' },
+    { id: 'rohrkolben',   biome: 'pond',    mat: 'reed',     weight: 3, variants: 'rotate', grid: ['o..', 'X.o', 'XXX'], accent: 'cattail' },
     // Tropen
-    { id: 'bananenblatt', biome: 'tropics', mat: 'palm',     weight: 7, variants: 'rotate', grid: ['XXX', '.X.'] },
-    { id: 'hibiskus',     biome: 'tropics', mat: 'hibiscus', weight: 4, variants: 'none',   grid: ['.X.', 'XoX', '.X.'], accent: 'pistil' },
+    { id: 'bananenblatt', biome: 'tropics', mat: 'palm',     weight: 7, variants: 'rotate+mirror', grid: ['.XX', 'XX.'] },
+    { id: 'hibiskus',     biome: 'tropics', mat: 'hibiscus', weight: 4, variants: 'rotate+mirror', grid: ['.XX', 'Xo.', '.X.'], accent: 'pistil' },
     { id: 'bambus',       biome: 'tropics', mat: 'bamboo',   weight: 3, variants: 'rotate', grid: ['X.X', 'XoX', '..X'], accent: 'node' },
   ];
 

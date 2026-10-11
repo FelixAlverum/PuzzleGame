@@ -42,6 +42,9 @@
   };
 
   let api = null, S = null, ui = null, current = null;
+  let statsDiff = null;  // Filter der Statistik: null = alle Schwierigkeiten
+  const LOCK = '<svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="7" width="11" height="8" rx="2" fill="currentColor"/>' +
+    '<path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   let armed = null;   // Zwei-Tipp-Bestätigung: { btn, label, timer }
   let keyboard = false; // zuletzt per Tastatur bedient → Fokus beim Seitenwechsel setzen
 
@@ -144,9 +147,36 @@
     });
   }
 
+  // Segment-Knöpfe als Auswahl (role=radio); gesperrte sind deaktiviert und tragen ein Schloss
+  function segButtons(box, items, onPick) {
+    box.textContent = '';
+    for (const it of items) {
+      const b = el('button', 'seg' + (it.on ? ' on' : '') + (it.locked ? ' locked' : ''));
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(!!it.on));
+      if (it.locked) { b.disabled = true; b.innerHTML = LOCK; }
+      b.append(it.name);
+      b.addEventListener('click', () => onPick(it.id));
+      box.append(b);
+    }
+  }
+
+  function renderDiffs() {
+    const info = api.diffInfo();
+    const seg = $('diff-seg');
+    seg.setAttribute('aria-label', S.diff);
+    segButtons(seg, info.list.map(d => ({ ...d, on: d.id === info.current })), id => { api.setSetting('diff', id); renderMenu(); });
+    const n = info.need;
+    $('diff-note').textContent = n
+      ? `${S.lockNote.replace('{n}', fmt(n.n)).replace('{d}', n.d).replace('{next}', n.next)} ${S.lockBest.replace('{s}', fmt(n.best))}`
+      : S.allUnlocked;
+  }
+
   function renderMenu() {
     const size = api.settings().size;
     $('size-chip').textContent = `${S.field} ${size}×${size}`;
+    renderDiffs();
     const list = $('biomes');
     list.textContent = '';
     for (const b of Logic.BIOMES) {
@@ -240,7 +270,11 @@
   }
 
   function renderStats() {
-    const data = api.statsData();
+    const seg = $('stats-diff-seg');
+    seg.setAttribute('aria-label', S.diff);
+    const opts = [{ id: null, name: S.allDiffs }, ...Logic.DIFFS.map(d => ({ id: d, name: S['diff_' + d] }))];
+    segButtons(seg, opts.map(o => ({ ...o, on: o.id === statsDiff })), id => { statsDiff = id; renderStats(); });
+    const data = api.statsData(statsDiff);
     const body = $('stats-body');
     body.textContent = '';
 

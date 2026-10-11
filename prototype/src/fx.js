@@ -87,6 +87,11 @@
       for (let i = 0; i < n; i++) this.add({ kind: 'firefly', x: rect.x + rnd(0, 1) * rect.w, y: rect.y + rnd(0.2, 1) * rect.h, size: cs * rnd(0.06, 0.1), color: '#fff3a0', vx: rnd(-0.6, 0.6) * cs, vy: -rnd(0.2, 0.9) * cs, sway: cs * 0.8, life: rnd(1.8, 2.8) });
     },
 
+    // Druckwelle bei großen Auflösungen: heller Ring, der sich ausbreitet und verblasst
+    ring(x, y, radius, color, life = 0.6) {
+      this.add({ kind: 'ring', x, y, size: radius, color, rot: 0, life });
+    },
+
     text(str, x, y, size, color, opt = {}) {
       this.texts.push({ str, x, y, size, color, t: -(opt.delay || 0), dur: opt.dur || 1.1, rise: opt.rise != null ? opt.rise : size * 1.6 });
     },
@@ -141,6 +146,13 @@
             ctx.strokeStyle = p.color; ctx.lineWidth = p.size * 0.3; ctx.lineCap = 'round';
             ctx.beginPath(); ctx.arc(0, 0, p.size, 0, Math.PI * 1.4); ctx.stroke();
             break;
+          case 'ring': {
+            const k = 1 - p.life / p.max, e = 1 - Math.pow(1 - k, 3);
+            ctx.globalAlpha = (1 - k) * 0.9;
+            ctx.strokeStyle = p.color; ctx.lineWidth = p.size * 0.09 * (1 - k) + 1;
+            ctx.beginPath(); ctx.arc(0, 0, p.size * (0.15 + 0.85 * e), 0, TAU); ctx.stroke();
+            break;
+          }
           case 'spark':
             ctx.beginPath();
             for (let k = 0; k < 8; k++) {

@@ -20,6 +20,23 @@
   const HOLD = TRAY;             // Slot-Nummer des Ablagefelds (Zwischenspeicher für eine Form)
   const UNDO_LIMIT = 3;          // so viele Züge lassen sich höchstens zurücknehmen
 
+  // Schwierigkeitsgrade: nur der Formen-Mix ändert sich. Die nächste Stufe wird frei, sobald
+  // eine Runde der vorherigen Stufe (beliebiges Biom, beliebige Feldgröße) UNLOCK_SCORE erreicht.
+  //   mercy/mercyFill: kleine Formen (≤ 3 Zellen) × mercy, wenn das Feld voller als mercyFill ist
+  //   small/large: Faktor für kleine (≤ 3) bzw. große (≥ 5 Zellen) Formen
+  //   ramp: wie stark Formen ab 6 Zellen mit dem Punktestand häufiger werden
+  //   maxBig: so viele sehr große Formen (≥ BIG Zellen) höchstens pro Ablage
+  const DIFFS = ['easy', 'normal', 'hard'];
+  const DEFAULT_DIFF = DIFFS[0];
+  const UNLOCK_SCORE = 1000;
+  const DIFF = {
+    easy:   { mercy: 3, mercyFill: 0.5, small: 1.4, large: 0.6, ramp: 0.3, maxBig: 1 },
+    normal: { mercy: 2, mercyFill: 0.6, small: 1,   large: 1,   ramp: 0.6, maxBig: 1 },
+    hard:   { mercy: 1, mercyFill: 1,   small: 0.8, large: 1.4, ramp: 1.2, maxBig: 2 },
+  };
+  // Spielstände von vor den Schwierigkeitsgraden wurden mit dem heutigen „normal“ gespielt
+  const diffOf = state => (DIFFS.includes(state.diff) ? state.diff : 'normal');
+
   // mulberry32 – Zustand liegt im Spielstand, damit Runden reproduzierbar und speicherbar sind
   function rand(state) {
     state.rng = (state.rng + 0x6D2B79F5) >>> 0;
@@ -89,16 +106,21 @@
 
   // --- Formen-Generator -------------------------------------------------------
 
-  function weightOf(shape, score, fill) {
+  function weightOf(shape, score, fill, diff = 'normal') {
+    const d = DIFF[diff];
     let w = shape.weight;
-    if (shape.size <= 3 && fill > 0.6) w *= 2;                    // Gnade bei vollem Feld
-    if (shape.size >= 6) w *= 1 + Math.min(score / 4000, 1) * 0.6; // wird langsam schwerer
+    if (shape.size <= 3) {
+      w *= d.small;
+      if (fill > d.mercyFill) w *= d.mercy;                          // Gnade bei vollem Feld
+    }
+    if (shape.size >= 5) w *= d.large;
+    if (shape.size >= 6) w *= 1 + Math.min(score / 4000, 1) * d.ramp; // wird langsam schwerer
     return w;
   }
 
   function drawItem(state, fill, allowBig) {
     const pool = Shapes.pool(state.biome).filter(s => allowBig || s.size < BIG);
-    const weights = pool.map(s => weightOf(s, state.score, fill));
+    const weights = pool.map(s => weightOf(s, state.score, fill, diffOf(state)));
     let x = rand(state) * weights.reduce((a, b) => a + b, 0);
     let i = 0;
     while (i < pool.length - 1 && x >= weights[i]) { x -= weights[i]; i++; }
@@ -111,7 +133,7 @@
       let big = 0;
       state.tray = [];
       for (let k = 0; k < TRAY; k++) {
-        const item = drawItem(state, fill, big === 0);
+        const item = drawItem(state, fill, big < DIFF[diffOf(state)].maxBig);
         if (Shapes.BY_ID[item.shape].size >= BIG) big++;
         state.tray.push(item);
       }
@@ -129,12 +151,13 @@
 
   // --- Spielablauf ------------------------------------------------------------
 
-  // opts: { biome, size } – fehlende oder unbekannte Werte fallen auf Wiese / 8×8 zurück
+  // opts: { biome, size, diff } – fehlende oder unbekannte Werte fallen auf Wiese / 8×8 / normal zurück
   function newGame(seed, opts = {}) {
     const biome = BIOMES.includes(opts.biome) ? opts.biome : BIOMES[0];
     const N = SIZES.includes(opts.size) ? opts.size : DEFAULT_SIZE;
+    const diff = DIFFS.includes(opts.diff) ? opts.diff : 'normal';
     const state = {
-      v: 1, biome, board: new Array(N * N).fill(null), tray: [], score: 0, combo: 0,
+      v: 1, biome, diff, board: new Array(N * N).fill(null), tray: [], score: 0, combo: 0,
       movesSinceClear: 0, rng: seed >>> 0, nextPid: 1, over: false, hold: null,
     };
     refill(state);
@@ -232,6 +255,7 @@
     if (![run.score, run.combo, run.movesSinceClear, run.rng, run.nextPid].every(Number.isFinite)) return null;
     const state = JSON.parse(JSON.stringify(run));
     state.biome = biome;
+    state.diff = diffOf(run);
     if (state.tray.every(t => !t)) refill(state);
     return state;
   }
@@ -266,10 +290,10 @@
     return events;
   }
 
-  // --- Statistik (je Biom + Feldgröße) ----------------------------------------
+  // --- Statistik (je Biom + Feldgröße + Schwierigkeit) ------------------------
   // Gezählt werden nur Runden, die mit Game Over enden; gelegte Formen zählen sofort.
 
-  const statKey = (biome, size) => `${biome}-${size}`;
+  const statKey = (biome, size, diff = 'normal') => `${biome}-${size}-${diff}`;
   const newStat = () => ({ games: 0, tiles: 0, best: 0, worst: null });
 
   function restoreStat(st) {
@@ -299,6 +323,23 @@
     return t;
   }
 
+  // --- Freischalten der Schwierigkeitsgrade ------------------------------------
+  // unlocked = Index der höchsten freien Stufe. Erreicht eine Runde der höchsten freien Stufe
+  // UNLOCK_SCORE, wird die nächste frei. Liefert die neu freigeschaltete Stufe oder null.
+
+  function unlockFor(unlocked, diff, score) {
+    const i = DIFFS.indexOf(diff);
+    if (i < 0 || i !== unlocked || i + 1 >= DIFFS.length || score < UNLOCK_SCORE) return null;
+    return DIFFS[i + 1];
+  }
+
+  // Aus gespeicherten Rekorden ableiten, was frei sein muss (z. B. nach dem Laden alter Spielstände)
+  function unlockedFrom(unlocked, bestByDiff) {
+    let u = Number.isInteger(unlocked) ? Math.max(0, Math.min(DIFFS.length - 1, unlocked)) : 0;
+    while (u + 1 < DIFFS.length && (bestByDiff[DIFFS[u]] || 0) >= UNLOCK_SCORE) u++;
+    return u;
+  }
+
   // --- Zug zurücknehmen -------------------------------------------------------
   // Vor jedem Zug wird der Stand (z. B. Runde + Garten + Statistik) als JSON abgelegt, damit
   // spätere Änderungen am Live-Zustand die gespeicherten Stände nicht verfälschen.
@@ -322,6 +363,7 @@
 
   return {
     SIZES, DEFAULT_SIZE, BIOMES, TRAY, HOLD, PLOTS, STAGES, UNDO_LIMIT,
+    DIFFS, DEFAULT_DIFF, UNLOCK_SCORE, diffOf, weightOf, unlockFor, unlockedFrom,
     sizeOf, pieceOf, itemAt, canPlace, fits, anyMove, stuck, fullLines, previewLines, lineScore,
     newGame, place, hold, refill, restore,
     newGarden, restoreGarden, growGarden,

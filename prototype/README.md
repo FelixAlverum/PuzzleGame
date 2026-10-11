@@ -9,7 +9,7 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 | Parameter | Wirkung |
 |---|---|
 | `?autoplay` | Ein gieriger Bot spielt selbst (ohne Menü) |
-| `?biome=pond&size=10` | Startet direkt in einem Modus (`meadow`/`pond`/`tropics`, `6`/`8`/`10`) |
+| `?biome=pond&size=10&diff=hard` | Startet direkt in einem Modus (`meadow`/`pond`/`tropics`, `6`/`8`/`10`, `easy`/`normal`/`hard` – nur wenn freigeschaltet) |
 | `?debug` | Zustand unter `window.__dbg` für automatisierte Tests |
 | `?lang=fr` | Sprache erzwingen, ohne sie zu speichern (`de`, `en`, `fr`, `es`, `ru`, `zh`) |
 
@@ -31,9 +31,15 @@ Der Verlauf wird nicht gespeichert; ein Garten-Reset ersetzt den Garten auch in 
 Beim Start erscheint das Menü: Biom wählen – **Wiese**, **Teich** oder **Tropen**. Das Biom gilt für die ganze Runde und bringt
 eigenen Hintergrund, Rahmen, Garten, Musik, Atmosphäre und **3 Extra-Formen** (Wiese: Pilz, Blüte, Tulpe · Teich: Schilf, Seerose,
 Rohrkolben · Tropen: Bananenblatt, Hibiskus, Bambus). Die übrigen 13 Grundformen gibt es überall.
-Im Spiel führt ≡ oben links (oder `M`/`Esc`) zurück ins Menü; der Lauf bleibt gespeichert – je Biom und Feldgröße einer.
+Im Spiel führt ≡ oben links (oder `M`/`Esc`) zurück ins Menü; der Lauf bleibt gespeichert – je Biom, Feldgröße und Schwierigkeit einer.
 
-- **Statistik:** Spiele, gelegte Formen, höchste und niedrigste Punktzahl je Biom und Feldgröße, dazu Summen.
+**Schwierigkeit:** Leicht, Mittel, Schwer – wählbar im Menü über den Biomen. Sie ändert nur den Formen-Mix: Leicht bringt mehr kleine
+Formen und viel Gnade bei vollem Feld, Mittel ist der bisherige Generator, Schwer bringt mehr große Formen, keine Gnade und bis zu zwei
+Riesenformen pro Korb. Neue Spieler starten auf Leicht. Erreicht eine Runde auf der höchsten freien Stufe **1000 Punkte** (beliebiges
+Biom, beliebige Feldgröße), wird die nächste Stufe sofort frei. Alte Spielstände (v2) zählen als Mittel; Rekorde ab 1000 schalten beim
+Laden nachträglich frei.
+
+- **Statistik:** Spiele, gelegte Formen, höchste und niedrigste Punktzahl je Biom und Feldgröße, dazu Summen – filterbar nach Schwierigkeit.
   Als Spiel zählt nur eine Runde mit Game Over; „Zug zurück“ nimmt auch die Statistik zurück.
 - **Anleitung:** Worum es geht, wie die Punkte entstehen (mit Beispiel), die Biome mit ihren Extra-Formen, Steuerung.
 - **Einstellungen:** Musik / Soundeffekte / Atmosphäre (0–100 %), Feldgröße 6×6 / 8×8 / 10×10, Sprache (6 Sprachen, mit Flaggen).
@@ -54,7 +60,7 @@ Danach im Browser `http://localhost:8080` öffnen. Ausgeliefert von nginx (unpri
 
 Neue Version veröffentlichen (im Ordner `prototype`, Version anpassen):
 ```
-docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.3.0 -t alverum/puzzlegame:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.4.0 -t alverum/puzzlegame:latest --push .
 ```
 
 ## Tests

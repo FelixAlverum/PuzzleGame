@@ -247,7 +247,8 @@ test('Statistik: Spiele, Formen, Rekord und Tiefstwert', () => {
 
   assert.deepEqual(Logic.restoreStat({ games: 2, tiles: -5, best: 'x', worst: 7.6 }), { games: 2, tiles: 0, best: 0, worst: 7 });
   assert.equal(Logic.restoreStat({ games: 0, worst: 5 }).worst, null);
-  assert.equal(Logic.statKey('pond', 10), 'pond-10');
+  assert.equal(Logic.statKey('pond', 10, 'hard'), 'pond-10-hard');
+  assert.equal(Logic.statKey('pond', 10), 'pond-10-normal', 'ohne Schwierigkeit: Mittel');
 });
 
 test('Reservefeld: Form parken, tauschen und von dort legen', () => {
@@ -298,4 +299,54 @@ test('restore übernimmt das Reservefeld, alte Stände ohne und prüft das Biom'
   assert.equal(Logic.restore(old).hold, null);
   assert.equal(Logic.restore({ ...s, hold: item('gibtsnicht') }), null);
   assert.equal(Logic.restore({ ...s, hold: item('tulpe') }), null, 'Tulpe gibt es nur auf der Wiese');
+});
+
+test('Schwierigkeit: steckt im Spielstand, alte Läufe gelten als Mittel', () => {
+  assert.deepEqual(Logic.DIFFS, ['easy', 'normal', 'hard']);
+  assert.equal(Logic.DEFAULT_DIFF, 'easy', 'neue Spieler starten auf Leicht');
+  assert.equal(Logic.newGame(1, { diff: 'hard' }).diff, 'hard');
+  assert.equal(Logic.newGame(1, { diff: 'extrem' }).diff, 'normal', 'unbekannt → Mittel');
+  const old = Logic.newGame(3);
+  delete old.diff;
+  assert.equal(Logic.restore(old).diff, 'normal');
+  assert.equal(Logic.restore(Logic.newGame(3, { diff: 'easy' })).diff, 'easy');
+});
+
+test('Schwierigkeit: Mittel entspricht dem bisherigen Generator, Leicht/Schwer verschieben den Formen-Mix', () => {
+  const small = Shapes.BY_ID.samen, big = Shapes.BY_ID.wurzel;
+  // bisherige Formel: kleine ×2 bei Füllung > 0,6, ab 6 Zellen bis +60 % mit dem Punktestand
+  assert.equal(Logic.weightOf(small, 0, 0.7, 'normal'), small.weight * 2);
+  assert.equal(Logic.weightOf(big, 2000, 0, 'normal'), big.weight * 1.3);
+  const ratio = d => Logic.weightOf(big, 0, 0, d) / Logic.weightOf(small, 0, 0, d);
+  assert.ok(ratio('easy') < ratio('normal') && ratio('normal') < ratio('hard'), 'je schwerer, desto mehr große Formen');
+  assert.equal(Logic.weightOf(small, 0, 0.9, 'hard'), Logic.weightOf(small, 0, 0, 'hard'), 'Schwer: keine Gnade bei vollem Feld');
+});
+
+test('Schwierigkeit: Ablage auf Schwer darf zwei sehr große Formen enthalten, sonst höchstens eine', () => {
+  const bigCount = diff => {
+    let max = 0;
+    for (let seed = 1; seed < 400; seed++) {
+      const s = Logic.newGame(seed, { diff });
+      max = Math.max(max, s.tray.filter(it => Shapes.BY_ID[it.shape].size >= 7).length);
+    }
+    return max;
+  };
+  assert.equal(bigCount('easy'), 1);
+  assert.equal(bigCount('normal'), 1);
+  assert.equal(bigCount('hard'), 2);
+});
+
+test('Freischalten: 1000 Punkte auf der höchsten freien Stufe öffnen die nächste', () => {
+  assert.equal(Logic.UNLOCK_SCORE, 1000);
+  assert.equal(Logic.unlockFor(0, 'easy', 999), null);
+  assert.equal(Logic.unlockFor(0, 'easy', 1000), 'normal');
+  assert.equal(Logic.unlockFor(1, 'normal', 1500), 'hard');
+  assert.equal(Logic.unlockFor(1, 'easy', 5000), null, 'Leicht schaltet Schwer nicht frei');
+  assert.equal(Logic.unlockFor(2, 'hard', 5000), null, 'nach Schwer kommt nichts');
+  assert.equal(Logic.unlockedFrom(0, {}), 0);
+  assert.equal(Logic.unlockedFrom(0, { easy: 1200 }), 1);
+  assert.equal(Logic.unlockedFrom(0, { easy: 1200, normal: 1000 }), 2);
+  assert.equal(Logic.unlockedFrom(1, { normal: 400 }), 1, 'gespeicherte Freischaltung bleibt');
+  assert.equal(Logic.unlockedFrom(7, {}), 2);
+  assert.equal(Logic.unlockedFrom('x', { easy: 10 }), 0);
 });
