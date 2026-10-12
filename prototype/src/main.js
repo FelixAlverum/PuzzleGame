@@ -592,7 +592,7 @@
     if (over) {
       if (inside(over.button, x, y)) restart();
       else if (inside(over.undoButton, x, y)) undo();
-      else if (hitCircle(menuButton(), x, y)) showMenu();
+      else if (inside(over.menuButton, x, y) || hitCircle(menuButton(), x, y)) showMenu();
       return;
     }
     if (hitCircle(menuButton(), x, y)) { showMenu(); return; }
@@ -1087,7 +1087,7 @@
     ctx.fillRect(0, 0, W, H);
 
     const canUndo = history.length > 0;
-    const w = Math.min(W * 0.86, L.B * 0.9), h = w * 0.66, ch = canUndo ? h * 1.22 : h;
+    const w = Math.min(W * 0.86, L.B * 0.9), h = w * 0.66, ch = h * (canUndo ? 1.48 : 1.22);
     const cx = L.board.x + L.B / 2, cy = L.board.y + L.B / 2 + (1 - a) * 30;
     ctx.save();
     ctx.globalAlpha = a;
@@ -1107,11 +1107,14 @@
     const bw = w * 0.62, bh = h * 0.2;
     const main = { x: cx - bw / 2, y: y + h * 0.7, w: bw, h: bh };
     const back = canUndo ? { x: cx - bw / 2, y: y + h * 0.96, w: bw, h: bh * 0.8 } : null;
+    const menu = { x: cx - bw / 2, y: y + h * (canUndo ? 1.22 : 0.96), w: bw, h: bh * 0.8 };
     pillButton(main, S.again, '#5d9a3e', '#ffffff');
     if (back) pillButton(back, S.undo, '#fbf5e6', '#4a3424', '#a8743f');
+    pillButton(menu, S.toMenu, '#fbf5e6', '#4a3424', '#a8743f');
     ctx.restore();
     over.button = a > 0.5 ? main : null;
     over.undoButton = a > 0.5 ? back : null;
+    over.menuButton = a > 0.5 ? menu : null;
   }
 
   function draw() {
