@@ -11,7 +11,7 @@
     de: {
       // Spiel (Canvas)
       best: 'Rekord', combo: 'Combo', hint: 'Ziehe eine Form aufs Beet', over: 'Der Garten ruht', again: 'Neu pflanzen',
-      newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten', undo: 'Zug zurück', hold: 'Reserve',
+      newBest: 'Neuer Rekord!', bloom: 'Der Garten blüht!', fresh: 'Frischer Boden!', garden: 'Garten', undo: 'Zug zurück', toMenu: 'Zum Menü', hold: 'Reserve',
       resetTitle: 'Garten zurücksetzen?', resetText: 'Alle Pflanzen und Gärten dieses Bioms beginnen von vorn.', resetYes: 'Zurücksetzen', resetNo: 'Abbrechen',
       name_meadow: 'Wiese', name_pond: 'Teich', name_tropics: 'Tropen',
       diff: 'Schwierigkeit', diff_easy: 'Leicht', diff_normal: 'Mittel', diff_hard: 'Schwer', allDiffs: 'Alle', unlocked: '{d} freigeschaltet!',
@@ -61,7 +61,7 @@
 
     en: {
       best: 'Best', combo: 'Combo', hint: 'Drag a piece onto the bed', over: 'The garden rests', again: 'Plant again',
-      newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden', undo: 'Undo move', hold: 'Hold',
+      newBest: 'New best!', bloom: 'Your garden is in bloom!', fresh: 'Fresh soil!', garden: 'Garden', undo: 'Undo move', toMenu: 'Back to menu', hold: 'Hold',
       resetTitle: 'Reset garden?', resetText: 'All plants and gardens of this biome start over.', resetYes: 'Reset', resetNo: 'Cancel',
       name_meadow: 'Meadow', name_pond: 'Pond', name_tropics: 'Tropics',
       diff: 'Difficulty', diff_easy: 'Easy', diff_normal: 'Medium', diff_hard: 'Hard', allDiffs: 'All', unlocked: '{d} unlocked!',
@@ -107,7 +107,7 @@
 
     zh: {
       best: '最高分', combo: '连击', hint: '把方块拖到花圃上', over: '花园休息了', again: '重新种植',
-      newBest: '新纪录！', bloom: '花园开花了！', fresh: '全新土壤！', garden: '花园', undo: '撤销一步', hold: '暂存',
+      newBest: '新纪录！', bloom: '花园开花了！', fresh: '全新土壤！', garden: '花园', undo: '撤销一步', toMenu: '返回菜单', hold: '暂存',
       resetTitle: '重置花园？', resetText: '这个生物群系的所有植物和花园都将重新开始。', resetYes: '重置', resetNo: '取消',
       name_meadow: '草地', name_pond: '池塘', name_tropics: '热带',
       diff: '难度', diff_easy: '简单', diff_normal: '普通', diff_hard: '困难', allDiffs: '全部', unlocked: '已解锁{d}！',
@@ -153,7 +153,7 @@
 
     fr: {
       best: 'Record', combo: 'Combo', hint: 'Glisse une pièce sur le parterre', over: 'Le jardin se repose', again: 'Replanter',
-      newBest: 'Nouveau record\u202f!', bloom: 'Ton jardin est en fleurs\u202f!', fresh: 'Terre fraîche\u202f!', garden: 'Jardin', undo: 'Annuler le coup', hold: 'Réserve',
+      newBest: 'Nouveau record\u202f!', bloom: 'Ton jardin est en fleurs\u202f!', fresh: 'Terre fraîche\u202f!', garden: 'Jardin', undo: 'Annuler le coup', toMenu: 'Retour au menu', hold: 'Réserve',
       resetTitle: 'Réinitialiser le jardin\u202f?', resetText: 'Toutes les plantes et tous les jardins de ce biome repartent de zéro.', resetYes: 'Réinitialiser', resetNo: 'Annuler',
       name_meadow: 'Prairie', name_pond: 'Étang', name_tropics: 'Tropiques',
       diff: 'Difficulté', diff_easy: 'Facile', diff_normal: 'Moyen', diff_hard: 'Difficile', allDiffs: 'Toutes', unlocked: '{d} débloqué !',
@@ -199,7 +199,7 @@
 
     es: {
       best: 'Récord', combo: 'Combo', hint: 'Arrastra una pieza al bancal', over: 'El jardín descansa', again: 'Plantar de nuevo',
-      newBest: '¡Nuevo récord!', bloom: '¡Tu jardín está en flor!', fresh: '¡Tierra fresca!', garden: 'Jardín', undo: 'Deshacer jugada', hold: 'Reserva',
+      newBest: '¡Nuevo récord!', bloom: '¡Tu jardín está en flor!', fresh: '¡Tierra fresca!', garden: 'Jardín', undo: 'Deshacer jugada', toMenu: 'Volver al menú', hold: 'Reserva',
       resetTitle: '¿Reiniciar el jardín?', resetText: 'Todas las plantas y jardines de este bioma empiezan de cero.', resetYes: 'Reiniciar', resetNo: 'Cancelar',
       name_meadow: 'Pradera', name_pond: 'Estanque', name_tropics: 'Trópico',
       diff: 'Dificultad', diff_easy: 'Fácil', diff_normal: 'Medio', diff_hard: 'Difícil', allDiffs: 'Todas', unlocked: '¡{d} desbloqueado!',
@@ -245,7 +245,7 @@
 
     ru: {
       best: 'Рекорд', combo: 'Комбо', hint: 'Перетащи фигуру на грядку', over: 'Сад отдыхает', again: 'Посадить снова',
-      newBest: 'Новый рекорд!', bloom: 'Твой сад расцвёл!', fresh: 'Свежая земля!', garden: 'Сад', undo: 'Отменить ход', hold: 'Запас',
+      newBest: 'Новый рекорд!', bloom: 'Твой сад расцвёл!', fresh: 'Свежая земля!', garden: 'Сад', undo: 'Отменить ход', toMenu: 'В меню', hold: 'Запас',
       resetTitle: 'Сбросить сад?', resetText: 'Все растения и сады этого биома начнутся заново.', resetYes: 'Сбросить', resetNo: 'Отмена',
       name_meadow: 'Луг', name_pond: 'Пруд', name_tropics: 'Тропики',
       diff: 'Сложность', diff_easy: 'Легко', diff_normal: 'Средне', diff_hard: 'Сложно', allDiffs: 'Все', unlocked: '«{d}» открыто!',
