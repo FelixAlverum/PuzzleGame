@@ -116,6 +116,13 @@ a:focus-visible {
   border-color: var(--wood);
 }
 
+/* Navigation aus einem Spiel zurück in die Spielesammlung */
+.pill.wood {
+  background: var(--wood);
+  border-color: var(--wood);
+  color: #fff;
+}
+
 .pill.small {
   font-size: 14px;
   padding: 8px 14px;

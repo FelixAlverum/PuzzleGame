@@ -115,7 +115,7 @@ eines Spiels (`games/cozy-garden/index.html`, `npm run dev:cozy-garden`).
 | Route | Inhalt | Stand |
 |---|---|---|
 | `#/` | **Bibliothek**: Kacheln mit Cover, Beschreibung, eigener Rekord, zuletzt gespielt; geplante Spiele als „Bald verfügbar“ | vorhanden |
-| `#/play/<spiel-id>` | Spiel im Vollbild. Zurück über den Knopf „Bibliothek“ im Spielmenü oder `Esc` im Spielmenü | vorhanden |
+| `#/play/<spiel-id>` | Spiel im Vollbild. Zurück über den Knopf „← Spielesammlung“ (Holzfarbe) im Spiel, bei Cozy Garden auch `Esc` im Spielmenü | vorhanden |
 | `#/settings` | **global**: Sprache, Gesamtlautstärke | vorhanden |
 | `#/profile` | Ranglisten, Spielstände (exportieren, löschen, Cloud ↔ Gerät), Käufe, Konto löschen | Phase 3 |
 | `#/shop` | Spiele und DLCs | Phase 4 |

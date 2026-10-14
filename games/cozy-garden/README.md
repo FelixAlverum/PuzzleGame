@@ -40,7 +40,7 @@ Beim Start erscheint das Menü: Biom wählen – **Wiese**, **Teich** oder **Tro
 eigenen Hintergrund, Rahmen, Garten, Musik, Atmosphäre und **3 Extra-Formen** (Wiese: Pilz, Blüte, Tulpe · Teich: Schilf, Seerose,
 Rohrkolben · Tropen: Bananenblatt, Hibiskus, Bambus). Die übrigen 13 Grundformen gibt es überall.
 Im Spiel führt ≡ oben links (oder `M`/`Esc`, nach Game Over auch der Knopf „Zum Menü“) zurück ins Menü; der Lauf bleibt gespeichert – je Biom, Feldgröße und Schwierigkeit einer.
-Aus dem Menü führt **Bibliothek** (oder `Esc`) zurück zur Spielesammlung.
+Aus dem Menü führt **← Spielesammlung** (oder `Esc`) zurück zur Spielesammlung.
 
 **Schwierigkeit:** Leicht, Mittel, Schwer – wählbar im Menü über den Biomen. Sie ändert nur den Formen-Mix: Leicht bringt mehr kleine
 Formen und viel Gnade bei vollem Feld, Mittel ist der bisherige Generator, Schwer bringt mehr große Formen, keine Gnade und bis zu zwei

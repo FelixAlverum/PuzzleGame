@@ -8,7 +8,7 @@ export const STR = {
     sound: 'Ton', volume: 'Gesamtlautstärke',
     volumeNote: 'Gilt für alle Spiele. Musik, Effekte und Atmosphäre stellst du im jeweiligen Spiel ein.',
     best: 'Rekord', lastPlayed: 'Zuletzt gespielt', loadError: 'Das Spiel konnte nicht geladen werden.',
-    toLibrary: 'Zur Bibliothek',
+    toLibrary: '← Spielesammlung',
   },
   en: {
     appName: 'Game Collection', tagline: 'Choose a game', play: 'Play', soon: 'Coming soon',
@@ -16,7 +16,7 @@ export const STR = {
     sound: 'Sound', volume: 'Master volume',
     volumeNote: 'Applies to all games. Music, effects and ambience are set in each game.',
     best: 'Best', lastPlayed: 'Last played', loadError: 'The game could not be loaded.',
-    toLibrary: 'Back to library',
+    toLibrary: '← Game collection',
   },
   fr: {
     appName: 'Collection de jeux', tagline: 'Choisis un jeu', play: 'Jouer', soon: 'Bientôt disponible',
@@ -24,7 +24,7 @@ export const STR = {
     sound: 'Son', volume: 'Volume général',
     volumeNote: 'S’applique à tous les jeux. Musique, effets et ambiance se règlent dans chaque jeu.',
     best: 'Record', lastPlayed: 'Dernière partie', loadError: 'Le jeu n’a pas pu être chargé.',
-    toLibrary: 'Retour à la bibliothèque',
+    toLibrary: '← Collection de jeux',
   },
   es: {
     appName: 'Colección de juegos', tagline: 'Elige un juego', play: 'Jugar', soon: 'Próximamente',
@@ -32,7 +32,7 @@ export const STR = {
     sound: 'Sonido', volume: 'Volumen general',
     volumeNote: 'Se aplica a todos los juegos. La música, los efectos y el ambiente se ajustan en cada juego.',
     best: 'Récord', lastPlayed: 'Última partida', loadError: 'No se pudo cargar el juego.',
-    toLibrary: 'Volver a la biblioteca',
+    toLibrary: '← Colección de juegos',
   },
   ru: {
     appName: 'Сборник игр', tagline: 'Выбери игру', play: 'Играть', soon: 'Скоро',
@@ -40,7 +40,7 @@ export const STR = {
     sound: 'Звук', volume: 'Общая громкость',
     volumeNote: 'Действует для всех игр. Музыку, эффекты и атмосферу настраивай в каждой игре.',
     best: 'Рекорд', lastPlayed: 'Последняя игра', loadError: 'Не удалось загрузить игру.',
-    toLibrary: 'В библиотеку',
+    toLibrary: '← Сборник игр',
   },
   zh: {
     appName: '游戏合集', tagline: '选择一个游戏', play: '开始', soon: '即将推出',
@@ -48,6 +48,6 @@ export const STR = {
     sound: '声音', volume: '总音量',
     volumeNote: '适用于所有游戏。音乐、音效和环境音在各个游戏中设置。',
     best: '最高分', lastPlayed: '上次游玩', loadError: '游戏无法加载。',
-    toLibrary: '返回游戏库',
+    toLibrary: '← 游戏合集',
   },
 };
