@@ -1,0 +1,11 @@
+/* Solitaire: Grundlage aus @spielesammlung/cards/cards.css und dem Spielrahmen in @spielesammlung/ui/theme.css.
+   Hier nur, was Solitaire eigen ist. */
+
+.solitaire .game-title {
+  color: #3d5a2a;
+}
+
+/* Leerer Stapel: Zeichen zum Zurückdrehen der Ablage */
+.solitaire .slot[data-pile="stock"] {
+  border-style: solid;
+}

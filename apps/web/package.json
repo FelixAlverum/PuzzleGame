@@ -1,6 +1,6 @@
 {
   "name": "@spielesammlung/web",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "description": "Plattform-Hülle: Bibliothek, Spielansicht, globale Einstellungen",
   "type": "module",
@@ -12,8 +12,10 @@
   "dependencies": {
     "@spielesammlung/cozy-garden": "*",
     "@spielesammlung/game-sdk": "*",
-    "@spielesammlung/minesweeper": "*",
     "@spielesammlung/i18n": "*",
+    "@spielesammlung/minesweeper": "*",
+    "@spielesammlung/solitaire": "*",
+    "@spielesammlung/spider": "*",
     "@spielesammlung/ui": "*"
   }
 }

@@ -1,0 +1,247 @@
+/* Kartenspiele: Tisch, Karten, Plätze. Größen hängen an --cw/--ch (Kartenbreite/-höhe), die der Tisch setzt.
+   Spielrahmen (Kopfleiste, Ergebnis, Fußzeile) aus @spielesammlung/ui/theme.css. */
+
+/* --- Spielfläche: Moosgrüner Filz im Holzrahmen --- */
+
+.cardgame .felt {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+  border-radius: 16px;
+  border: 4px solid var(--wood);
+  box-shadow: 0 4px 0 var(--shadow), inset 0 0 40px rgba(20, 50, 15, 0.35);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 220, 0.18), transparent 60%),
+    repeating-linear-gradient(35deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 5px),
+    #5f9645;
+  overflow: hidden;
+}
+
+.ptable {
+  position: absolute;
+  inset: 0;
+  z-index: 0;              /* eigene Stapelebene: Karten-z-index bleibt unter dem Ergebnis */
+  touch-action: none;
+  --cw: 60px;
+  --ch: 84px;
+}
+
+/* --- Plätze (leere Stapel) --- */
+
+.ptable .slot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--cw);
+  height: var(--ch);
+  box-sizing: border-box;
+  border-radius: calc(var(--cw) * 0.08);
+  border: 2px dashed rgba(255, 250, 225, 0.45);
+  background: rgba(20, 50, 15, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 250, 225, 0.6);
+  font-weight: 800;
+  font-size: calc(var(--cw) * 0.4);
+  cursor: pointer;
+}
+
+.ptable .slot svg {
+  width: 50%;
+  height: 50%;
+}
+
+/* --- Karten --- */
+
+.ptable .pcard {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--cw);
+  height: var(--ch);
+  border-radius: calc(var(--cw) * 0.08);
+  transition: transform 0.2s ease-out;
+  cursor: pointer;
+  color: #2b2420;
+}
+
+.ptable.instant .pcard,
+.ptable .pcard.drag {
+  transition: none;
+}
+
+.ptable .pcard.red {
+  color: #c0392b;
+}
+
+.ptable .pcard .face,
+.ptable .pcard .back {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border-radius: inherit;
+}
+
+.ptable .pcard .face {
+  display: none;
+  background: linear-gradient(#fffcf3, #fbf3e0);
+  border: 1px solid rgba(74, 52, 36, 0.45);
+  box-shadow: 0 1px 2px rgba(30, 20, 10, 0.35);
+  overflow: hidden;
+}
+
+.ptable .pcard.up .face {
+  display: block;
+}
+
+.ptable .pcard.up .back {
+  display: none;
+}
+
+/* Ecke: Wert links, Farbe rechts – bleibt auch im engen Fächer lesbar */
+.ptable .pcard .idx {
+  position: absolute;
+  top: calc(var(--cw) * 0.03);
+  left: calc(var(--cw) * 0.07);
+  right: calc(var(--cw) * 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: calc(var(--cw) * 0.32);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.ptable .pcard .idx svg {
+  width: calc(var(--cw) * 0.27);
+  height: calc(var(--cw) * 0.27);
+}
+
+.ptable .pcard .mid {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 34%;
+  bottom: 8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ptable .pcard .mid svg {
+  width: 82%;
+  height: 82%;
+}
+
+.ptable .pcard .mid.ace svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ptable .pcard .mid.fig {
+  left: 8%;
+  right: 8%;
+  top: 30%;
+  bottom: 5%;
+}
+
+.ptable .pcard .mid.fig svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Rückseite: Grün mit Rautenmuster und Papierrand */
+.ptable .pcard .back {
+  border: calc(var(--cw) * 0.05) solid #fbf5e6;
+  box-shadow: 0 1px 2px rgba(30, 20, 10, 0.4), inset 0 0 0 1px rgba(60, 40, 20, 0.3);
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 250, 225, 0.16) 0 3px, transparent 3px 8px),
+    repeating-linear-gradient(-45deg, rgba(255, 250, 225, 0.16) 0 3px, transparent 3px 8px),
+    linear-gradient(160deg, #6ea64b, #3f7a2a);
+}
+
+.ptable .pcard .back::after {
+  content: '';
+  position: absolute;
+  inset: 9%;
+  border-radius: calc(var(--cw) * 0.05);
+  border: 1.5px solid rgba(255, 250, 225, 0.5);
+}
+
+/* --- Zustände --- */
+
+.ptable .pcard.flat .face,
+.ptable .pcard.flat .back {
+  box-shadow: none;
+}
+
+.ptable .pcard.drag {
+  filter: drop-shadow(0 8px 10px rgba(20, 10, 0, 0.35));
+}
+
+.ptable .pcard.hint .face,
+.ptable .slot.hint {
+  box-shadow: 0 0 0 3px #f2c14e, 0 0 14px 4px rgba(242, 193, 78, 0.8);
+}
+
+.ptable .pcard.hint {
+  animation: pc-bob 0.65s ease-in-out 2;
+}
+
+@keyframes pc-bob {
+  50% { translate: 0 -4px; }
+}
+
+.ptable .pcard.picked .face {
+  box-shadow: 0 0 0 3px #7fc8f8, 0 6px 10px rgba(20, 10, 0, 0.3);
+}
+
+.ptable .pcard.picked {
+  translate: 0 -6px;
+}
+
+.ptable .pcard.cursor .face,
+.ptable .pcard.cursor .back,
+.ptable .slot.cursor {
+  outline: 3px solid #e8b04a;
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .ptable .slot:hover {
+    background: rgba(255, 250, 225, 0.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptable .pcard {
+    transition-duration: 0.01s;
+  }
+
+  .ptable .pcard.hint {
+    animation: none;
+  }
+}
+
+/* Zähler „Züge“ und Werkzeug-Symbole in der Kopfleiste */
+.cardgame .counter.moves svg {
+  color: var(--wood);
+}
+
+.cardgame .counter.time svg {
+  color: var(--green-dark);
+}
+
+.cardgame .game-tools .icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cardgame .note-line {
+  min-height: 1.3em;
+  font-weight: 700;
+  color: var(--ink);
+}

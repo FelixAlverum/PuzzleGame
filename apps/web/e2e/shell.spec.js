@@ -2,12 +2,15 @@
 import { test, expect } from '@playwright/test';
 import { freshStorage, openGame } from './helpers.js';
 
-test('Bibliothek: spielbare Spiele mit Cover, geplante als „Bald verfügbar“', async ({ page }) => {
+test('Bibliothek: alle vier Spiele mit Cover, nichts mehr „Bald verfügbar“', async ({ page }) => {
   await freshStorage(page);
   await page.goto('./#/');
   await expect(page.locator('h1')).toHaveText('Spielesammlung');
-  await expect(page.locator('.game:not(.soon)')).toHaveCount(2);
-  await expect(page.locator('.game.soon')).toHaveCount(2);
+  await expect(page.locator('.game:not(.soon)')).toHaveCount(4);
+  await expect(page.locator('.game.soon')).toHaveCount(0);
+  for (const id of ['cozy-garden', 'minesweeper', 'solitaire', 'spider']) {
+    await expect(page.locator(`.game[data-game="${id}"] .pill.primary`)).toHaveAttribute('href', `#/play/${id}`);
+  }
   for (const img of await page.locator('.game img').all()) {
     expect(await img.evaluate(i => i.naturalWidth)).toBeGreaterThan(0);
   }

@@ -7,6 +7,11 @@ Neueste oben. **Entschieden** heißt: gilt, bis es hier ausdrücklich geändert 
 
 | Datum | Entscheidung | Warum |
 |---|---|---|
+| 2026-10-14 | **Kartenspiele über einen gemeinsamen Rahmen** (`mountCardGame` in `packages/cards`): Spiele liefern nur Regeln, Texte und Lage der Stapel | Solitaire und Spider teilen Tisch, Bedienung, Zeit, Speichern, Statistik und Ton. Ein weiteres Patience-Spiel (z. B. FreeCell) braucht nur noch seine Regeln. |
+| 2026-10-14 | **Läufe der Kartenspiele = Seed + Züge**, „Rückgängig“ spielt die Züge ohne den letzten nach | Ein Format für Spielstand, Rückgängig und Ranglisten-Beweis. Nachspielen von ein paar hundert Zügen dauert Millisekunden. |
+| 2026-10-14 | **Ranglisten der Kartenspiele werten die Zeit** (je Variante), keine Punkte | Wie bei Minesweeper eindeutig und mit dem Beweis nachprüfbar; Punkte lassen sich später als zweite Rangliste ergänzen. |
+| 2026-10-14 | **Gemeinsames Ton-Grundgerüst** in `packages/audio`, Klänge bleiben im Spiel | Kontext, Entsperren und Gesamtlautstärke waren in Cozy Garden und Minesweeper doppelt; die Kartenspiele brauchten dasselbe. |
+| 2026-10-14 | **Spielrahmen für HTML-Spiele** (`.game-root`, `.game-bar`, `.counter`, `.game-result`, `.game-help`) in `packages/ui` | Minesweeper, Solitaire und Spider sehen gleich aus und passen sich gleich an Handy hoch und quer an. |
 | 2026-10-14 | **Spielstände der Hülle in `localStorage`** (Präfix `lib:`), nicht IndexedDB, bis Cloud-Sync kommt | Synchron, also sicher beim Schließen des Tabs (`pagehide`). Die Datenmengen sind klein. IndexedDB lohnt sich erst mit der Sync-Warteschlange (Phase 3). |
 | 2026-10-14 | **Lebenszyklus über `GameHandle`**: `mount` gibt `{ pause, resume, unmount }` zurück, die Hülle ruft sie auf | Eine Stelle entscheidet über Sichtbarkeit und Routing. Spiele müssen nicht selbst auf `visibilitychange` hören. |
 | 2026-10-14 | **Sprache und Gesamtlautstärke nur in der Hülle**, Kanal-Lautstärken und alles andere im Spiel | Eine Sprache für die ganze Sammlung. Spiele bekommen sie über `platform.language()` und `platform.audio`. |
@@ -24,7 +29,6 @@ Neueste oben. **Entschieden** heißt: gilt, bis es hier ausdrücklich geändert 
 
 | Phase | Vorschlag | Warum |
 |---|---|---|
-| 2 | Minesweeper als zweites Spiel | Am kleinsten, prüft den Vertrag mit wenig Aufwand |
 | 3 | Eigene API (Node, Fastify) + Postgres + fertige Auth-Bibliothek (z. B. better-auth) | Volle Kontrolle für Nachspiel-Prüfung und Kauf-Webhooks, läuft im selben docker-compose. Alternative: Supabase. |
 | 3 | Ranglisten nur mit nachgespieltem `proof` | Vom Client gemeldete Punkte sind beliebig fälschbar |
 | 3 | IndexedDB mit Sync-Warteschlange für Cloud-Spielstände | Offline-first mit Revisionen, siehe daten-und-konten.md |
@@ -34,4 +38,3 @@ Neueste oben. **Entschieden** heißt: gilt, bis es hier ausdrücklich geändert 
 
 - Name der Spielesammlung (betrifft Repo, Docker-Images, Domain, PWA-Titel; heute Arbeitstitel „Spielesammlung“)
 - Welche Inhalte von Cozy Garden DLC werden (z. B. Biome) und was gratis bleibt
-- Reihenfolge Solitaire und Spider

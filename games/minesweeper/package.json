@@ -11,6 +11,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@spielesammlung/audio": "*",
     "@spielesammlung/game-sdk": "*",
     "@spielesammlung/i18n": "*",
     "@spielesammlung/ui": "*"

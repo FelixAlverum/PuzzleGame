@@ -184,3 +184,208 @@ input[type=range] {
   min-height: 32px;
   touch-action: pan-x;
 }
+
+/* --- Spielrahmen für Spiele mit HTML-Oberfläche (Minesweeper, Solitaire, Spider) ---
+   Wurzel .game-root füllt die Bühne: Kopfleiste .game-bar, Spielfläche (Sache des Spiels), Fußzeile .game-help.
+   Das Spiel hängt zusätzlich seine eigene Wurzel-Klasse an (z. B. .minesweeper) und ergänzt nur, was ihm eigen ist. */
+
+.game-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at top, #f6efd9, var(--bg) 70%);
+  font-family: var(--font);
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.game-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
+}
+
+.game-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #3d5a2a;
+}
+
+/* Varianten/Stufen als Segmente */
+.game-variants {
+  flex: 1 1 280px;
+}
+
+.game-variants .seg {
+  min-height: 38px;
+  font-size: 14px;
+  flex: 1 1 70px;
+}
+
+.game-counters,
+.game-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 62px;
+  padding: 5px 12px;
+  box-sizing: border-box;
+  border: 2px solid var(--wood);
+  border-radius: 999px;
+  background: var(--paper);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.counter svg,
+.game-tools .icon svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+/* Knopf nur mit Symbol (Rückgängig, Tipp, Flaggen-Modus) */
+.game-tools .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+}
+
+/* Ergebnis (Sieg, Niederlage) mittig über der Spielfläche */
+.game-result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 340px);
+  text-align: center;
+  z-index: 20;
+}
+
+.game-result[hidden] {
+  display: none;
+}
+
+.game-result h2 {
+  margin: 4px 0;
+  font-size: 26px;
+  color: var(--red);
+}
+
+.game-result.won h2 {
+  color: var(--green-dark);
+}
+
+.game-result .sub {
+  margin: 0 0 12px;
+  font-weight: 700;
+  min-height: 1em;
+}
+
+.game-result .row {
+  justify-content: center;
+}
+
+.game-help {
+  padding: 2px max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.game-help p {
+  margin: 2px 0;
+}
+
+.game-help .stats {
+  font-weight: 800;
+  color: var(--green-dark);
+}
+
+/* Schmale Bildschirme: Zähler und Werkzeuge teilen sich eine Zeile */
+@media (max-width: 600px) {
+  .game-bar {
+    gap: 6px 8px;
+  }
+
+  .game-title {
+    font-size: 18px;
+  }
+
+  .game-help .hint {
+    display: none;
+  }
+
+  .game-counters,
+  .game-tools {
+    gap: 5px;
+  }
+
+  .game-tools {
+    margin-left: auto;
+  }
+
+  .counter {
+    min-width: 0;
+    padding: 4px 9px;
+    gap: 4px;
+  }
+
+  .game-tools .pill.small {
+    padding: 6px 11px;
+    min-height: 40px;
+  }
+
+  .game-tools .icon {
+    min-width: 42px;
+  }
+}
+
+/* Niedrige Bildschirme (Handy quer): eine Zeile Kopfleiste, keine Anleitung */
+@media (max-height: 520px) {
+  .game-bar {
+    flex-wrap: nowrap;
+    padding-top: max(6px, env(safe-area-inset-top));
+    padding-bottom: 4px;
+  }
+
+  .game-title {
+    display: none;
+  }
+
+  .game-variants {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .game-variants .seg {
+    min-height: 34px;
+    min-width: 0;
+    padding: 0 6px;
+    font-size: 13px;
+  }
+
+  .game-bar .pill.small {
+    min-height: 36px;
+    padding: 5px 10px;
+    white-space: nowrap;
+  }
+
+  .game-help .hint {
+    display: none;
+  }
+}

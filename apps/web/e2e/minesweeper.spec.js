@@ -31,7 +31,7 @@ test('Klick deckt eine Fläche auf, Rechtsklick setzt eine Flagge, die Zeit läu
 test('Sieg: Meldung, Statistik und Bestzeit in der Bibliothek', async ({ page }) => {
   await cell(page, 40).click();
   await winNow(page);
-  await expect(page.locator('.result h2')).toHaveText('Geschafft!');
+  await expect(page.locator('.game-result h2')).toHaveText('Geschafft!');
   expect(await page.evaluate(() => __dbg.stats().beginner.won)).toBe(1);
   await page.locator('[data-act="exit"]').click();
   await expect(page.locator('.game[data-game="minesweeper"] .meta')).toContainText('Rekord (Anfänger)');
@@ -41,10 +41,10 @@ test('Niederlage: Kette mit Wackeln, Menü erst danach, alle Minen explodieren',
   await cell(page, 40).click();
   await cell(page, await firstMine(page)).click();
   expect(await page.evaluate(() => __dbg.blasting())).toBe(true);     // der treffende Klick überspringt nicht
-  await expect(page.locator('.result')).toBeHidden();
+  await expect(page.locator('.game-result')).toBeHidden();
   expect(await page.evaluate(() => document.querySelector('.minesweeper').getAnimations().length)).toBeGreaterThan(0);
-  await expect(page.locator('.result')).toBeVisible({ timeout: 5000 });
-  await expect(page.locator('.result h2')).toHaveText('Boom! Mine erwischt.');
+  await expect(page.locator('.game-result')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('.game-result h2')).toHaveText('Boom! Mine erwischt.');
   expect(await page.evaluate(() => __dbg.burst())).toBe(10);
   await expect(page.locator('.minesweeper .c.mine')).toHaveCount(10);
 });
@@ -54,8 +54,8 @@ test('Niederlage: Klick überspringt die Kette und öffnet sofort das Menü', as
   await cell(page, await firstMine(page)).click();
   await page.waitForTimeout(450);
   expect(await page.evaluate(() => __dbg.blasting())).toBe(true);
-  await page.locator('.minesweeper .title').click();
-  await expect(page.locator('.result')).toBeVisible();
+  await page.locator('.minesweeper .game-title').click();
+  await expect(page.locator('.game-result')).toBeVisible();
   expect(await page.evaluate(() => __dbg.blasting())).toBe(false);
   await expect(page.locator('.minesweeper .c.mine')).toHaveCount(10);
 });
@@ -64,7 +64,7 @@ test('Profi: Kettenreaktion mit 99 Minen dauert höchstens etwa 3,5 s', async ({
   await page.evaluate(() => { __dbg.setLevel('expert'); __dbg.reveal(240); });
   const start = Date.now();
   await page.evaluate(() => { const g = __dbg.game(); __dbg.reveal(g.mine.findIndex((m, i) => m && !g.open[i])); });
-  await expect(page.locator('.result')).toBeVisible({ timeout: 6000 });
+  await expect(page.locator('.game-result')).toBeVisible({ timeout: 6000 });
   expect(Date.now() - start).toBeLessThan(4200);
 });
 
@@ -137,4 +137,45 @@ test('@handy Profi-Feld wird gedreht und passt; Tippen deckt auf, lang drücken 
   await page.waitForTimeout(550);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect(cell(page, i)).toHaveClass(/flag/);
+});
+
+test('„Neues Spiel“ fragt bei begonnenem Lauf nach: erst der zweite Klick verwirft ihn', async ({ page }) => {
+  await cell(page, 40).click();
+  const seed = await page.evaluate(() => __dbg.game().seed);
+  const btn = page.locator('[data-act="new"]');
+  await btn.click();
+  await expect(btn).toHaveText('Wirklich neu?');
+  await expect(btn).toHaveClass(/armed/);
+  expect(await page.evaluate(() => __dbg.game().seed)).toBe(seed);
+  await btn.click();
+  await expect(btn).toHaveText('Neues Spiel');
+  expect(await page.evaluate(() => __dbg.game().started)).toBe(false);
+});
+
+test('Eigenes Feld: Maße wählen, spielen, Stand und Maße bleiben erhalten', async ({ page }) => {
+  await page.locator('.levels .seg', { hasText: 'Eigenes' }).click();
+  await expect(page.locator('.custom')).toBeVisible();
+  await page.locator('.custom input[data-k="w"]').fill('12');
+  await page.locator('.custom input[data-k="h"]').fill('8');
+  await page.locator('.custom input[data-k="mines"]').fill('15');
+  await page.locator('[data-act="custom-start"]').click();
+  await expect(page.locator('.custom')).toBeHidden();
+  await expect(page.locator('.minesweeper .c')).toHaveCount(96);
+  await expect(page.locator('.mines b')).toHaveText('15');
+  await cell(page, 50).click();
+  expect(await page.evaluate(() => __dbg.game().opened)).toBeGreaterThan(1);
+  await page.locator('[data-act="exit"]').click();
+  await page.evaluate(() => { location.hash = '#/play/minesweeper'; });
+  await page.waitForFunction(() => window.__dbg && window.__dbg.ready());
+  const g = await page.evaluate(() => ({ level: __dbg.level(), w: __dbg.game().w, h: __dbg.game().h, mines: __dbg.game().mines, opened: __dbg.game().opened }));
+  expect(g).toMatchObject({ level: 'custom', w: 12, h: 8, mines: 15 });
+  expect(g.opened).toBeGreaterThan(1);
+});
+
+test('Sieg: Welle über das Feld, Siegton, dann die Meldung', async ({ page }) => {
+  await cell(page, 40).click();
+  await winNow(page);
+  await expect(page.locator('.minesweeper .board')).toHaveClass(/won/);
+  await expect(page.locator('.game-result')).toBeHidden();
+  await expect(page.locator('.game-result')).toBeVisible();
 });

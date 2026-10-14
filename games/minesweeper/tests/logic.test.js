@@ -138,3 +138,30 @@ test('Statistik: nur beendete Spiele, Bestzeit nur bei Sieg und Verbesserung', (
   assert.deepEqual(st, { played: 4, won: 3, best: 20000 });
   assert.deepEqual(Logic.restoreStat({ played: 2, won: 5, best: -1 }), { played: 2, won: 2, best: null });
 });
+
+test('Eigenes Feld: Maße in den Grenzen, mindestens 9 Felder frei, erster Klick sicher', () => {
+  assert.deepEqual(Logic.customSize({ w: 2, h: 99, mines: 9999 }), { w: 5, h: 30, mines: 5 * 30 - 9 });
+  assert.deepEqual(Logic.customSize({ w: 12.4, h: 7, mines: 0 }), { w: 12, h: 7, mines: 1 });
+  const d = Logic.customSize(null);
+  assert.ok(d.w >= 5 && d.h >= 5 && d.mines >= 1 && d.mines <= Logic.maxMines(d.w, d.h));
+  for (let seed = 1; seed <= 50; seed++) {
+    const g = Logic.newGame('custom', seed, { w: 6, h: 5, mines: 21 });
+    assert.equal(g.level, 'custom');
+    assert.equal(g.w * g.h, 30);
+    const ev = Logic.reveal(g, 14);
+    assert.equal(count(g.mine), 21);
+    assert.equal(g.mine[14], 0);
+    assert.ok(ev.some(e => e.type === 'revealed'));
+    assert.ok(g.won, 'alle freien Felder liegen um den ersten Klick');
+  }
+});
+
+test('Eigenes Feld: Stand übersteht Speichern, kaputte Maße werden verworfen', () => {
+  const g = Logic.newGame('custom', 7, { w: 20, h: 10, mines: 30 });
+  Logic.reveal(g, 55);
+  const back = Logic.restore(JSON.parse(JSON.stringify(g)));
+  assert.equal(back.w, 20);
+  assert.equal(back.mines, 30);
+  assert.deepEqual(back.mine, g.mine);
+  assert.equal(Logic.restore({ ...JSON.parse(JSON.stringify(g)), w: 3 }), null);
+});

@@ -1,72 +1,6 @@
 /* Minesweeper: alles unter .minesweeper. Grundbausteine (Pillen, Segmente, Karten) aus @spielesammlung/ui/theme.css.
    Verdeckte Felder sind Moos, aufgedeckte heller Sand – passend zu Holz und Papier der Sammlung. */
 
-.minesweeper {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  background: radial-gradient(ellipse at top, #f6efd9, var(--bg) 70%);
-  font-family: var(--font);
-  color: var(--ink);
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.minesweeper .bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
-}
-
-.minesweeper .title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-  color: #3d5a2a;
-}
-
-.minesweeper .levels {
-  flex: 1 1 280px;
-}
-
-.minesweeper .levels .seg {
-  min-height: 38px;
-  font-size: 14px;
-  flex: 1 1 70px;
-}
-
-.minesweeper .counters,
-.minesweeper .tools {
-  display: flex;
-  gap: 8px;
-}
-
-.minesweeper .counter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 62px;
-  padding: 5px 12px;
-  box-sizing: border-box;
-  border: 2px solid var(--wood);
-  border-radius: 999px;
-  background: var(--paper);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.minesweeper .counter svg,
-.minesweeper .flag-mode svg {
-  width: 18px;
-  height: 18px;
-  flex: none;
-}
-
 .minesweeper .counter.mines svg {
   color: #3a2a1c;
 }
@@ -76,11 +10,7 @@
 }
 
 .minesweeper .flag-mode {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   color: var(--red);
-  min-width: 52px;
 }
 
 .minesweeper .flag-mode.on {
@@ -247,66 +177,67 @@
   z-index: 1;
 }
 
-/* --- Ergebnis --- */
+/* --- Aufdecken und Sieg --- */
 
-.minesweeper .result {
+/* Neu geöffnete Felder springen auf, von der angeklickten Stelle aus nach außen (--d = Verzögerung) */
+.minesweeper .c.pop {
+  animation: ms-open 0.22s ease-out both;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes ms-open {
+  0% { transform: scale(0.6); background-color: #b9d99a; }
+  100% { transform: scale(1); }
+}
+
+/* Sieg: eine Welle läuft diagonal über das Feld, die Flaggen hüpfen */
+.minesweeper .board.won .c {
+  animation: ms-wave 0.6s ease-in-out both;
+  animation-delay: var(--d, 0s);
+}
+
+.minesweeper .board.won .c.flag {
+  animation-name: ms-hop;
+}
+
+@keyframes ms-wave {
+  0%, 100% { transform: none; }
+  45% { transform: translateY(calc(var(--cs) * -0.25)) scale(1.08); filter: brightness(1.12); }
+}
+
+@keyframes ms-hop {
+  0%, 100% { transform: none; }
+  40% { transform: translateY(calc(var(--cs) * -0.5)) rotate(-8deg); }
+  70% { transform: translateY(calc(var(--cs) * -0.1)) rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minesweeper .c.pop,
+  .minesweeper .board.won .c {
+    animation: none;
+  }
+}
+
+/* --- Eigenes Feld --- */
+
+.minesweeper .custom {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(90%, 340px);
-  text-align: center;
-  z-index: 2;
+  width: min(92%, 380px);
+  z-index: 20;
 }
 
-.minesweeper .result[hidden] {
+.minesweeper .custom[hidden] {
   display: none;
 }
 
-.minesweeper .result h2 {
-  margin: 4px 0;
-  font-size: 26px;
-  color: var(--red);
+.minesweeper .custom .setting {
+  grid-template-columns: 90px 1fr 44px;
 }
 
-.minesweeper .result.won h2 {
-  color: var(--green-dark);
-}
-
-.minesweeper .result .sub {
-  margin: 0 0 12px;
-  font-weight: 700;
-  min-height: 1em;
-}
-
-.minesweeper .result .row {
+.minesweeper .custom .row {
   justify-content: center;
-}
-
-/* --- Fußzeile --- */
-
-.minesweeper .help {
-  padding: 2px max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
-  text-align: center;
-  font-size: 13px;
-  color: var(--ink-soft);
-}
-
-.minesweeper .help p {
-  margin: 2px 0;
-}
-
-.minesweeper .help .stats {
-  font-weight: 800;
-  color: var(--green-dark);
-}
-
-@media (max-width: 600px) {
-  .minesweeper .title {
-    font-size: 18px;
-  }
-
-  .minesweeper .help .hint {
-    display: none;
-  }
+  margin-top: 8px;
 }

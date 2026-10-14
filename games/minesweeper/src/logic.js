@@ -11,6 +11,22 @@ export const LEVELS = {
 export const LEVEL_IDS = Object.keys(LEVELS);
 export const DEFAULT_LEVEL = 'beginner';
 
+// Eigenes Feld: Größe und Minenzahl frei, aber mindestens 9 Felder ohne Mine (erster Klick + Nachbarn)
+export const CUSTOM = 'custom';
+export const CUSTOM_LIMITS = { w: [5, 40], h: [5, 30], mines: [1] };
+export const maxMines = (w, h) => w * h - 9;
+const clampInt = (v, lo, hi, dflt) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, Math.round(v))) : dflt);
+
+/** Gültige Maße für ein eigenes Feld; ungültige Werte werden in die Grenzen gezogen */
+export function customSize(s) {
+  const o = s && typeof s === 'object' ? s : {};
+  const w = clampInt(o.w, ...CUSTOM_LIMITS.w, 20), h = clampInt(o.h, ...CUSTOM_LIMITS.h, 12);
+  return { w, h, mines: clampInt(o.mines, 1, maxMines(w, h), Math.round(w * h * 0.16)) };
+}
+
+const sizeOf = (level, custom) => (level === CUSTOM ? customSize(custom) : LEVELS[level] || LEVELS[DEFAULT_LEVEL]);
+const validLevel = level => level === CUSTOM || !!LEVELS[level];
+
 function mulberry32(seed) {
   let a = seed >>> 0;
   return () => {
@@ -22,12 +38,13 @@ function mulberry32(seed) {
   };
 }
 
-// Felder: mine 0/1, open 0/1, flag 0/1 als flache Listen (Index = r * w + c), gut zu speichern
-export function newGame(level, seed) {
-  const L = LEVELS[level] || LEVELS[DEFAULT_LEVEL];
+// Felder: mine 0/1, open 0/1, flag 0/1 als flache Listen (Index = r * w + c), gut zu speichern.
+// custom: Maße { w, h, mines } für die Stufe 'custom'
+export function newGame(level, seed, custom) {
+  const L = sizeOf(level, custom);
   const n = L.w * L.h;
   return {
-    level: LEVELS[level] ? level : DEFAULT_LEVEL,
+    level: validLevel(level) ? level : DEFAULT_LEVEL,
     w: L.w, h: L.h, mines: L.mines, seed: seed >>> 0,
     mine: new Array(n).fill(0), open: new Array(n).fill(0), flag: new Array(n).fill(0),
     started: false, over: false, won: false, exploded: -1,
@@ -141,11 +158,11 @@ export function chord(g, i) {
 
 // Gespeicherten Stand prüfen; kaputte oder unpassende Stände ergeben null
 export function restore(d) {
-  if (!d || typeof d !== 'object' || !LEVELS[d.level]) return null;
-  const L = LEVELS[d.level], n = L.w * L.h;
+  if (!d || typeof d !== 'object' || !validLevel(d.level)) return null;
+  const L = sizeOf(d.level, d), n = L.w * L.h;
   const bits = a => Array.isArray(a) && a.length === n && a.every(v => v === 0 || v === 1);
   if (d.w !== L.w || d.h !== L.h || d.mines !== L.mines || !bits(d.mine) || !bits(d.open) || !bits(d.flag)) return null;
-  const g = newGame(d.level, d.seed);
+  const g = newGame(d.level, d.seed, L);
   Object.assign(g, {
     mine: d.mine.slice(), open: d.open.slice(), flag: d.flag.slice(),
     started: !!d.started, over: !!d.over, won: !!d.won,

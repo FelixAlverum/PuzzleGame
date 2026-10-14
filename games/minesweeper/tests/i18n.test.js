@@ -15,3 +15,11 @@ test('Alle Sprachen haben dieselben Texte, keiner ist leer', () => {
 test('Jede Stufe hat einen Namen', () => {
   for (const l of I18N.LANGS) for (const id of Logic.LEVEL_IDS) assert.ok(I18N.STR[l][id], `${l}.${id}`);
 });
+
+test('Manifest: Ranglisten entsprechen den Stufen der Logik', async () => {
+  const { STR } = I18N;
+  assert.ok(STR.de.beginner);
+  const src = await import('node:fs').then(fs => fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8'));
+  const ids = JSON.parse(src.match(/const LEVEL_IDS = (\[[^\]]*\])/)[1].replace(/'/g, '"'));
+  assert.deepEqual(ids, Logic.LEVEL_IDS);
+});

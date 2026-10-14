@@ -1,9 +1,10 @@
 // Minesweeper: Darstellung und Eingabe als HTML-Raster, Spiellogik in logic.js.
 // mount() baut das Spiel in einem Element auf und liefert pause/resume/unmount an die Plattform-Hülle.
-// Je Stufe gibt es einen eigenen offenen Lauf und eine eigene Statistik; die Zeit läuft nur, solange gespielt wird.
+// Je Stufe (auch „Eigenes“ Feld) gibt es einen eigenen offenen Lauf und eine eigene Statistik;
+// die Zeit läuft nur, solange gespielt wird.
 import * as Logic from './logic.js';
 import * as I18N from './i18n.js';
-import { createAudio } from './audio.js';
+import { createSound } from './audio.js';
 import '@spielesammlung/ui/theme.css';
 import './style.css';
 
@@ -15,6 +16,9 @@ const BLAST_TOTAL = 2600; // ms höchstens für die ganze Kette, egal wie viele 
 const BLAST_GAP = 220;    // ms höchstens zwischen zwei Explosionen (wenige Minen)
 const BLAST_AFTER = 800;  // ms Pause nach der letzten Explosion, bevor das Menü kommt
 const BANG_GAP = 45;      // ms Mindestabstand zwischen zwei Knallen, sonst wird es Klangbrei
+const WIN_DELAY = 750;    // ms Welle über das Feld, bevor die Siegmeldung kommt
+const ARM_TIME = 3000;    // ms, in denen der zweite Tipp auf „Neues Spiel“ bestätigt
+const LEVELS = [...Logic.LEVEL_IDS, Logic.CUSTOM];
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 const ICON = {
@@ -24,23 +28,23 @@ const ICON = {
 };
 
 const TEMPLATE = `
-  <header class="bar">
+  <header class="game-bar">
     <button class="pill wood small" data-act="exit" hidden></button>
-    <h1 class="title"></h1>
-    <div class="seg-row levels" role="radiogroup"></div>
-    <div class="counters">
+    <h1 class="game-title"></h1>
+    <div class="seg-row game-variants levels" role="radiogroup"></div>
+    <div class="game-counters">
       <span class="counter mines">${ICON.mine}<b>0</b></span>
       <span class="counter time">${ICON.clock}<b>0</b></span>
     </div>
-    <div class="tools">
-      <button class="pill ghost small flag-mode" aria-pressed="false">${ICON.flag}</button>
+    <div class="game-tools">
+      <button class="pill ghost small icon flag-mode" aria-pressed="false">${ICON.flag}</button>
       <button class="pill primary small" data-act="new"></button>
     </div>
   </header>
   <div class="flash" aria-hidden="true"></div>
   <main class="field">
     <div class="board" role="grid"></div>
-    <section class="result card" hidden>
+    <section class="game-result card" hidden>
       <h2></h2>
       <p class="sub"></p>
       <div class="row">
@@ -48,8 +52,18 @@ const TEMPLATE = `
         <button class="pill ghost" data-act="look"></button>
       </div>
     </section>
+    <section class="custom card" hidden>
+      <h2></h2>
+      <label class="setting"><span data-t="width"></span><input type="range" data-k="w"><output></output></label>
+      <label class="setting"><span data-t="height"></span><input type="range" data-k="h"><output></output></label>
+      <label class="setting"><span data-t="mineCount"></span><input type="range" data-k="mines"><output></output></label>
+      <div class="row">
+        <button class="pill primary" data-act="custom-start"></button>
+        <button class="pill ghost" data-act="custom-cancel"></button>
+      </div>
+    </section>
   </main>
-  <footer class="help">
+  <footer class="game-help">
     <p class="stats"></p>
     <p class="hint"></p>
   </footer>`;
@@ -57,11 +71,11 @@ const TEMPLATE = `
 /** @param {HTMLElement} el @param {import('@spielesammlung/game-sdk').Platform} platform */
 export function mount(el, platform) {
   const root = document.createElement('div');
-  root.className = 'minesweeper';
+  root.className = 'game-root minesweeper';
   root.innerHTML = TEMPLATE;
   el.append(root);
   const $ = sel => root.querySelector(sel);
-  const board = $('.board'), field = $('.field'), result = $('.result');
+  const board = $('.board'), field = $('.field'), result = $('.game-result'), customBox = $('.custom');
   const ac = new AbortController(), signal = ac.signal;
 
   // Sprache: von der Plattform, Entwickler-Hilfe ?lang=fr erzwingt eine
@@ -70,8 +84,8 @@ export function mount(el, platform) {
   const S = I18N.STR[lang], htmlLang = I18N.HTML_LANG[lang];
   root.lang = htmlLang;
 
-  // Zustand (gespeichert): gewählte Stufe, offener Lauf und Statistik je Stufe
-  let level = Logic.DEFAULT_LEVEL, runs = {}, stats = {};
+  // Zustand (gespeichert): gewählte Stufe, offener Lauf und Statistik je Stufe, Maße des eigenen Felds
+  let level = Logic.DEFAULT_LEVEL, runs = {}, stats = {}, custom = Logic.customSize();
   let game = Logic.newGame(level, randSeed());
   // Ablauf
   let ready = false, paused = false, destroyed = false, flagMode = false;
@@ -80,7 +94,10 @@ export function mount(el, platform) {
   let cursor = null;                     // Tastatur-Cursor in Anzeige-Koordinaten { r, c }
   let blast = null;                      // laufende Explosionskette { timers, start, lastBang }
   let burst = new Set();                 // schon explodierte Minen der verlorenen Runde
-  const sound = createAudio();
+  let popping = new Map();               // gerade aufspringende Felder → Verzögerung in s
+  let popTimer = 0, winTimer = 0;
+  let armed = null;                      // Zwei-Tipp-Bestätigung für „Neues Spiel“ { btn, label, timer }
+  const sound = createSound();
   let offVolume = () => {};
   // Anzeige: Raster kann hochkant gedreht sein (breite Felder auf schmalen Bildschirmen)
   let cellEls = [], dispToIndex = [], indexToDisp = [], dispCols = 0, dispRows = 0, builtFor = '';
@@ -112,30 +129,40 @@ export function mount(el, platform) {
     commitTime();
     runs[level] = game;
     platform.save.store({
-      v: 1, level, stats,
+      v: 1, level, stats, custom,
       runs: Object.fromEntries(Object.entries(runs).filter(([, g]) => g && !g.over && g.started)),
     });
   }
 
   function load(data) {
     if (!data || data.v !== 1) return;
-    if (Logic.LEVELS[data.level]) level = data.level;
-    for (const l of Logic.LEVEL_IDS) {
+    if (LEVELS.includes(data.level)) level = data.level;
+    if (data.custom) custom = Logic.customSize(data.custom);
+    for (const l of LEVELS) {
       if (data.stats && data.stats[l]) stats[l] = Logic.restoreStat(data.stats[l]);
       const g = data.runs && Logic.restore(data.runs[l]);
       if (g && g.level === l && !g.over) runs[l] = g;
     }
   }
 
+  const freshGame = l => Logic.newGame(l, randSeed(), custom);
+
   // --- Aktionen --------------------------------------------------------------------------
 
   function act(kind, i) {
-    if (!ready || paused || game.over) return;
+    if (!ready || paused || game.over || !customBox.hidden) return;
     let events = null;
     if (kind === 'flag') events = Logic.toggleFlag(game, i);
     else events = game.open[i] ? Logic.chord(game, i) : Logic.reveal(game, i);
     if (!events) return;
+    disarm();
     startTimeIfRunning();
+    for (const ev of events) {
+      if (ev.type === 'revealed' && ev.cells.length) {
+        if (!game.over || game.won) sound.reveal(ev.cells.length);
+        pop(ev.cells, i);
+      } else if (ev.type === 'flagged') sound.flag(ev.on);
+    }
     if (game.over) end();
     paint();
     save();
@@ -144,17 +171,41 @@ export function mount(el, platform) {
   function end() {
     stopTime();
     game.elapsed = Math.round(game.elapsed);   // ganze Millisekunden für Statistik und Rangliste
-    const newBest = Logic.recordResult(statOf(level), game);
-    if (game.won) platform.scores.submit(level, game.elapsed, { seed: game.seed, moves: game.moves });
+    // Eigene Felder: keine Rangliste und keine Bestzeit, über verschiedene Größen hinweg sagt sie nichts
+    const newBest = Logic.recordResult(statOf(level), game) && level !== Logic.CUSTOM;
+    if (game.won && level !== Logic.CUSTOM) platform.scores.submit(level, game.elapsed, { seed: game.seed, moves: game.moves });
     delete runs[level];
     renderStats();
-    if (game.won) showResult(newBest);
+    if (game.won) celebrate(newBest);
     else startBlast();
   }
 
+  // Neu geöffnete Felder springen nacheinander auf, ausgehend vom angeklickten Feld
+  function pop(cells, from) {
+    const fr = Math.floor(from / game.w), fc = from % game.w;
+    for (const i of cells) {
+      const d = Math.hypot(Math.floor(i / game.w) - fr, (i % game.w) - fc);
+      popping.set(i, Math.min(0.4, d * 0.03));
+    }
+    clearTimeout(popTimer);
+    popTimer = setTimeout(() => { popping.clear(); if (!destroyed) paint(); }, 700);
+  }
+
+  // Sieg: Ton, eine Welle über das Feld, danach die Meldung
+  function celebrate(newBest) {
+    sound.win(newBest);
+    for (let k = 0; k < dispToIndex.length; k++) {
+      const el = cellEls[dispToIndex[k]];
+      el.style.setProperty('--d', `${(Math.floor(k / dispCols) + (k % dispCols)) * 0.018}s`);
+    }
+    board.classList.add('won');
+    clearTimeout(winTimer);
+    winTimer = setTimeout(() => showResult(newBest), WIN_DELAY);
+  }
+
   function showResult(newBest) {
-    $('.result h2').textContent = game.won ? S.won : S.lost;
-    $('.result .sub').textContent = game.won ? `${fmtTime(game.elapsed)}${newBest ? ' · ' + S.newBest : ''}` : '';
+    $('.game-result h2').textContent = game.won ? S.won : S.lost;
+    $('.game-result .sub').textContent = game.won ? `${fmtTime(game.elapsed)}${newBest ? ' · ' + S.newBest : ''}` : '';
     result.classList.toggle('won', game.won);
     result.hidden = false;
   }
@@ -231,34 +282,92 @@ export function mount(el, platform) {
     fl.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 650, easing: 'ease-out' });
   }
 
-  function newGame() {
+  // Aufräumen, bevor ein anderes Spiel aufs Feld kommt (neues Spiel, andere Stufe)
+  function clearBoardEffects() {
     cancelBlast();
     burst = new Set();
-    stopTime();
-    game = runs[level] = Logic.newGame(level, randSeed());
+    popping.clear();
+    clearTimeout(winTimer);
+    board.classList.remove('won');
     result.hidden = true;
     cursor = null;
+  }
+
+  function newGame() {
+    disarm();
+    clearBoardEffects();
+    stopTime();
+    game = runs[level] = freshGame(level);
+    customBox.hidden = true;
     layoutBoard();
     paint();
     save();
   }
 
+  // Ein begonnener Lauf geht nur nach einem zweiten Tipp (oder Druck auf N) innerhalb von 3 s verloren
+  const inProgress = () => game.started && !game.over;
+  function confirmNew(btn, action) {
+    if (!inProgress() || (armed && armed.btn === btn)) { disarm(); action(); return; }
+    disarm();
+    armed = { btn, label: btn.textContent, timer: setTimeout(disarm, ARM_TIME) };
+    btn.textContent = S.sure;
+    btn.classList.add('armed');
+  }
+  function disarm() {
+    if (!armed) return;
+    clearTimeout(armed.timer);
+    armed.btn.textContent = armed.label;
+    armed.btn.classList.remove('armed');
+    armed = null;
+  }
+
   function setLevel(l) {
-    if (!Logic.LEVELS[l] || l === level) return;
+    if (!LEVELS.includes(l)) return;
+    if (l === level) {                           // „Eigenes“ ein zweites Mal: Maße ändern
+      if (l === Logic.CUSTOM) openCustom();
+      return;
+    }
+    disarm();
     if (blast) finishBlast();
-    burst = new Set();
+    clearBoardEffects();
     stopTime();
     runs[level] = game;
     level = l;
-    game = runs[l] && !runs[l].over ? runs[l] : Logic.newGame(l, randSeed());
-    result.hidden = true;
-    cursor = null;
+    game = runs[l] && !runs[l].over ? runs[l] : freshGame(l);
+    customBox.hidden = true;
     startTimeIfRunning();
     renderLevels();
     renderStats();
     layoutBoard();
     paint();
     save();
+    if (l === Logic.CUSTOM && !game.started) openCustom();
+  }
+
+  // --- Eigenes Feld ----------------------------------------------------------------------
+
+  const customInput = k => customBox.querySelector(`input[data-k="${k}"]`);
+  function openCustom() {
+    disarm();
+    const [wl, wh] = Logic.CUSTOM_LIMITS.w, [hl, hh] = Logic.CUSTOM_LIMITS.h;
+    Object.assign(customInput('w'), { min: wl, max: wh, value: custom.w });
+    Object.assign(customInput('h'), { min: hl, max: hh, value: custom.h });
+    customInput('mines').min = Logic.CUSTOM_LIMITS.mines[0];
+    syncCustom(custom.mines);
+    result.hidden = true;
+    customBox.hidden = false;
+  }
+  // Minen-Regler folgt der Feldgröße (höchstens alle Felder bis auf 9)
+  function syncCustom(mines) {
+    const w = Number(customInput('w').value), h = Number(customInput('h').value), m = customInput('mines');
+    m.max = Logic.maxMines(w, h);
+    m.value = Math.min(Number(m.max), mines ?? Number(m.value));
+    for (const k of ['w', 'h', 'mines']) customInput(k).nextElementSibling.textContent = customInput(k).value;
+  }
+  function startCustom() {
+    custom = Logic.customSize({ w: Number(customInput('w').value), h: Number(customInput('h').value), mines: Number(customInput('mines').value) });
+    newGame();
+    renderStats();
   }
 
   function setFlagMode(on) {
@@ -273,7 +382,7 @@ export function mount(el, platform) {
   function renderLevels() {
     const seg = $('.levels');
     seg.textContent = '';
-    for (const l of Logic.LEVEL_IDS) {
+    for (const l of LEVELS) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'seg' + (l === level ? ' on' : '');
@@ -287,7 +396,9 @@ export function mount(el, platform) {
 
   function renderStats() {
     const st = statOf(level);
-    $('.stats').textContent = `${S.best}: ${st.best == null ? '–' : fmtTime(st.best)} · ${S.wins}: ${st.won}/${st.played}`;
+    $('.stats').textContent = level === Logic.CUSTOM
+      ? `${game.w} × ${game.h} · ${S.mineCount}: ${game.mines} · ${S.wins}: ${st.won}/${st.played}`
+      : `${S.best}: ${st.best == null ? '–' : fmtTime(st.best)} · ${S.wins}: ${st.won}/${st.played}`;
   }
 
   // Raster neu aufbauen, wenn sich Stufe oder Ausrichtung ändern; Zellgröße passt sich dem Platz an
@@ -300,7 +411,7 @@ export function mount(el, platform) {
     const size = Math.max(14, Math.floor(Math.min((W - gap * (cols - 1)) / (cols + 0.5), (H - gap * (rows - 1)) / (rows + 0.5), 44)));
     board.style.setProperty('--cs', size + 'px');
     board.style.gridTemplateColumns = `repeat(${cols}, ${size}px)`;
-    const key = `${game.level}:${turn}`;
+    const key = `${game.level}:${game.w}x${game.h}:${turn}`;
     if (key === builtFor) return;
     builtFor = key;
     dispCols = cols; dispRows = rows;
@@ -343,6 +454,10 @@ export function mount(el, platform) {
         cls += ' hidden';
       }
       if (i === cur) cls += ' cursor';
+      if (popping.has(i) && game.open[i] && !game.mine[i] && !game.won) {
+        cls += ' pop';
+        el.style.setProperty('--d', popping.get(i) + 's');
+      }
       if (el.className !== cls) el.className = cls;
       if (el.textContent !== text) el.textContent = text;
     }
@@ -352,7 +467,11 @@ export function mount(el, platform) {
 
   function applyStrings() {
     $('[data-act="exit"]').textContent = S.back;
-    $('.title').textContent = S.title;
+    $('.game-title').textContent = S.title;
+    root.querySelectorAll('[data-t]').forEach(n => { n.textContent = S[n.dataset.t]; });
+    $('.custom h2').textContent = S.customTitle;
+    $('[data-act="custom-start"]').textContent = S.start;
+    $('[data-act="custom-cancel"]').textContent = S.cancel;
     $('[data-act="new"]').textContent = S.newGame;
     $('[data-act="again"]').textContent = S.again;
     $('[data-act="look"]').textContent = S.look;
@@ -427,9 +546,13 @@ export function mount(el, platform) {
     if (!b) return;
     const a = b.dataset.act;
     if (a === 'exit' && platform.exit) platform.exit();
-    else if (a === 'new' || a === 'again') newGame();
+    else if (a === 'new') confirmNew(b, newGame);
+    else if (a === 'again') newGame();
     else if (a === 'look') result.hidden = true;
+    else if (a === 'custom-start') confirmNew(b, startCustom);
+    else if (a === 'custom-cancel') customBox.hidden = true;
   });
+  customBox.addEventListener('input', e => { if (e.target.matches('input')) syncCustom(); });
   $('.flag-mode').addEventListener('click', () => setFlagMode(!flagMode));
 
   // Tastatur: Pfeile bewegen den Cursor, Leertaste/Enter deckt auf, F setzt Flagge, N neues Spiel
@@ -437,9 +560,13 @@ export function mount(el, platform) {
     if (!ready || paused) return;
     sound.unlock();
     if (blast) { finishBlast(); e.preventDefault(); return; }
-    if (e.target.closest && e.target.closest('button, input, a')) return;   // Knöpfe bedienen sich selbst
     const k = e.key;
-    if (k === 'n' || k === 'N') { newGame(); return; }
+    if (!customBox.hidden) {                     // Dialog „Eigenes Feld“ offen: nur Esc schließt ihn
+      if (k === 'Escape') customBox.hidden = true;
+      return;
+    }
+    if (e.target.closest && e.target.closest('button, input, a')) return;   // Knöpfe bedienen sich selbst
+    if (k === 'n' || k === 'N') { confirmNew($('[data-act="new"]'), newGame); return; }
     if (!dispCols || !dispRows) return;          // Raster noch nicht aufgebaut (z. B. Feld ohne Größe)
     if (k.startsWith('Arrow')) {
       if (!cursor) cursor = { r: Math.floor(dispRows / 2), c: Math.floor(dispCols / 2) };
@@ -467,6 +594,7 @@ export function mount(el, platform) {
     window.__dbg = {
       ready: () => ready, game: () => game, level: () => level, stats: () => stats,
       reveal: i => act('primary', i), flag: i => act('flag', i), newGame, setLevel,
+      setCustom: size => { custom = Logic.customSize(size); newGame(); renderStats(); },
       turned: () => builtFor.endsWith('true'), cellSize: () => parseFloat(board.style.getPropertyValue('--cs')),
       blasting: () => !!blast, burst: () => burst.size, bangs: () => sound.played,
     };
@@ -480,7 +608,7 @@ export function mount(el, platform) {
     const data = await platform.save.load();
     if (destroyed) return;
     load(data);
-    game = runs[level] || Logic.newGame(level, randSeed());
+    game = runs[level] || freshGame(level);
     sound.setMaster(platform.audio.volume());
     offVolume = platform.audio.onChange(v => sound.setMaster(v));
     ready = true;
@@ -514,6 +642,9 @@ export function mount(el, platform) {
     destroyed = true;
     cancelPress();
     cancelBlast();
+    disarm();
+    clearTimeout(popTimer);
+    clearTimeout(winTimer);
     clearInterval(timer);
     offVolume();
     sound.close();

@@ -1,0 +1,17 @@
+{
+  "name": "@spielesammlung/spider",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spider Solitaire – mit 1, 2 oder 4 Farben",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@spielesammlung/cards": "*",
+    "@spielesammlung/game-sdk": "*"
+  }
+}

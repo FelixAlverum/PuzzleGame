@@ -1,0 +1,18 @@
+/* Spider: Grundlage aus @spielesammlung/cards/cards.css und dem Spielrahmen in @spielesammlung/ui/theme.css.
+   Hier nur, was Spider eigen ist. */
+
+.spider .game-title {
+  color: #3d5a2a;
+}
+
+/* Plätze für fertige Folgen: nur angedeutet, man legt dort nichts selbst ab */
+.spider .slot[data-pile^="f"] {
+  border-style: solid;
+  border-color: rgba(255, 250, 225, 0.2);
+  cursor: default;
+}
+
+/* Leerer Stapel: kein Platzhalter mehr nötig */
+.spider .slot[data-pile="stock"] {
+  border-color: rgba(255, 250, 225, 0.2);
+}

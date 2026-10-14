@@ -5,9 +5,9 @@ Ein Ordner pro Spiel, benannt nach der Spiel-ID (Kleinbuchstaben, Bindestrich).
 | Ordner | Spiel | Stand |
 |---|---|---|
 | [cozy-garden](cozy-garden/) | Block-Puzzle mit Pflanzenformen | spielbar |
-| [minesweeper](minesweeper/) | Minesweeper | Prototyp, spielbar |
-| `solitaire/` | Solitaire (Klondike) | geplant (Phase 2) |
-| `spider/` | Spider Solitaire | geplant (Phase 2) |
+| [minesweeper](minesweeper/) | Minesweeper mit eigenem Feld | spielbar |
+| [solitaire](solitaire/) | Solitaire (Klondike), 1 oder 3 Karten ziehen | spielbar |
+| [spider](spider/) | Spider Solitaire, 1, 2 oder 4 Farben | spielbar |
 
 ## Ein neues Spiel anlegen
 
@@ -17,8 +17,12 @@ Ein Ordner pro Spiel, benannt nach der Spiel-ID (Kleinbuchstaben, Bindestrich).
    `mount` lädt den Spielcode per `await import('./src/main.js')`, damit die Bibliothek klein bleibt.
 3. `src/main.js` exportiert `mount(el, platform)` und gibt `{ pause, resume, unmount }` zurück.
 4. In `apps/web/package.json` als Abhängigkeit und in `apps/web/src/games.js` in `GAMES` eintragen, `npm install`.
-5. Optional `index.html` zum Einzelstart mit `createFakePlatform` (Vorlage: `cozy-garden/index.html`) und ein Skript
+5. Optional `index.html` zum Einzelstart mit `createFakePlatform` (Vorlage: `minesweeper/index.html`) und ein Skript
    `"dev": "vite"`.
+
+Ein Kartenspiel (Patience) braucht nur Regeln, Texte und die Lage der Stapel: `mountCardGame` aus
+[packages/cards](../packages/cards/) übernimmt den Rest (Vorlage: `solitaire/`). Spiele mit HTML-Oberfläche nutzen den
+Spielrahmen aus `packages/ui` (`.game-root`, `.game-bar`, `.counter`, `.game-result`, `.game-help`).
 
 ## Regeln für ein Spiel
 

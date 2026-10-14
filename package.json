@@ -17,6 +17,8 @@
     "preview": "npm run preview -w @spielesammlung/web",
     "dev:cozy-garden": "npm run dev -w @spielesammlung/cozy-garden",
     "dev:minesweeper": "npm run dev -w @spielesammlung/minesweeper",
+    "dev:solitaire": "npm run dev -w @spielesammlung/solitaire",
+    "dev:spider": "npm run dev -w @spielesammlung/spider",
     "test": "node --test \"games/*/tests/*.test.js\" \"apps/*/tests/*.test.js\" \"packages/*/tests/*.test.js\"",
     "test:e2e": "playwright test -c apps/web/playwright.config.js",
     "typecheck": "tsc -p packages/game-sdk"

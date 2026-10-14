@@ -1,0 +1,17 @@
+{
+  "name": "@spielesammlung/solitaire",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Solitaire (Klondike) – Ziehen mit 1 oder 3 Karten",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@spielesammlung/cards": "*",
+    "@spielesammlung/game-sdk": "*"
+  }
+}

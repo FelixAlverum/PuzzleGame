@@ -2,16 +2,15 @@
 // Der eigentliche Spielcode (src/main.js) wird erst beim Start geladen.
 import { defineGame } from '@spielesammlung/game-sdk';
 import cover from './cover.svg';
+import { STR } from './src/i18n.js';
 
-const LEVEL_TITLES = {
-  beginner: { de: 'Anfänger', en: 'Beginner', fr: 'Débutant', es: 'Principiante', ru: 'Новичок', zh: '初级' },
-  intermediate: { de: 'Fortgeschritten', en: 'Intermediate', fr: 'Intermédiaire', es: 'Intermedio', ru: 'Любитель', zh: '中级' },
-  expert: { de: 'Profi', en: 'Expert', fr: 'Expert', es: 'Experto', ru: 'Профессионал', zh: '高级' },
-};
+// Stufen mit Rangliste (wie LEVEL_IDS in src/logic.js); Namen je Sprache aus den Spieltexten
+const LEVEL_IDS = ['beginner', 'intermediate', 'expert'];
+const levelTitle = id => Object.fromEntries(Object.entries(STR).map(([lang, s]) => [lang, s[id]]));
 
 export default defineGame({
   id: 'minesweeper',
-  title: { de: 'Minesweeper', en: 'Minesweeper', fr: 'Démineur', es: 'Buscaminas', ru: 'Сапёр', zh: '扫雷' },
+  title: levelTitle('title'),
   description: {
     de: 'Der Klassiker: Decke alle Felder ohne Mine auf. Der erste Klick ist immer sicher.',
     en: 'The classic: reveal every field without a mine. Your first click is always safe.',
@@ -23,7 +22,7 @@ export default defineGame({
   cover,
   saveVersion: 1,
   // Bestzeit je Stufe in ms (weniger ist besser); proof: Seed + Züge, lässt sich nachspielen
-  leaderboards: Object.entries(LEVEL_TITLES).map(([id, title]) => ({ id, title, sort: 'asc', format: 'time' })),
+  leaderboards: LEVEL_IDS.map(id => ({ id, title: levelTitle(id), sort: 'asc', format: 'time' })),
   async mount(el, platform) {
     const { mount } = await import('./src/main.js');
     return mount(el, platform);
