@@ -11,32 +11,43 @@ der Sammlung geworden: [Cozy Garden](games/cozy-garden/).
 
 | Teil | Stand |
 |---|---|
-| [games/cozy-garden](games/cozy-garden/) | spielbar, läuft eigenständig, Speichern lokal |
-| Plattform-Hülle, weitere Spiele, API | geplant, siehe [Fahrplan](docs/fahrplan.md) |
+| [apps/web](apps/web/) – Plattform-Hülle | Bibliothek, Spielansicht, Einstellungen (Sprache, Gesamtlautstärke), PWA; Gastmodus, alles lokal |
+| [games/cozy-garden](games/cozy-garden/) | spielbar, in der Hülle und einzeln |
+| Minesweeper, Solitaire, Spider | in der Bibliothek als „Bald verfügbar“, siehe [Fahrplan](docs/fahrplan.md) Phase 2 |
+| API, Konten, Cloud-Sync, Ranglisten, Shop | geplant, Phase 3 und 4 |
 
 ## Aufbau
 
 ```
-apps/          Anwendungen, die ausgeliefert werden
-  web/           Plattform-Hülle: Bibliothek, Profil, Shop, Login   (geplant, Phase 1)
-  api/           Backend: Konten, Spielstände, Ranglisten, Käufe    (geplant, Phase 3)
-games/         ein Ordner pro Spiel, jedes Spiel hält sich an den Spielvertrag
+apps/
+  web/           Plattform-Hülle: Bibliothek, Spielansicht, Einstellungen (Vite)
+  api/           Backend: Konten, Spielstände, Ranglisten, Käufe     (geplant, Phase 3)
+games/           ein Ordner pro Spiel, jedes Spiel hält sich an den Spielvertrag
   cozy-garden/   Block-Puzzle mit Pflanzenformen
-packages/      gemeinsamer Code mehrerer Spiele bzw. von Hülle und Spielen (geplant)
-infra/         Docker, nginx, docker-compose für den Server
-docs/          Architektur, Daten und Konten, Betrieb, Fahrplan, Entscheidungen
+packages/
+  game-sdk/      Spielvertrag (TypeScript): defineGame, Typen des platform-Objekts, Fake-Plattform
+  i18n/          Sprachliste, Sprachwahl, Flaggen
+  ui/            gemeinsames Theme (Farben, Knöpfe, Karten, Regler)
+infra/           Docker, nginx, docker-compose für den Server
+docs/            Architektur, Daten und Konten, Betrieb, Fahrplan, Entscheidungen
 ```
 
-Was in welchen Ordner gehört, steht in der README des jeweiligen Ordners:
-[apps](apps/README.md) · [games](games/README.md) · [packages](packages/README.md).
+npm-Workspaces verbinden alles: Die Hülle importiert die Spiele als `@spielesammlung/<spiel-id>`, die Spiele und die Hülle
+importieren die Pakete als `@spielesammlung/<paket>`. Was in welchen Ordner gehört, steht in der README des jeweiligen
+Ordners: [apps](apps/README.md) · [games](games/README.md) · [packages](packages/README.md).
 
-## Starten
+## Entwickeln
 
-Cozy Garden: [games/cozy-garden/index.html](games/cozy-garden/index.html) im Browser öffnen. Kein Build nötig.
+Node 22.18 oder neuer.
 
-Tests (Node 22 oder neuer):
 ```
-npm test
+npm install
+npm run dev               # Plattform-Hülle mit allen Spielen: http://localhost:5173
+npm run dev:cozy-garden   # Cozy Garden einzeln, ohne Hülle
+npm test                  # Tests aller Spiele, Pakete und der Hülle
+npm run typecheck         # TypeScript-Prüfung des Spielvertrags
+npm run build             # Produktions-Build nach apps/web/dist
+npm run preview           # den Build lokal ansehen (mit Service Worker): http://localhost:4173
 ```
 
 Docker-Image bauen und veröffentlichen: siehe [docs/betrieb.md](docs/betrieb.md).
@@ -46,7 +57,7 @@ Docker-Image bauen und veröffentlichen: siehe [docs/betrieb.md](docs/betrieb.md
 | Datei | Inhalt |
 |---|---|
 | [docs/architektur.md](docs/architektur.md) | Zielbild, Repo-Aufbau, Spielvertrag (`platform`), Menü und Routing |
-| [docs/daten-und-konten.md](docs/daten-und-konten.md) | Gastmodus, Datenmodell, Spielstand-Sync, DLC, fälschungssichere Ranglisten |
+| [docs/daten-und-konten.md](docs/daten-und-konten.md) | Gastmodus, Speicher, Datenmodell, Spielstand-Sync, DLC, fälschungssichere Ranglisten |
 | [docs/betrieb.md](docs/betrieb.md) | Docker, Server, PWA, Bezahlung, rechtliche Pflichten |
 | [docs/fahrplan.md](docs/fahrplan.md) | Phasen 0–4 mit Stand |
 | [docs/entscheidungen.md](docs/entscheidungen.md) | Was entschieden ist, was noch offen ist |

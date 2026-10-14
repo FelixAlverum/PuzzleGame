@@ -2,9 +2,30 @@
 
 ## Gastmodus zuerst
 
-Spielen geht ohne Konto, dann liegt alles lokal in IndexedDB. Wer sich registriert, bekommt die Gastdaten
+Spielen geht ohne Konto, dann liegt alles lokal im Browser. Wer sich registriert, bekommt die Gastdaten
 (Spielstände, Statistik, Rekorde) ins Konto übernommen. Ein Login ist nie Voraussetzung fürs Spielen, nur für
 Cloud-Sync, Ranglisten und Käufe.
+
+## Speicher im Browser (heute)
+
+Die Hülle legt alles in `localStorage` unter dem Präfix `lib:` ab (`apps/web/src/storage.js`):
+
+| Schlüssel | Inhalt |
+|---|---|
+| `lib:settings` | globale Einstellungen: `{ lang, volume }` (`lang: null` = Browsersprache) |
+| `lib:meta` | `{ lastPlayed: { <spiel-id>: Zeitstempel } }` |
+| `lib:save:<spiel-id>:<slot>` | Spielstand, für die Hülle undurchsichtiges JSON (Slot meist `default`) |
+| `lib:scores:<spiel-id>` | eigener Rekord je Rangliste |
+
+Warum `localStorage` und nicht IndexedDB: Es schreibt synchron. Spiele speichern auch beim Schließen des Tabs
+(`pagehide`), und ein asynchroner IndexedDB-Schreibvorgang kann dort abbrechen. Die Datenmengen sind klein
+(Cozy Garden: wenige KB). Mit Cloud-Sync (Phase 3) kommt eine Sync-Warteschlange dazu. Erst dann lohnt sich IndexedDB.
+
+Alte Stände übernimmt die Hülle einmalig: Fehlt `lib:save:<id>:default`, sucht sie die Schlüssel aus
+`manifest.legacySaveKeys` (neuester zuerst), kopiert den ersten Fund und löscht alle alten Schlüssel.
+Für Cozy Garden sind das `cozy-garden:save` (v0.5) und `puzzlegame-save` (bis v0.4).
+
+Im Einzelbetrieb ohne Hülle (`createFakePlatform`) liegen Spielstände getrennt unter `dev:<spiel-id>:<slot>`.
 
 ## Datenmodell (Postgres)
 
@@ -27,7 +48,7 @@ Manifest im Code, siehe [architektur.md](architektur.md#spielvertrag). `products
 - **Für die Plattform undurchsichtiges JSON.** Die Plattform kennt nur `save_version`. Migrationen macht das Spiel
   selbst, so wie Cozy Garden heute v1 → v2 → v3 hochzieht (`loadSave` in `games/cozy-garden/src/main.js`).
 - **Größenlimit** pro Slot, z. B. 256 KB.
-- **Offline-first:** zuerst lokal schreiben, dann im Hintergrund hochladen, mit `revision` (optimistische Sperre).
+- **Offline-first (Phase 3):** zuerst lokal schreiben, dann im Hintergrund hochladen, mit `revision` (optimistische Sperre).
   Hat der Server eine neuere Revision, weil auf einem anderen Gerät weitergespielt wurde, gewinnt der neuere Stand.
   Im Profil lässt sich zwischen „Dieses Gerät“ und „Cloud“ wählen.
 - **Statistik ≠ Rangliste.** Spielinterne Statistik (bei Cozy Garden: Spiele, gelegte Formen, Min/Max je Biom)

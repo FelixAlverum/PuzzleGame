@@ -6,7 +6,7 @@ Spiel festzurren.
 | Phase | Inhalt | Ergebnis | Stand |
 |---|---|---|---|
 | 0 | YouTube entfernen, Repo in die Zielstruktur bringen | Cozy Garden läuft wie bisher, ohne YouTube | **erledigt** |
-| 1 | Monorepo mit Vite, Cozy Garden auf ES-Module + `mount/unmount`, Hülle mit Bibliothek (nur Gastmodus) | Bibliothek mit einem Spiel | offen |
+| 1 | Monorepo mit Vite, Cozy Garden auf ES-Module + `mount/unmount`, Hülle mit Bibliothek (nur Gastmodus) | Bibliothek mit einem Spiel | **erledigt** |
 | 2 | Minesweeper als zweites Spiel, dann Solitaire + Spider über `packages/cards` | Vertrag bewährt sich an vier Spielen | offen |
 | 3 | API: Konten, Cloud-Spielstände, Ranglisten mit Nachspiel-Prüfung | Profil geräteübergreifend | offen |
 | 4 | Shop, Zahlung, DLC, Rechtliches | Monetarisierung | offen |
@@ -15,21 +15,43 @@ Spiel festzurren.
 
 - YouTube-Playables-SDK aus `index.html` entfernt
 - `yt.js` → `platform.js`: lokaler Plattform-Adapter mit der Form des künftigen Spielvertrags
-  (`save`, `scores`, `language`, `audio`, `onPause/onResume`, `logError`)
 - Spielstand-Schlüssel `puzzlegame-save` → `cozy-garden:save`, alter Stand wird beim ersten Laden übernommen
 - Pause und Speichern bei verdecktem Tab über `visibilitychange` (vorher Sache von YouTube)
 - `prototype/` aufgeteilt: Spiel → `games/cozy-garden/`, Docker/nginx → `infra/`, Doku → `docs/`
-- Wurzel-`package.json` mit `npm test`
 
-## Phase 1 – Aufgaben
+## Phase 1 – erledigt (2026-10-14)
 
-- [ ] npm-Workspaces und Vite einrichten
-- [ ] `packages/game-sdk`: `defineGame`, Typen für `platform`, `createFakePlatform()`
-- [ ] Cozy Garden auf ES-Module umstellen (`root.X = …` → `export`). Die Tests laufen weiter in Node.
-- [ ] `main.js` in `mount(el, platform)` kapseln: Canvas und Menü-Overlay in `el` statt `document.body`,
-      die 8 `addEventListener` an `window`/`document` mit `AbortController` aufräumbar machen
-- [ ] CSS aus `index.html` in `packages/ui` (Theme) und Cozy-Garden-eigenes CSS trennen
-- [ ] `apps/web`: Routing (`#/`, `#/play/:id`, `#/settings`), Bibliothek, Plattform mit IndexedDB
-- [ ] Sprache und Gesamtlautstärke in die Hülle verlegen
-- [ ] PWA-Manifest und Service Worker
-- [ ] `infra/web/Dockerfile` auf mehrstufigen Vite-Build umstellen
+- [x] npm-Workspaces (`apps/*`, `games/*`, `packages/*`) und Vite 8
+- [x] `packages/game-sdk` (TypeScript): `defineGame`, Typen für Manifest, `Platform`, `GameHandle`, `createFakePlatform()`
+- [x] `packages/i18n` (Sprachliste, Sprachwahl, Flaggen) und `packages/ui` (Theme) – beide von Hülle und Spiel genutzt
+- [x] Cozy Garden auf ES-Module umgestellt. Die Tests laufen weiter in Node.
+- [x] `main.js` → `mount(el, platform)`: Canvas und Menü in `el`, Listener über `AbortController`, `ResizeObserver` statt
+      `resize`, `pause`/`resume`/`unmount`; `menu.js` → `createMenu(ui, api, signal)`; Menü-Markup in `menu.html`
+- [x] CSS getrennt: Theme in `packages/ui`, Spiel-CSS unter `.cozy-garden` in `games/cozy-garden/src/style.css`
+- [x] `apps/web`: Routing (`#/`, `#/play/:id`, `#/settings`), Bibliothek mit Cover, eigenem Rekord und „zuletzt gespielt“,
+      geplante Spiele als „Bald verfügbar“, Plattform mit Speicher in `localStorage`, Übernahme alter Spielstände
+- [x] Sprache und Gesamtlautstärke in die Hülle verlegt; im Spiel Knopf „Bibliothek“ und `Esc` im Hauptmenü
+- [x] PWA: Manifest, Icon, Service Worker
+- [x] `infra/web/Dockerfile` zweistufig (Vite-Build, dann nginx)
+- [x] Tests: Speicher, Einstellungen, Plattform, Spielvertrag (`npm test`, 42 Tests), `npm run typecheck`
+
+Abweichungen vom Plan, begründet in [entscheidungen.md](entscheidungen.md):
+- Speicher in `localStorage` statt IndexedDB (synchron, sicher beim Schließen des Tabs)
+- Pause/Weiter steuert die Hülle über das `GameHandle`, nicht das Spiel über `platform.onPause`
+- `packages/audio` und `packages/storage` noch nicht angelegt: Es gibt erst einen Nutzer.
+
+Nachzuholen:
+- [ ] Docker-Image 0.6.0 bauen und veröffentlichen. Der Build ist noch nicht im Container getestet, weil Docker
+      beim Umbau nicht lief.
+- [ ] PNG-Icons 192/512 px für die PWA (vor allem iOS)
+- [ ] Spielerinnen und Spieler, die früher im Spiel eine Sprache gewählt hatten, landen zunächst bei der Browsersprache
+      und müssen sie einmal in den Einstellungen der Sammlung wählen.
+
+## Phase 2 – Aufgaben
+
+- [ ] `games/minesweeper`: Logik DOM-frei mit Seed (erstes Feld nie Mine), Größen Anfänger/Fortgeschritten/Experte,
+      Rangliste Zeit (`sort: 'asc'`)
+- [ ] Gemeinsames Audio nach `packages/audio`, sobald Minesweeper Ton bekommt
+- [ ] `packages/cards`: Deck, Mischen mit Seed, Kartengrafik, Ziehen von Stapeln
+- [ ] `games/solitaire` (Klondike), `games/spider` (1, 2, 4 Farben)
+- [ ] In der Bibliothek aus „Bald verfügbar“ echte Spiele machen (`apps/web/src/games.js`)

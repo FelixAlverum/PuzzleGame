@@ -4,14 +4,14 @@
 
 ```
 ┌──────────────────────────── Browser (PWA) ────────────────────────────┐
-│  Plattform-Hülle (apps/web): Bibliothek · Profil · Shop · Login       │
+│  Plattform-Hülle (apps/web): Bibliothek · Einstellungen · Profil · Shop│
 │        │  übergibt jedem Spiel ein einheitliches `platform`-Objekt    │
 │        ▼                                                              │
 │  [Cozy Garden] [Solitaire] [Spider] [Minesweeper]  … per import()     │
 │        │                                                              │
-│  Lokaler Speicher (IndexedDB): Gastmodus, Offline, Sync-Warteschlange │
+│  Lokaler Speicher: Gastmodus, Offline, später Sync-Warteschlange      │
 └────────┼──────────────────────────────────────────────────────────────┘
-         ▼  HTTPS /api
+         ▼  HTTPS /api  (Phase 3)
 ┌──── API (apps/api) ───────┐     ┌──────────┐     ┌──────────────────┐
 │ Konten · Spielstände ·    │────▶│ Postgres │     │ Zahlungsanbieter │
 │ Ranglisten · DLC/Käufe    │◀────┼──────────┼─────│ (Webhook)        │
@@ -21,91 +21,106 @@
 **Grundregel:** Ein Spiel weiß nichts von Konten, Servern oder `localStorage`. Es redet ausschließlich mit dem
 `platform`-Objekt. Ob dahinter ein Gast im Browser steckt oder ein angemeldetes Konto mit Cloud-Sync, entscheidet die Hülle.
 
+Stand nach Phase 1: Hülle, Spielvertrag und Cozy Garden laufen, alles im Gastmodus und lokal. Profil, Shop, Login und
+die API fehlen noch.
+
 ## Repo-Aufbau
 
 ```
 apps/
-  web/                 Plattform-Hülle: Routing, Bibliothek, Profil, Shop, Login, globale Einstellungen
-  api/                 Backend: Auth, Spielstände, Ranglisten, Käufe/Entitlements
+  web/                 Plattform-Hülle: Routing, Bibliothek, Spielansicht, globale Einstellungen   (vorhanden)
+  api/                 Backend: Auth, Spielstände, Ranglisten, Käufe/Entitlements               (Phase 3)
 games/
-  cozy-garden/         Block-Puzzle (vorhanden)
-  minesweeper/         geplant – kleinstes Spiel, prüft den Spielvertrag als Erstes
-  solitaire/           geplant (Klondike)
-  spider/              geplant (Spider Solitaire)
+  cozy-garden/         Block-Puzzle                                                             (vorhanden)
+  minesweeper/         kleinstes Spiel, prüft den Spielvertrag als Erstes                        (Phase 2)
+  solitaire/           Klondike                                                                 (Phase 2)
+  spider/              Spider Solitaire                                                         (Phase 2)
 packages/
-  game-sdk/            Spielvertrag: defineGame(), Typen des platform-Objekts, Fake-Plattform für Tests
-  ui/                  Theme, Farben, Schriften, Buttons, Overlays (heute im <style> von cozy-garden/index.html)
-  i18n/                Sprachwahl, Fallback-Logik, gemeinsame Texte (Spieltexte bleiben im Spiel)
-  audio/               Web-Audio-Grundlage, Lautstärkekanäle, Entsperren per Geste
-  cards/               Kartendeck, Mischen mit Seed, Kartengrafik, Stapel ziehen → Solitaire + Spider
-  storage/             IndexedDB-Cache, Sync mit der API
+  game-sdk/            Spielvertrag: defineGame(), Typen des platform-Objekts, Fake-Plattform    (vorhanden)
+  i18n/                Sprachliste, Sprachwahl, Flaggen                                          (vorhanden)
+  ui/                  Theme: Farben, Schrift, Knöpfe, Karten, Regler                            (vorhanden)
+  audio/               Web-Audio-Grundlage, sobald ein zweites Spiel Ton hat
+  cards/               Kartendeck, Mischen mit Seed, Kartengrafik → Solitaire + Spider            (Phase 2)
 infra/                 Docker, nginx, docker-compose
 docs/
 ```
 
 Code wandert erst dann nach `packages/`, wenn **ein zweiter Nutzer** ihn braucht. Bis dahin bleibt er im Spiel.
-Erster Kandidat ist `cards/` (Solitaire + Spider).
 
-### Build
+### Build und Module
 
-Heute läuft Cozy Garden ohne Build: klassische `<script>`-Tags, jedes Modul hängt ein globales Objekt an
-(`Logic`, `Shapes`, `Platform`, …). Ab Phase 1 gilt:
-
-- **ES-Module + Vite.** Die Hülle lädt jedes Spiel erst beim Start per `import()`. Der Dev-Server lädt bei Änderungen sofort neu.
-- **npm-Workspaces** für `apps/*`, `games/*`, `packages/*`
-- **TypeScript** mindestens für `packages/game-sdk` und `apps/api`, denn dort steht der Vertrag zwischen den Teilen.
-  Spiele dürfen JavaScript mit JSDoc-Typen bleiben.
-- **Spiellogik bleibt DOM-frei und läuft in Node** (wie `games/cozy-garden/src/logic.js` heute). Die API nutzt
-  sie zum Prüfen von Ranglisten-Einträgen, siehe [daten-und-konten.md](daten-und-konten.md#ranglisten-fälschungssicher).
+- **ES-Module + Vite 8.** Die Hülle (`apps/web`) ist das einzige Build-Ziel. Jedes Spiel landet in einem eigenen Chunk,
+  der erst beim Start geladen wird: Die Hülle importiert nur das Manifest (`games/<id>/index.js`), das Manifest lädt den
+  Spielcode in `mount` per `import('./src/main.js')`.
+- **npm-Workspaces** für `apps/*`, `games/*`, `packages/*`. Pakete werden ohne eigenen Build direkt aus dem Quelltext
+  importiert (`@spielesammlung/<name>`).
+- **TypeScript** für `packages/game-sdk` (später auch `apps/api`). Nur löschbare Typ-Syntax (`erasableSyntaxOnly`),
+  damit Node die Datei in Tests direkt ausführen kann. Hülle und Spiele sind JavaScript und beziehen die Typen per JSDoc
+  (`@param {import('@spielesammlung/game-sdk').Platform} platform`). Prüfen: `npm run typecheck`.
+- **Spiellogik bleibt DOM-frei und läuft in Node** (`games/cozy-garden/src/logic.js`). Die API nutzt sie später zum Prüfen
+  von Ranglisten-Einträgen, siehe [daten-und-konten.md](daten-und-konten.md#ranglisten-fälschungssicher).
+- Spiel-CSS wird per `import './style.css'` eingebunden und hängt unter der Wurzel-Klasse des Spiels (`.cozy-garden`).
+  Das gemeinsame Theme kommt aus `@spielesammlung/ui/theme.css`.
 
 ## Spielvertrag
 
-Jedes Spiel exportiert ein Manifest und eine `mount`-Funktion:
+Quelle der Wahrheit: [packages/game-sdk/src/index.ts](../packages/game-sdk/src/index.ts).
+
+Jedes Spiel exportiert ein Manifest:
 
 ```js
+// games/cozy-garden/index.js
 export default defineGame({
   id: 'cozy-garden',
-  saveVersion: 3,                       // Migration alter Stände bleibt Sache des Spiels
   title: { de: 'Cozy Garden', en: 'Cozy Garden' },
-  cover: './cover.webp',
-  leaderboards: [
-    { id: 'best', sort: 'desc', format: 'points' },
-  ],
-  dlc: ['cozy-garden.biome-tropics'],   // Produkt-IDs, die das Spiel abfragt (Beispiel)
+  description: { de: '…', en: '…' },
+  cover,                                             // URL (import cover from './cover.svg')
+  saveVersion: 3,                                    // Migration alter Stände bleibt Sache des Spiels
+  legacySaveKeys: ['cozy-garden:save', 'puzzlegame-save'],   // übernimmt die Hülle einmalig
+  leaderboards: [{ id: 'best', sort: 'desc', format: 'points' }],
   async mount(el, platform) {
-    // Canvas + UI nur innerhalb von `el` aufbauen.
-    // Listener an window/document mit einem AbortSignal registrieren, damit unmount sauber aufräumt.
-    return { pause() {}, resume() {}, unmount() {} };
+    const { mount } = await import('./src/main.js');   // Spielcode erst beim Start laden
+    return mount(el, platform);                        // → { pause, resume, unmount }
   },
 });
 ```
 
-Das `platform`-Objekt, das die Hülle übergibt:
+**Lebenszyklus (`GameHandle`)** – die Hülle steuert, das Spiel gehorcht:
 
-| Bereich | API | Heute in Cozy Garden (`src/platform.js`) |
+| Aufruf | Wann | Was das Spiel tut |
 |---|---|---|
-| Spielstand | `save.load(slot?)`, `save.store(data, slot?)` | `localStorage`, Schlüssel `cozy-garden:save` |
-| Ranglisten | `scores.submit(board, value, proof?)`, `scores.top(board)` | `submit` ist ein No-op |
-| DLC | `entitlements.has(id)`, `entitlements.onChange(cb)` | – |
-| Nutzer | `user` (id, Anzeigename, Gast ja/nein) | – |
-| Sprache | `language()`, später `onLanguageChange(cb)` | Browsersprache |
-| Ton | `audio.enabled()`, `audio.onChange(cb)` (globale Stummschaltung) | immer an |
-| Lebenszyklus | `onPause(cb)`, `onResume(cb)`, `exit()` (zurück zur Bibliothek) | `visibilitychange` |
+| `mount(el, platform)` | Route `#/play/<id>` betreten | DOM in `el` aufbauen, Stand laden, Loop starten |
+| `pause()` | Tab verdeckt | Loop und Ton anhalten, speichern |
+| `resume()` | Tab wieder sichtbar | weiterlaufen |
+| `unmount()` | Route verlassen | speichern, alle Listener/Timer/Observer abräumen, DOM entfernen |
+
+**Das `platform`-Objekt:**
+
+| Bereich | API | In der Hülle heute (`apps/web/src/platform.js`) |
+|---|---|---|
+| Spielstand | `save.load(slot?)` → Promise, `save.store(data, slot?)` | localStorage `lib:save:<id>:<slot>`, alte Schlüssel einmalig übernommen |
+| Ranglisten | `scores.submit(board, value, proof?)` | nur eigener Rekord je Rangliste (`lib:scores:<id>`), angezeigt in der Bibliothek |
+| DLC | `entitlements.has(id)`, `entitlements.onChange(cb)` | immer `false` (Phase 4) |
+| Nutzer | `user` (id, Anzeigename, Gast ja/nein) | immer Gast |
+| Sprache | `language()` → z. B. `'de'` | Einstellung der Hülle, sonst Browsersprache |
+| Ton | `audio.volume()` (0..1), `audio.onChange(cb)` | Gesamtlautstärke aus den Einstellungen der Hülle |
+| Verlassen | `exit()` – fehlt ohne Hülle | zurück zu `#/` |
 | Fehler | `logError(e)` | `console.error` |
 
-`packages/game-sdk` liefert `createFakePlatform()`, damit jedes Spiel auch ohne Hülle läuft und testbar bleibt.
-Bis dahin spielt `games/cozy-garden/src/platform.js` genau diese Rolle.
+`createFakePlatform({ gameId, … })` aus dem `game-sdk` liefert dasselbe ohne Hülle: für Tests und für den Einzelstart
+eines Spiels (`games/cozy-garden/index.html`, `npm run dev:cozy-garden`).
 
 ## Menü und Routing (Hülle)
 
-| Route | Inhalt |
-|---|---|
-| `#/` | **Bibliothek**: Kacheln mit Cover, „Weiterspielen“, eigener Rekord, Schloss oder Preis bei nicht gekauften Spielen |
-| `#/play/<spiel-id>` | Spiel im Vollbild, fester Knopf „Zur Bibliothek“ |
-| `#/profile` | Ranglisten, Spielstände (pro Spiel exportieren, löschen, Cloud ↔ Gerät), Käufe, Konto löschen |
-| `#/shop` | Spiele und DLCs |
-| `#/settings` | **global**: Sprache, Gesamtlautstärke, Konto |
+| Route | Inhalt | Stand |
+|---|---|---|
+| `#/` | **Bibliothek**: Kacheln mit Cover, Beschreibung, eigener Rekord, zuletzt gespielt; geplante Spiele als „Bald verfügbar“ | vorhanden |
+| `#/play/<spiel-id>` | Spiel im Vollbild. Zurück über den Knopf „Bibliothek“ im Spielmenü oder `Esc` im Spielmenü | vorhanden |
+| `#/settings` | **global**: Sprache, Gesamtlautstärke | vorhanden |
+| `#/profile` | Ranglisten, Spielstände (exportieren, löschen, Cloud ↔ Gerät), Käufe, Konto löschen | Phase 3 |
+| `#/shop` | Spiele und DLCs | Phase 4 |
+
+Entwickler-Parameter der Spiele stehen vor dem `#`: `/?autoplay&debug#/play/cozy-garden`.
 
 Alles Spielspezifische bleibt im Menü des Spiels. Bei Cozy Garden sind das Biom, Feldgröße, Schwierigkeit,
-Anleitung, Statistik und die Lautstärke je Kanal. Das heutige `menu.js` wird damit zum **Spielmenü**.
-Sprache und Gesamtlautstärke wandern in die Hülle.
+Anleitung, Statistik und die Lautstärke je Kanal. Sprache und Gesamtlautstärke gibt es nur in der Hülle.
