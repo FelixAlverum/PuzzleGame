@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Spider Solitaire</title>
+  <link rel="icon" href="./cover.svg">
+  <style>
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #efe6cf;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Spider einzeln, ohne Plattform-Hülle (npm run dev:spider). Spielstände liegen dann unter dev:spider:*. -->
+  <div id="app"></div>
+  <script type="module">
+    import game from './index.js';
+    import { createFakePlatform } from '@spielesammlung/game-sdk';
+
+    const handle = await game.mount(document.getElementById('app'), createFakePlatform({ gameId: game.id }));
+    document.addEventListener('visibilitychange', () => (document.hidden ? handle.pause() : handle.resume()));
+  </script>
+</body>
+
+</html>
