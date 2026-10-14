@@ -14,7 +14,7 @@ Danach `http://localhost:8080` öffnen. Auf dem Server: [infra/docker-compose.ym
 
 Neue Version veröffentlichen, **aus der Repo-Wurzel** (Version in `infra/web/Dockerfile` und im Befehl anpassen):
 ```
-docker buildx build --platform linux/amd64,linux/arm64 -f infra/web/Dockerfile -t alverum/puzzlegame:0.8.0 -t alverum/puzzlegame:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -f infra/web/Dockerfile -t alverum/puzzlegame:0.8.1 -t alverum/puzzlegame:latest --push .
 ```
 
 [infra/web/Dockerfile](../infra/web/Dockerfile) arbeitet in zwei Stufen. `node:22-alpine` führt `npm ci` und
