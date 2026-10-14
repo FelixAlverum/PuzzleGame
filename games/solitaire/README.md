@@ -46,6 +46,9 @@ node --test "games/solitaire/tests/*.test.js"
 | `src/main.js` | Lage der Stapel je Bildschirmgröße, Übergabe an `mountCardGame` |
 | `src/i18n.js` | Spieltexte in 6 Sprachen (Knöpfe und Kartennamen kommen aus `packages/cards`) |
 | `src/style.css` | Kleinigkeiten unter `.solitaire` |
+| `assets/recycle.svg` | Zeichen im leeren Stapel (Ablage zurückdrehen) |
+
+Kartenbilder (Farbsymbole, Figuren, Rückseite) liegen in [packages/cards/assets](../../packages/cards/assets/).
 
 ## Offen
 - Nur lösbare Partien austeilen (braucht einen Löser)

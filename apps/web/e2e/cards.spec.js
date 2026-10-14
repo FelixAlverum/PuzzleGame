@@ -128,6 +128,21 @@ test.describe('Spider', () => {
     await expect(page.locator('.note-line')).toHaveText('Erst jede Spalte belegen, dann neu austeilen.');
   });
 
+  test('Gezogene Karten liegen über allen Spalten, auch über denen weiter rechts', async ({ page }) => {
+    await page.waitForTimeout(2500);                   // Austeilen abwarten
+    const g = await page.evaluate(() => __dbg.game());
+    const id = g.piles.t0.at(-1);
+    const from = await page.evaluate(i => __dbg.cardCenter(i), id);
+    const over = await page.evaluate(i => __dbg.cardCenter(i), g.piles.t9.at(-2));
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + 10, from.y + 10, { steps: 3 });
+    await page.mouse.move(over.x, over.y + 10, { steps: 10 });
+    const onTop = await page.evaluate(([x, y]) => document.elementFromPoint(x, y).closest('.pcard').dataset.id, [over.x, over.y + 20]);
+    expect(Number(onTop)).toBe(id);
+    await page.mouse.up();
+  });
+
   test('Varianten behalten ihren eigenen Lauf; König bis Ass wird abgeräumt und gewinnt', async ({ page }) => {
     await page.evaluate(() => __dbg.move(['d']));
     await page.locator('.game-variants .seg[data-variant="s2"]').click();

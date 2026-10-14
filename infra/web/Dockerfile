@@ -11,7 +11,7 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 LABEL org.opencontainers.image.title="Spielesammlung" \
       org.opencontainers.image.description="Spielesammlung im Browser – Cozy Garden, Minesweeper, Solitaire und Spider" \
-      org.opencontainers.image.version="0.8.0"
+      org.opencontainers.image.version="0.8.1"
 
 COPY infra/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /src/apps/web/dist/ /usr/share/nginx/html/

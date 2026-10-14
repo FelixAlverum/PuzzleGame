@@ -1,46 +1,56 @@
-// Kartengrafik als HTML/SVG: Ecke mit Wert und Farbe (bleibt im Fächer sichtbar), in der Mitte großes Farbsymbol,
-// bei Bube, Dame und König eine kleine Figur. Farbsymbole als SVG statt Unicode, weil iOS ♥ sonst als Emoji zeigt.
-import { RANK_LABEL, isRed } from './deck.js';
+// Kartengrafik als HTML, aufgebaut wie echte Spielkarten:
+// - Ecke oben mit Wert und Farbe (bleibt im Fächer sichtbar), unten dieselbe Ecke um 180° gedreht
+// - 2–10: Farbsymbole im klassischen Muster, die untere Hälfte steht auf dem Kopf
+// - Ass: großes Farbsymbol im Kranz, Bube/Dame/König: doppelköpfige Figur im Rahmen
+// Kleine Karten (Tisch mit Klasse .compact, z. B. Spider auf dem Handy) zeigen statt des Musters ein großes Symbol
+// und keine untere Ecke – das regelt cards.css, die Karte enthält beides.
+// Die Bilder liegen als eigene Dateien unter packages/cards/assets/ und werden eingebettet (?raw), damit currentColor
+// die Kartenfarbe übernimmt. Austauschen: Datei ersetzen. Farbsymbole als SVG statt Unicode (iOS zeigt ♥ als Emoji).
+import { RANK_LABEL } from './deck.js';
+import spades from '../assets/suits/spades.svg?raw';
+import hearts from '../assets/suits/hearts.svg?raw';
+import diamonds from '../assets/suits/diamonds.svg?raw';
+import clubs from '../assets/suits/clubs.svg?raw';
+import jack from '../assets/figures/jack.svg?raw';
+import queen from '../assets/figures/queen.svg?raw';
+import king from '../assets/figures/king.svg?raw';
+import aceOrnament from '../assets/ace-ornament.svg?raw';
 
-export const SUIT_PATH = [
-  // Pik
-  'M12 1.5C9.2 5.6 3.5 8.6 3.5 13.4a4.3 4.3 0 0 0 7.4 3L9.8 22h4.4l-1.1-5.6a4.3 4.3 0 0 0 7.4-3C20.5 8.6 14.8 5.6 12 1.5z',
-  // Herz
-  'M12 21.5C6.8 17 2.5 13.4 2.5 8.6A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 9.5 2.2c0 4.8-4.3 8.4-9.5 12.9z',
-  // Karo
-  'M12 1.5L20.5 12 12 22.5 3.5 12z',
-  // Kreuz
-  'M12 2.2a4.3 4.3 0 0 0-3.6 6.7A4.3 4.3 0 1 0 10.6 16L9.8 22h4.4l-.8-6a4.3 4.3 0 1 0 2.2-7.1A4.3 4.3 0 0 0 12 2.2z',
-];
+const SUIT = [spades, hearts, diamonds, clubs];          // Reihenfolge wie SUITS in deck.js
+const FIGURE = { 11: jack, 12: queen, 13: king };
 
-export const suitSvg = suit => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${SUIT_PATH[suit]}" fill="currentColor"/></svg>`;
+// Lage der Farbsymbole je Wert: [x, y] im Musterfeld (0..1); ab y > 0.5 steht das Symbol auf dem Kopf
+const L = 0, C = 0.5, R = 1;
+const SIDES4 = [[L, 0], [R, 0], [L, 1], [R, 1]];
+const SIDES6 = [...SIDES4, [L, 0.5], [R, 0.5]];
+const SIDES8 = [[L, 0], [R, 0], [L, 1 / 3], [R, 1 / 3], [L, 2 / 3], [R, 2 / 3], [L, 1], [R, 1]];
+export const PIPS = {
+  2: [[C, 0], [C, 1]],
+  3: [[C, 0], [C, 0.5], [C, 1]],
+  4: SIDES4,
+  5: [...SIDES4, [C, 0.5]],
+  6: SIDES6,
+  7: [...SIDES6, [C, 0.25]],
+  8: [...SIDES6, [C, 0.25], [C, 0.75]],
+  9: [...SIDES8, [C, 0.5]],
+  10: [...SIDES8, [C, 1 / 6], [C, 5 / 6]],
+};
 
-const GOLD = '#e2b44a', SKIN = '#f3d4ab', HAIR = '#7a4a26';
+// Klassen idx-top/idx-bot statt top/bot: .top ist im Theme schon die Kopfzeile einer Seite
+const corner = (card, cls) => `<span class="idx ${cls}"><b>${RANK_LABEL[card.rank]}</b>${SUIT[card.suit]}</span>`;
 
-// Figur für Bube (11), Dame (12), König (13) in einem Rahmen; Gewand in der Kartenfarbe
-function figure(rank, suit) {
-  const robe = isRed(suit) ? '#b8452f' : '#33404f';
-  const head = `<circle cx="20" cy="25" r="7" fill="${SKIN}"/><circle cx="17.6" cy="24.5" r="0.9" fill="#3a2a1c"/><circle cx="22.4" cy="24.5" r="0.9" fill="#3a2a1c"/>`;
-  const body = `<path d="M5 51C5 39 11 34 20 34s15 5 15 17z" fill="${robe}"/><path d="M20 34v17" stroke="${GOLD}" stroke-width="2"/>` +
-    `<path d="M12 36.5c3 2.6 13 2.6 16 0" stroke="${GOLD}" stroke-width="2" fill="none"/>`;
-  let hat = '';
-  if (rank === 13) {
-    hat = `<path d="M13 30c1 4 13 4 14 0l-1.5 6c-3 2-8 2-11 0z" fill="${HAIR}"/>` +   // Bart
-      `<path d="M11.5 19V10l4.2 4.2L20 8l4.3 6.2L28.5 10v9z" fill="${GOLD}"/><circle cx="20" cy="15.5" r="1.4" fill="#b8452f"/>`;
-  } else if (rank === 12) {
-    hat = `<ellipse cx="13.5" cy="28" rx="2.6" ry="6" fill="${HAIR}"/><ellipse cx="26.5" cy="28" rx="2.6" ry="6" fill="${HAIR}"/>` +
-      `<path d="M14 19.5v-5l3 2.4 3-4.4 3 4.4 3-2.4v5z" fill="${GOLD}"/><circle cx="20" cy="17" r="1.1" fill="#3f7a2a"/>`;
-  } else {
-    hat = `<path d="M11.5 21c0-7 17-7 17 0z" fill="${robe}"/><path d="M26 15c4-5 8-5 10-3-3 0-6 2-8 5" fill="${GOLD}"/>`;
+function middle(card) {
+  const s = SUIT[card.suit];
+  if (FIGURE[card.rank]) {
+    return `<span class="mid fig">${FIGURE[card.rank]}</span>`;
   }
-  return `<svg viewBox="0 0 40 52" aria-hidden="true" preserveAspectRatio="xMidYMax meet">` +
-    `<rect x="1" y="1" width="38" height="50" rx="4" fill="#f6ecd2" stroke="currentColor" stroke-width="1.2"/>` +
-    `${body}${head}${hat}</svg>`;
+  if (card.rank === 1) return `<span class="mid ace"><span class="orn">${aceOrnament}</span>${s}</span>`;
+  const pips = PIPS[card.rank].map(([x, y]) =>
+    `<i${y > 0.5 ? ' class="flip"' : ''} style="left:${x * 100}%;top:${(y * 100).toFixed(2)}%">${s}</i>`).join('');
+  return `<span class="mid simple">${s}</span><span class="pips">${pips}</span>`;
 }
 
 /** Innenleben einer Karte (Vorderseite + Rückseite) */
 export function cardHTML(card) {
-  const mid = card.rank >= 11 ? figure(card.rank, card.suit) : suitSvg(card.suit);
-  return `<div class="face"><span class="idx"><b>${RANK_LABEL[card.rank]}</b>${suitSvg(card.suit)}</span>` +
-    `<span class="mid${card.rank === 1 ? ' ace' : ''}${card.rank >= 11 ? ' fig' : ''}">${mid}</span></div><div class="back"></div>`;
+  return `<div class="face">${corner(card, 'idx-top')}${middle(card)}${corner(card, 'idx-bot')}</div><div class="back"></div>`;
 }

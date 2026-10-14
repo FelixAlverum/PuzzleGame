@@ -13,8 +13,24 @@ Alles, was Kartenspiele gemeinsam haben. Genutzt von [Solitaire](../../games/sol
 ## Karten
 Eine Karte ist `{ id, suit, rank }`: `suit` 0–3 (♠ ♥ ♦ ♣), `rank` 1–13. Spielstände und Züge speichern nur `id`s.
 `makeDeck({ decks: 2, suits: 1 })` ergibt 104 Pik-Karten für Spider mit einer Farbe.
-Kartengrafik als HTML mit SVG-Farbsymbolen (`src/face.js`): Ecke mit Wert und Farbe, großes Symbol, Figuren für
-Bube, Dame, König; Größen hängen an `--cw`/`--ch`.
+Kartengrafik als HTML (`src/face.js`), aufgebaut wie echte Spielkarten: Ecke oben mit Wert und Farbe, unten dieselbe
+Ecke auf dem Kopf; 2–10 mit Farbsymbolen im klassischen Muster (`PIPS`), Ass im Kranz, Bube/Dame/König doppelköpfig
+im Rahmen. Im Fächer ist nur der obere Streifen zu sehen (28 % der Höhe), darunter beginnen Muster und Figuren.
+Kleine Karten (unter 64 px Breite, Tisch mit Klasse `.compact`, z. B. Spider auf dem Handy) zeigen statt des Musters
+ein großes Symbol und keine untere Ecke. Größen hängen an `--cw`/`--ch`.
+
+## Bilder austauschen
+Alle Bilder liegen als eigene SVG-Dateien unter `assets/`. Zum Austauschen die Datei ersetzen, Name beibehalten.
+
+| Datei | Wofür | Hinweise |
+|---|---|---|
+| `suits/spades.svg`, `hearts.svg`, `diamonds.svg`, `clubs.svg` | Farbsymbole (Ecke und Mitte) | eingebettet; `fill="currentColor"` übernimmt Rot/Schwarz der Karte |
+| `figures/jack.svg`, `queen.svg`, `king.svg` | Bube, Dame, König in der Kartenmitte (doppelköpfig, mit Hellebarde, Blume, Zepter) | eingebettet; `currentColor` = Gewand/Rahmen (rot bei ♥♦, blaugrau bei ♠♣, in `cards.css`), Format etwa 40:44 |
+| `ace-ornament.svg` | Kranz hinter dem großen Symbol des Asses | eingebettet; `currentColor` = Kartenfarbe, quadratisch |
+| `back.svg` | Rückseite aller Karten | Hintergrundbild, wird auf die Karte gestreckt: Seitenverhältnis 5:7 (z. B. viewBox 100 × 140) |
+| `icons/clock.svg`, `moves.svg`, `undo.svg`, `hint.svg` | Zeit, Züge, Rückgängig, Tipp in der Kopfleiste | eingebettet; `currentColor` = Farbe des Knopfs |
+
+Eingebettete Bilder (`?raw`) sollten keine `id`s brauchen, weil sie mehrfach in der Seite stehen; die Rückseite darf welche haben.
 
 ## Ein Patience-Spiel mit `mountCardGame`
 Das Spiel liefert:

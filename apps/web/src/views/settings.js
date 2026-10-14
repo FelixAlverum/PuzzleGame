@@ -1,10 +1,7 @@
 // Globale Einstellungen: Gesamtlautstärke und Sprache. Gelten für alle Spiele.
 import { LANGS, NATIVE, HTML_LANG, FLAGS } from '@spielesammlung/i18n';
 import { el, header, link } from '../dom.js';
-
-const GLOBE = '<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#e7f0e0"/>' +
-  '<g fill="none" stroke="#3f7a2a" stroke-width="1.4"><circle cx="15" cy="10" r="7"/><ellipse cx="15" cy="10" rx="3" ry="7"/>' +
-  '<path d="M8 10h14M9.5 6h11M9.5 14h11"/></g></svg>';
+import GLOBE from '../assets/globe.svg?raw';   // Sprachwahl „Automatisch“
 
 export function settingsView(app, { settings, S }) {
   const page = el('main', 'page');

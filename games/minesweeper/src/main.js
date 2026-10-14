@@ -5,6 +5,9 @@
 import * as Logic from './logic.js';
 import * as I18N from './i18n.js';
 import { createSound } from './audio.js';
+import mineIcon from '../assets/icon-mine.svg?raw';
+import clockIcon from '../assets/icon-clock.svg?raw';
+import flagIcon from '../assets/icon-flag.svg?raw';
 import '@spielesammlung/ui/theme.css';
 import './style.css';
 
@@ -21,11 +24,8 @@ const ARM_TIME = 3000;    // ms, in denen der zweite Tipp auf „Neues Spiel“ 
 const LEVELS = [...Logic.LEVEL_IDS, Logic.CUSTOM];
 const rnd = (a, b) => a + Math.random() * (b - a);
 
-const ICON = {
-  mine: '<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></g><circle cx="12" cy="12" r="6.5" fill="currentColor"/></svg>',
-  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 9v4l3 2M10 3h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>',
-  flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M8 4l11 4.5L8 13z" fill="currentColor"/></svg>',
-};
+// Symbole der Kopfleiste: games/minesweeper/assets/icon-*.svg (currentColor)
+const ICON = { mine: mineIcon, clock: clockIcon, flag: flagIcon };
 
 const TEMPLATE = `
   <header class="game-bar">

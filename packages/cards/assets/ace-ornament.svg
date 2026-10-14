@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true">
+  <!-- Kranz hinter dem großen Farbsymbol des Asses. currentColor = Kartenfarbe. Keine ids verwenden. -->
+  <circle cx="20" cy="20" r="14.5" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.7"/>
+  <circle cx="20" cy="20" r="19.2" fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="0.5"/>
+  <g fill="currentColor" fill-opacity="0.32">
+    <ellipse cx="37.00" cy="20.00" rx="1.1" ry="2.4" transform="rotate(90.0 37.00 20.00)"/>
+    <ellipse cx="35.71" cy="26.51" rx="1.1" ry="2.4" transform="rotate(112.5 35.71 26.51)"/>
+    <ellipse cx="32.02" cy="32.02" rx="1.1" ry="2.4" transform="rotate(135.0 32.02 32.02)"/>
+    <ellipse cx="26.51" cy="35.71" rx="1.1" ry="2.4" transform="rotate(157.5 26.51 35.71)"/>
+    <ellipse cx="20.00" cy="37.00" rx="1.1" ry="2.4" transform="rotate(180.0 20.00 37.00)"/>
+    <ellipse cx="13.49" cy="35.71" rx="1.1" ry="2.4" transform="rotate(202.5 13.49 35.71)"/>
+    <ellipse cx="7.98" cy="32.02" rx="1.1" ry="2.4" transform="rotate(225.0 7.98 32.02)"/>
+    <ellipse cx="4.29" cy="26.51" rx="1.1" ry="2.4" transform="rotate(247.5 4.29 26.51)"/>
+    <ellipse cx="3.00" cy="20.00" rx="1.1" ry="2.4" transform="rotate(270.0 3.00 20.00)"/>
+    <ellipse cx="4.29" cy="13.49" rx="1.1" ry="2.4" transform="rotate(292.5 4.29 13.49)"/>
+    <ellipse cx="7.98" cy="7.98" rx="1.1" ry="2.4" transform="rotate(315.0 7.98 7.98)"/>
+    <ellipse cx="13.49" cy="4.29" rx="1.1" ry="2.4" transform="rotate(337.5 13.49 4.29)"/>
+    <ellipse cx="20.00" cy="3.00" rx="1.1" ry="2.4" transform="rotate(360.0 20.00 3.00)"/>
+    <ellipse cx="26.51" cy="4.29" rx="1.1" ry="2.4" transform="rotate(382.5 26.51 4.29)"/>
+    <ellipse cx="32.02" cy="7.98" rx="1.1" ry="2.4" transform="rotate(405.0 32.02 7.98)"/>
+    <ellipse cx="35.71" cy="13.49" rx="1.1" ry="2.4" transform="rotate(427.5 35.71 13.49)"/>
+  </g>
+  <g fill="#e2b44a">
+    <circle cx="20" cy="2.6" r="1"/><circle cx="37.4" cy="20" r="1"/><circle cx="20" cy="37.4" r="1"/><circle cx="2.6" cy="20" r="1"/>
+  </g>
+</svg>

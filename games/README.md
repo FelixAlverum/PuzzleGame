@@ -35,4 +35,6 @@ Spielrahmen aus `packages/ui` (`.game-root`, `.game-bar`, `.counter`, `.game-res
   Daran hängen Tests und die Prüfung der Ranglisten.
 - Spielstände tragen eine Versionsnummer. Alte Stände migriert das Spiel selbst.
 - Eigene Tests unter `tests/*.test.js`. `npm test` in der Repo-Wurzel findet sie automatisch.
+- Bilder liegen als eigene Dateien unter `assets/` (SVG), nicht als Text im Code: Symbole mit `currentColor` per
+  `import icon from '../assets/x.svg?raw'` eingebettet, Hintergründe per `url()` im CSS. So lassen sie sich ersetzen.
 - Spielspezifische Einstellungen und Texte bleiben im Spiel. Sprache und Gesamtlautstärke kommen von der Plattform.

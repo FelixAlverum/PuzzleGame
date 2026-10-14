@@ -82,6 +82,7 @@ oder im Repo-Wurzelordner `npm test`.
 | `src/menu.js`, `src/menu.html` | Menü, Anleitung, Statistik, Einstellungen (HTML-Overlay, `createMenu`) |
 | `src/style.css` | Aussehen des Spiels, alles unter `.cozy-garden` |
 | `src/i18n.js` | Alle Spieltexte in Deutsch, Englisch, Französisch, Spanisch, Russisch, Chinesisch |
+| `assets/lock.svg` | Schloss auf noch gesperrten Knöpfen im Menü |
 
 Die Logik liefert pro Zug Events (`placed`, `cleared`, `boardCleared`, `trayRefilled`, `gameOver`).
 Animationen und Sound reagieren nur auf diese Events.
