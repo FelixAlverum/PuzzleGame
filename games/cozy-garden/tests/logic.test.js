@@ -1,8 +1,8 @@
 // Ausführen: node --test games/cozy-garden/tests/logic.test.js
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const Shapes = require('../src/shapes.js');
-const Logic = require('../src/logic.js');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as Shapes from '../src/shapes.js';
+import * as Logic from '../src/logic.js';
 
 const N = Logic.DEFAULT_SIZE;
 const item = (shape, v = 0) => ({ shape, v });

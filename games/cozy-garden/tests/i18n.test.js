@@ -1,8 +1,8 @@
 // Ausführen: node --test games/cozy-garden/tests/i18n.test.js
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const I18N = require('../src/i18n.js');
-const Logic = require('../src/logic.js');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as I18N from '../src/i18n.js';
+import * as Logic from '../src/logic.js';
 
 test('Sechs Sprachen: de, en, fr, es, ru, zh', () => {
   assert.deepEqual(I18N.LANGS, ['de', 'en', 'fr', 'es', 'ru', 'zh']);

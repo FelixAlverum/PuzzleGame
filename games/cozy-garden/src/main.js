@@ -1,25 +1,46 @@
-// Einstieg: Layout, Eingabe, Spiel-Loop, Rendering, Lebenszyklus (Pause/Weiter über platform.js).
+// Einstieg: Layout, Eingabe, Spiel-Loop, Rendering, Lebenszyklus.
 // Ein Spielmodus = Biom + Feldgröße + Schwierigkeit. Je Modus gibt es einen eigenen Spielstand und eine
 // eigene Statistik, je Biom einen eigenen Garten. Menü, Statistik und Einstellungen liegen in menu.js.
-(function () {
-  'use strict';
+// mount() baut das Spiel in einem Element auf und liefert pause/resume/unmount an die Plattform-Hülle.
+// Mit der Außenwelt (Spielstand, Sprache, Lautstärke, Rangliste) spricht das Spiel nur über `platform`.
+import * as Logic from './logic.js';
+import * as I18N from './i18n.js';
+import * as Mat from './materials.js';
+import * as Garden from './garden.js';
+import { FX, FONT } from './fx.js';
+import { Sound } from './audio.js';
+import { createMenu } from './menu.js';
+import menuHtml from './menu.html?raw';
+import '@spielesammlung/ui/theme.css';
+import './style.css';
 
-  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-  const lerp = (a, b, k) => a + (b - a) * k;
-  const easeOut = k => 1 - Math.pow(1 - k, 3);
-  const randSeed = () => (Math.random() * 4294967296) >>> 0;
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeOut = k => 1 - Math.pow(1 - k, 3);
+const randSeed = () => (Math.random() * 4294967296) >>> 0;
 
-  // Texte: siehe i18n.js. lang = aktuelle Sprache, S = ihre Texte
-  let S = I18N.STR.en, lang = 'en';
+/** @param {HTMLElement} el @param {import('@spielesammlung/game-sdk').Platform} platform */
+export function mount(el, platform) {
 
-  const canvas = document.getElementById('game');
+  // Texte der aktuellen Sprache, siehe i18n.js
+  let S = I18N.STR.en;
+
+  // Wurzel des Spiels: Canvas und Menü-Overlay, beides innerhalb von el
+  const root = document.createElement('div');
+  root.className = 'cozy-garden';
+  root.innerHTML = '<canvas class="game"></canvas>' + menuHtml;
+  el.append(root);
+  const canvas = root.querySelector('canvas.game');
   const ctx = canvas.getContext('2d');
+  // Beendet beim Abbauen alle Listener an window/document
+  const ac = new AbortController(), signal = ac.signal;
+  let menu = null, offVolume = () => {}, destroyed = false;
   let W = 0, H = 0, DPR = 1, L = null, bg = null;
   let bgTheme = null, bgOld = null, bgFade = 0;   // Hintergrund folgt dem Garten-Thema, Wechsel wird überblendet
 
-  // Einstellungen (gespeichert). Lautstärken 0..1, size = Kantenlänge des Felds, diff = gewählte Schwierigkeit
-  // lang: null = Sprache der Plattform bzw. des Browsers übernehmen, sonst vom Spieler gewählt
-  const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, diff: Logic.DEFAULT_DIFF, biome: Logic.BIOMES[0], lang: null };
+  // Einstellungen (gespeichert). Lautstärken 0..1, size = Kantenlänge des Felds, diff = gewählte Schwierigkeit.
+  // Sprache und Gesamtlautstärke kommen von der Plattform.
+  const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, diff: Logic.DEFAULT_DIFF, biome: Logic.BIOMES[0] };
   // Fortschritt (gespeichert): Garten je Biom, Statistik und offener Lauf je Modus („biome-size-diff“),
   // unlocked = Index der höchsten freigeschalteten Schwierigkeit (bleibt auch nach „Statistik zurücksetzen“)
   let gardens = {}, stats = {}, runs = {}, hintDone = false, unlocked = 0;
@@ -382,7 +403,7 @@
     const committed = h ? { ...stats, [modeKey]: h.stat } : stats;
     return Logic.statTotals(Object.values(committed)).best;
   }
-  const submitBest = () => Platform.scores.submit('best', overallBest());
+  const submitBest = () => platform.scores.submit('best', overallBest());
 
   function endGame() {
     over = { t: clock, button: null, newBest: game.score > bestAtStart && bestAtStart > 0 };
@@ -435,7 +456,7 @@
     buildBackground();
     Sound.setBiome(b);
     screen = 'game';
-    Menu.hide();
+    menu.hide();
     if (Logic.stuck(game)) { game.over = true; endGame(); }
     saveNow();
   }
@@ -451,7 +472,7 @@
       saveNow();
     }
     screen = 'menu';
-    Menu.show(page);
+    menu.show(page);
   }
 
   function setSetting(k, v) {
@@ -461,14 +482,12 @@
     saveDirty = true;
   }
 
-  // Sprache sofort umschalten: Canvas-Texte lesen S jedes Bild neu, das Menü baut sich neu auf
-  function setLanguage(l, remember) {
+  // Sprache umschalten: Canvas-Texte lesen S jedes Bild neu, das Menü baut sich neu auf
+  function setLanguage(l) {
     if (!I18N.LANGS.includes(l)) return;
-    lang = l;
     S = I18N.STR[l];
-    document.documentElement.lang = I18N.HTML_LANG[l];
-    if (remember) { settings.lang = l; saveDirty = true; }
-    if (ready) Menu.setStrings(S);
+    root.lang = I18N.HTML_LANG[l];
+    if (menu) menu.setStrings(S);
   }
 
   function resetStats() {
@@ -484,10 +503,9 @@
     settings: () => settings,
     setSetting,
     preview: k => Sound.preview(k),
-    audioEnabled: () => Platform.audio.enabled(),
+    volume: () => platform.audio.volume(),
     resetStats,
-    lang: () => lang,
-    setLanguage: l => setLanguage(l, true),
+    exit: platform.exit && (() => platform.exit()),
     // Schwierigkeiten fürs Menü: frei/gesperrt, gewählte, und was für die nächste fehlt
     diffInfo() {
       const cur = Logic.DIFFS[unlocked], next = Logic.DIFFS[unlocked + 1] || null;
@@ -551,7 +569,6 @@
     if (Logic.SIZES.includes(st.size)) settings.size = st.size;
     if (Logic.DIFFS.includes(st.diff)) settings.diff = st.diff;
     if (Logic.BIOMES.includes(st.biome)) settings.biome = st.biome;
-    if (I18N.LANGS.includes(st.lang)) settings.lang = st.lang;
     for (const b of Logic.BIOMES) {
       const g = data.gardens && Logic.restoreGarden(data.gardens[b]);
       if (g) gardens[b] = g;
@@ -572,7 +589,7 @@
   }
 
   function saveNow() {
-    Platform.save.store(snapshot());
+    platform.save.store(snapshot());
     saveDirty = false;
     lastSave = clock;
   }
@@ -580,7 +597,7 @@
   // --- Eingabe ---------------------------------------------------------------------------
 
   // Ton freischalten bei jeder ersten Geste – auch im Menü
-  window.addEventListener('pointerdown', () => Sound.unlock(), true);
+  window.addEventListener('pointerdown', () => Sound.unlock(), { capture: true, signal });
 
   canvas.addEventListener('pointerdown', e => {
     if (!ready || paused || screen !== 'game') return;
@@ -635,7 +652,7 @@
     if (!ready || paused) return;
     const k = e.key;
     if (screen !== 'game') {                     // Menü bedient sich per Tab/Enter selbst
-      if (k === 'Escape') Menu.back();
+      if (k === 'Escape' && !menu.back() && platform.exit) platform.exit();   // Esc im Hauptmenü: zur Bibliothek
       return;
     }
     if (confirm) {
@@ -678,10 +695,11 @@
     else if (k === 'Enter' || k === ' ') { if (tryPlace(kb.slot, kb.r, kb.c)) kb = null; }
     else return;
     e.preventDefault();
-  });
+  }, { signal });
 
-  window.addEventListener('resize', resize);
-  window.addEventListener('pagehide', () => { if (ready) saveNow(); });
+  const resizer = new ResizeObserver(() => { if (!destroyed) resize(); });
+  resizer.observe(root);
+  window.addEventListener('pagehide', () => { if (ready) saveNow(); }, { signal });
 
   // Entwickler-Hilfe: index.html?autoplay lässt einen gierigen Bot spielen (Tests, Screenshots)
   const AUTOPLAY = /[?&]autoplay\b/.test(location.search);
@@ -706,7 +724,8 @@
   }
 
   // Entwickler-Hilfe: index.html?debug macht den Zustand für automatisierte Browser-Tests zugänglich
-  if (/[?&]debug\b/.test(location.search)) {
+  const DEBUG = /[?&]debug\b/.test(location.search);
+  if (DEBUG) {
     window.__dbg = {
       layout: () => L, game: () => game, garden: () => garden, place: tryPlace, ready: () => ready,
       undo, resetGarden, history: () => history.length,
@@ -1173,34 +1192,21 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     Mat.build();
-    const [data, language] = await Promise.all([Platform.save.load(), Platform.language()]);
+    const data = await platform.save.load();
+    if (destroyed) return;                       // schon wieder abgebaut, während der Stand lud
     loadSave(data);
-    // Entwickler-Hilfe: ?lang=fr erzwingt eine Sprache (ohne sie zu speichern)
+    // Entwickler-Hilfe: ?lang=fr erzwingt eine Sprache
     const forced = new URLSearchParams(location.search).get('lang');
-    setLanguage(I18N.LANGS.includes(forced) ? forced : settings.lang || I18N.pick(language), false);
+    setLanguage(I18N.LANGS.includes(forced) ? forced : I18N.pick(platform.language()));
     biome = settings.biome;
     gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
     for (const k of ['music', 'sfx', 'amb']) Sound.setVolume(k, settings[k]);
     Sound.setBiome(biome);
-    Menu.init({ S, ...menuApi });
+    menu = createMenu(root.querySelector('.ui'), { S, ...menuApi }, signal);
 
-    Sound.setEnabled(Platform.audio.enabled());
-    Platform.audio.onChange(on => Sound.setEnabled(on));
-    Platform.onPause(() => {
-      paused = true;
-      drag = null; returning = null;
-      cancelAnimationFrame(raf);
-      Sound.setPaused(true);
-      submitBest();
-      saveNow();
-    });
-    Platform.onResume(() => {
-      if (!paused) return;
-      paused = false;
-      last = 0;
-      Sound.setPaused(false);
-      raf = requestAnimationFrame(frame);
-    });
+    Sound.setMaster(platform.audio.volume());
+    offVolume = platform.audio.onChange(v => Sound.setMaster(v));
+    Sound.setPaused(paused);
 
     ready = true;
     buildBackground();
@@ -1211,8 +1217,43 @@
     if (q.get('diff')) setSetting('diff', q.get('diff'));
     if (Logic.BIOMES.includes(q.get('biome')) || AUTOPLAY) enterGame(Logic.BIOMES.includes(q.get('biome')) ? q.get('biome') : biome);
     else showMenu();
-    raf = requestAnimationFrame(frame);
+    if (!paused) raf = requestAnimationFrame(frame);
   }
 
-  init().catch(e => Platform.logError(e));
-})();
+  // --- Lebenszyklus (von der Plattform-Hülle gesteuert) ----------------------------------
+
+  function pause() {
+    if (paused || destroyed) return;
+    paused = true;
+    drag = null; returning = null;
+    cancelAnimationFrame(raf);
+    Sound.setPaused(true);
+    if (ready) { submitBest(); saveNow(); }
+  }
+
+  function resume() {
+    if (!paused || destroyed) return;
+    paused = false;
+    last = 0;
+    Sound.setPaused(false);
+    if (ready) raf = requestAnimationFrame(frame);
+  }
+
+  function unmount() {
+    if (destroyed) return;
+    if (ready) { submitBest(); saveNow(); }
+    destroyed = true;
+    cancelAnimationFrame(raf);
+    ac.abort();
+    resizer.disconnect();
+    offVolume();
+    if (menu) menu.destroy();
+    Sound.setPaused(true);
+    FX.reset();
+    root.remove();
+    if (DEBUG) delete window.__dbg;
+  }
+
+  init().catch(e => platform.logError(e));
+  return { pause, resume, unmount };
+}

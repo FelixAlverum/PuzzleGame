@@ -1,0 +1,18 @@
+{
+  "name": "@spielesammlung/cozy-garden",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Cozy Garden – Block-Puzzle mit Pflanzenformen aus Naturmaterialien",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@spielesammlung/game-sdk": "*",
+    "@spielesammlung/i18n": "*",
+    "@spielesammlung/ui": "*"
+  }
+}

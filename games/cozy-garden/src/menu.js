@@ -1,64 +1,36 @@
-// Menü, Anleitung, Statistik und Einstellungen als HTML-Overlay über dem Canvas (siehe Vault: 02 Design/UI und UX).
+// Menü, Anleitung, Statistik und Einstellungen des Spiels als HTML-Overlay über dem Canvas.
 // HTML statt Canvas: Regler, Fokus und Tastaturbedienung gibt es so gratis.
 // Kennt keinen Spielzustand – alles kommt über die Callbacks aus main.js (api).
-(function (root) {
-  'use strict';
+// Sprache und Gesamtlautstärke stellt die Plattform-Hülle ein, nicht dieses Menü.
+import * as Shapes from './shapes.js';
+import * as Logic from './logic.js';
+import * as Mat from './materials.js';
+import * as Garden from './garden.js';
 
-  const $ = id => document.getElementById(id);
-  const el = (tag, cls, text) => {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  };
-  const fmt = v => (v == null ? '–' : Number(v).toLocaleString());
+const el = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+};
+const fmt = v => (v == null ? '–' : Number(v).toLocaleString());
 
-  // Vorschaubilder im Menü: je Biom zwei seiner Extra-Formen
-  const THUMB = { meadow: ['bluete', 'tulpe'], pond: ['seerose', 'rohrkolben'], tropics: ['hibiskus', 'bambus'] };
-  // Anleitung: alle Extra-Formen des Bioms
-  const extrasOf = biome => Shapes.pool(biome).filter(sh => sh.biome).map(sh => sh.id);
+// Vorschaubilder im Menü: je Biom zwei seiner Extra-Formen
+const THUMB = { meadow: ['bluete', 'tulpe'], pond: ['seerose', 'rohrkolben'], tropics: ['hibiskus', 'bambus'] };
+// Anleitung: alle Extra-Formen des Bioms
+const extrasOf = biome => Shapes.pool(biome).filter(sh => sh.biome).map(sh => sh.id);
 
-  // Flaggen als kleines Inline-SVG (Emoji-Flaggen zeigt Windows nur als Buchstaben an)
-  function star(cx, cy, r, a) {
-    const pts = [];
-    for (let k = 0; k < 10; k++) {
-      const rr = k % 2 ? r * 0.382 : r, t = a + k * Math.PI / 5;
-      pts.push(`${(cx + Math.cos(t) * rr).toFixed(2)},${(cy + Math.sin(t) * rr).toFixed(2)}`);
-    }
-    return `<polygon fill="#ffde00" points="${pts.join(' ')}"/>`;
-  }
-  const smallStar = (x, y) => star(x, y, 1, Math.atan2(5 - y, 5 - x));   // Spitze zeigt zum großen Stern
-  const FLAGS = {
-    de: '<svg viewBox="0 0 5 3" preserveAspectRatio="none"><rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#dd0000"/><rect y="2" width="5" height="1" fill="#ffce00"/></svg>',
-    en: '<svg viewBox="0 0 60 30" preserveAspectRatio="xMidYMid slice"><clipPath id="uk-clip"><path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/></clipPath>' +
-      '<path d="M0,0v30h60v-30z" fill="#012169"/><path d="M0,0L60,30M60,0L0,30" stroke="#fff" stroke-width="6"/>' +
-      '<path d="M0,0L60,30M60,0L0,30" clip-path="url(#uk-clip)" stroke="#c8102e" stroke-width="4"/>' +
-      '<path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/><path d="M30,0v30M0,15h60" stroke="#c8102e" stroke-width="6"/></svg>',
-    fr: '<svg viewBox="0 0 3 2" preserveAspectRatio="none"><rect width="1" height="2" fill="#002395"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#ed2939"/></svg>',
-    es: '<svg viewBox="0 0 3 2" preserveAspectRatio="none"><rect width="3" height="2" fill="#aa151b"/><rect y="0.5" width="3" height="1" fill="#f1bf00"/></svg>',
-    ru: '<svg viewBox="0 0 3 2" preserveAspectRatio="none"><rect width="3" height="0.667" fill="#fff"/><rect y="0.667" width="3" height="0.667" fill="#0039a6"/><rect y="1.333" width="3" height="0.667" fill="#d52b1e"/></svg>',
-    zh: '<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#ee1c25"/>' + star(5, 5, 3, -Math.PI / 2) +
-      smallStar(10, 2) + smallStar(12, 4) + smallStar(12, 7) + smallStar(10, 9) + '</svg>',
-  };
+const LOCK = '<svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="7" width="11" height="8" rx="2" fill="currentColor"/>' +
+  '<path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 
-  let api = null, S = null, ui = null, current = null;
+// ui: das Overlay-Element (enthält die .screen-Abschnitte aus menu.html), api: Callbacks aus main.js,
+// signal: beendet beim Abbauen des Spiels alle Listener an window.
+export function createMenu(ui, api, signal) {
+  const $ = id => ui.querySelector('#' + id);
+  let S = api.S, current = null;
   let statsDiff = null;  // Filter der Statistik: null = alle Schwierigkeiten
-  const LOCK = '<svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="7" width="11" height="8" rx="2" fill="currentColor"/>' +
-    '<path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   let armed = null;   // Zwei-Tipp-Bestätigung: { btn, label, timer }
   let keyboard = false; // zuletzt per Tastatur bedient → Fokus beim Seitenwechsel setzen
-
-  function init(opts) {
-    api = opts;
-    S = opts.S;
-    ui = $('ui');
-    applyStatic();
-    ui.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
-    $('reset-stats').addEventListener('click', e => confirmTap(e.currentTarget, () => { api.resetStats(); show('stats'); }));
-    buildSettings();
-    root.addEventListener('keydown', () => { keyboard = true; }, true);
-    root.addEventListener('pointerdown', () => { keyboard = false; }, true);
-  }
 
   const applyStatic = () => ui.querySelectorAll('[data-t]').forEach(n => { n.textContent = S[n.dataset.t]; });
 
@@ -130,7 +102,7 @@
 
   // Formen nebeneinander auf dem Biom-Hintergrund, mittig und so groß wie möglich
   function drawThumb(canvas, biome, ids) {
-    const dpr = Math.min(root.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = canvas.clientWidth || 240, h = canvas.clientHeight || 135;
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     const g = canvas.getContext('2d');
@@ -329,19 +301,6 @@
       b.addEventListener('click', () => { api.setSetting('size', n); renderSettings(); });
       seg.append(b);
     }
-    const langs = $('lang-seg');
-    for (const l of I18N.LANGS) {
-      const b = el('button', 'seg lang');
-      b.type = 'button';
-      b.setAttribute('role', 'radio');
-      b.dataset.lang = l;
-      b.setAttribute('lang', I18N.HTML_LANG[l]);
-      const flag = el('span', 'flag');
-      flag.innerHTML = FLAGS[l];
-      b.append(flag, el('span', null, I18N.NATIVE[l]));
-      b.addEventListener('click', () => api.setLanguage(l));
-      langs.append(b);
-    }
   }
 
   function renderSettings() {
@@ -356,13 +315,19 @@
       b.classList.toggle('on', on);
       b.setAttribute('aria-checked', String(on));
     });
-    $('lang-seg').querySelectorAll('.seg').forEach(b => {
-      const on = b.dataset.lang === api.lang();
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-checked', String(on));
-    });
-    $('muted-note').hidden = api.audioEnabled();
+    $('muted-note').hidden = api.volume() > 0;
   }
 
-  root.Menu = { init, show, hide, back, setStrings, get screen() { return current; } };
-})(self);
+  // Aufbau erst hier, wenn alle Konstanten oben angelegt sind
+  applyStatic();
+  ui.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
+  $('reset-stats').addEventListener('click', e => confirmTap(e.currentTarget, () => { api.resetStats(); show('stats'); }));
+  const toLibrary = $('to-library');
+  toLibrary.hidden = !api.exit;
+  toLibrary.addEventListener('click', () => api.exit());
+  buildSettings();
+  window.addEventListener('keydown', () => { keyboard = true; }, { capture: true, signal });
+  window.addEventListener('pointerdown', () => { keyboard = false; }, { capture: true, signal });
+
+  return { show, hide, back, setStrings, destroy: disarm, get screen() { return current; } };
+}
