@@ -7,6 +7,10 @@ import { createCardSound } from './sound.js';
 import { STR as BASE, cardName } from './strings.js';
 import '@spielesammlung/ui/theme.css';
 import '../cards.css';
+import clockIcon from '../assets/icons/clock.svg?raw';
+import movesIcon from '../assets/icons/moves.svg?raw';
+import undoIcon from '../assets/icons/undo.svg?raw';
+import hintIcon from '../assets/icons/hint.svg?raw';
 
 const randSeed = () => (Math.random() * 4294967296) >>> 0;
 const AUTO_STEP = 120;    // ms zwischen zwei Karten beim automatischen Zuendespielen
@@ -14,12 +18,8 @@ const ARM_TIME = 3000;    // ms, in denen der zweite Tipp auf „Neues Spiel“ 
 const NOTE_TIME = 4500;   // ms, so lange steht ein Hinweis in der Fußzeile
 const DEAL_STAGGER = 16;  // ms zwischen zwei Karten beim Austeilen
 
-const ICON = {
-  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 9v4l3 2M10 3h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>',
-  moves: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="11" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9 3.5h9a2 2 0 0 1 2 2V17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
-  undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v6h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.6 11A8 8 0 1 1 7 18.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
-  hint: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.8 10.6c.7.6 1 1.4 1 2.4h5.6c0-1 .3-1.8 1-2.4A6 6 0 0 0 12 3z" fill="currentColor"/><path d="M9.5 18.5h5M10.5 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-};
+// Symbole der Kopfleiste: packages/cards/assets/icons/*.svg (currentColor = Farbe des Knopfs)
+const ICON = { clock: clockIcon, moves: movesIcon, undo: undoIcon, hint: hintIcon };
 
 const TEMPLATE = `
   <header class="game-bar">

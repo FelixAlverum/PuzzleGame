@@ -92,6 +92,16 @@
   overflow: hidden;
 }
 
+/* Feine Drucklinie innen, wie bei echten Karten */
+.ptable .pcard .face::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--cw) * 0.035);
+  border-radius: calc(var(--cw) * 0.05);
+  border: 1px solid rgba(74, 52, 36, 0.12);
+  pointer-events: none;
+}
+
 .ptable .pcard.up .face {
   display: block;
 }
@@ -100,52 +110,120 @@
   display: none;
 }
 
-/* Ecke: Wert links, Farbe rechts – bleibt auch im engen Fächer lesbar */
+.ptable .pcard .face svg {
+  display: block;
+}
+
+/* Ecke: Wert links, Farbe rechts – bleibt auch im engen Fächer lesbar. Unten dieselbe Ecke auf dem Kopf. */
 .ptable .pcard .idx {
   position: absolute;
   top: calc(var(--cw) * 0.03);
   left: calc(var(--cw) * 0.07);
-  right: calc(var(--cw) * 0.06);
+  right: calc(var(--cw) * 0.07);
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-weight: 800;
-  font-size: calc(var(--cw) * 0.32);
+  font-size: calc(var(--cw) * 0.28);
   line-height: 1.05;
   letter-spacing: -0.04em;
+  z-index: 1;
 }
 
 .ptable .pcard .idx svg {
-  width: calc(var(--cw) * 0.27);
-  height: calc(var(--cw) * 0.27);
+  width: calc(var(--cw) * 0.24);
+  height: calc(var(--cw) * 0.24);
+}
+
+.ptable .pcard .idx-bot {
+  top: auto;
+  bottom: calc(var(--cw) * 0.03);
+  font-size: calc(var(--cw) * 0.21);
+  transform: rotate(180deg);
+}
+
+.ptable .pcard .idx-bot svg {
+  width: calc(var(--cw) * 0.18);
+  height: calc(var(--cw) * 0.18);
 }
 
 .ptable .pcard .mid {
   position: absolute;
-  left: 14%;
-  right: 14%;
-  top: 34%;
-  bottom: 8%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.ptable .pcard .mid svg {
-  width: 82%;
-  height: 82%;
+/* 2–10: Farbsymbole im klassischen Muster. Im Fächer ist von jeder Karte nur der obere Streifen (28 % der Höhe)
+   zu sehen – Muster, Kranz und Figurenrahmen beginnen erst darunter, damit dort nur Wert und Farbe stehen. */
+.ptable .pcard .pips {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 35%;
+  bottom: 24%;
 }
 
-.ptable .pcard .mid.ace svg {
+.ptable .pcard .pips i {
+  position: absolute;
+  width: calc(var(--cw) * 0.17);
+  height: calc(var(--cw) * 0.17);
+  transform: translate(-50%, -50%);
+}
+
+.ptable .pcard .pips i.flip {
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.ptable .pcard .pips svg,
+.ptable .pcard .mid.simple svg {
   width: 100%;
   height: 100%;
 }
 
-.ptable .pcard .mid.fig {
+.ptable .pcard .mid.simple {
+  display: none;
+}
+
+/* Ass: großes Symbol im Kranz */
+.ptable .pcard .mid.ace {
   left: 8%;
   right: 8%;
-  top: 30%;
-  bottom: 5%;
+  top: 29%;
+  bottom: 18%;
+}
+
+.ptable .pcard .mid.ace > svg {
+  position: relative;
+  width: calc(var(--cw) * 0.44);
+  height: calc(var(--cw) * 0.44);
+}
+
+.ptable .pcard .mid.ace .orn {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--cw) * 0.74);
+  height: calc(var(--cw) * 0.74);
+  transform: translate(-50%, -50%);
+}
+
+.ptable .pcard .mid.ace .orn svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Bube, Dame, König (assets/figures/*.svg): currentColor färbt Gewand und Rahmen */
+.ptable .pcard .mid.fig {
+  left: 9%;
+  right: 9%;
+  top: 29%;
+  bottom: 17%;
+  color: #33404f;
+}
+
+.ptable .pcard.red .mid.fig {
+  color: #b8452f;
 }
 
 .ptable .pcard .mid.fig svg {
@@ -153,22 +231,53 @@
   height: 100%;
 }
 
-/* Rückseite: Grün mit Rautenmuster und Papierrand */
-.ptable .pcard .back {
-  border: calc(var(--cw) * 0.05) solid #fbf5e6;
-  box-shadow: 0 1px 2px rgba(30, 20, 10, 0.4), inset 0 0 0 1px rgba(60, 40, 20, 0.3);
-  background:
-    repeating-linear-gradient(45deg, rgba(255, 250, 225, 0.16) 0 3px, transparent 3px 8px),
-    repeating-linear-gradient(-45deg, rgba(255, 250, 225, 0.16) 0 3px, transparent 3px 8px),
-    linear-gradient(160deg, #6ea64b, #3f7a2a);
+/* Kleine Karten (Tisch .compact): ein großes Symbol statt Muster, keine untere Ecke, größere Ecke oben */
+.ptable.compact .pcard .idx-top {
+  font-size: calc(var(--cw) * 0.32);
 }
 
-.ptable .pcard .back::after {
-  content: '';
-  position: absolute;
-  inset: 9%;
-  border-radius: calc(var(--cw) * 0.05);
-  border: 1.5px solid rgba(255, 250, 225, 0.5);
+.ptable.compact .pcard .idx-top svg {
+  width: calc(var(--cw) * 0.27);
+  height: calc(var(--cw) * 0.27);
+}
+
+.ptable.compact .pcard .idx-bot,
+.ptable.compact .pcard .pips,
+.ptable.compact .pcard .mid.ace .orn,
+.ptable.compact .pcard .face::after {
+  display: none;
+}
+
+.ptable.compact .pcard .mid.simple,
+.ptable.compact .pcard .mid.ace {
+  display: flex;
+  left: 14%;
+  right: 14%;
+  top: 34%;
+  bottom: 8%;
+}
+
+.ptable.compact .pcard .mid.simple svg {
+  width: 82%;
+  height: 82%;
+}
+
+.ptable.compact .pcard .mid.ace > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ptable.compact .pcard .mid.fig {
+  left: 8%;
+  right: 8%;
+  top: 30%;
+  bottom: 5%;
+}
+
+/* Rückseite: Bild aus assets/back.svg (Seitenverhältnis 5:7), austauschbar */
+.ptable .pcard .back {
+  box-shadow: 0 1px 2px rgba(30, 20, 10, 0.4), inset 0 0 0 1px rgba(60, 40, 20, 0.3);
+  background: url("./assets/back.svg") center / 100% 100% no-repeat;
 }
 
 /* --- Zustände --- */

@@ -9,6 +9,7 @@ const LIFT_MS = 280;      // so lange fliegen bewegte Karten über allen anderen
 // Ebenen (z-index): Stapel liegen bei (Platz + 1) × 200 + Index, also höchstens rund 4000 (Spider: 19 Plätze).
 // Gleitende, gezogene und feiernde Karten liegen deutlich darüber, sonst rutschen sie unter Stapel weiter rechts.
 const Z_LIFT = 10000, Z_DRAG = 20000, Z_PARTY = 30000;
+const COMPACT_BELOW = 64;  // px Kartenbreite, unter der die Karten ein großes Symbol statt des Musters zeigen
 
 /**
  * @param {HTMLElement} host
@@ -54,6 +55,7 @@ export function createTable(host, opts) {
     layout = l;
     root.style.setProperty('--cw', l.cardW + 'px');
     root.style.setProperty('--ch', l.cardH + 'px');
+    root.classList.toggle('compact', l.cardW < COMPACT_BELOW);   // kleine Karten: einfache Vorderseite
     for (const [id, el] of slotEls) if (!l.slots.some(s => s.id === id)) { el.remove(); slotEls.delete(id); }
     for (const s of l.slots) {
       let el = slotEls.get(s.id);

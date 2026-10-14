@@ -46,5 +46,7 @@ node --test "games/spider/tests/*.test.js"
 | `src/i18n.js` | Spieltexte in 6 Sprachen |
 | `src/style.css` | Kleinigkeiten unter `.spider` |
 
+Kartenbilder (Farbsymbole, Figuren, Rückseite) liegen in [packages/cards/assets](../../packages/cards/assets/).
+
 ## Offen
 - Punkte nach Windows-Art (500 − Züge + 100 je Folge) als zweite Rangliste
