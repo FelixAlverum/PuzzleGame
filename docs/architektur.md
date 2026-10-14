@@ -21,8 +21,8 @@
 **Grundregel:** Ein Spiel weiß nichts von Konten, Servern oder `localStorage`. Es redet ausschließlich mit dem
 `platform`-Objekt. Ob dahinter ein Gast im Browser steckt oder ein angemeldetes Konto mit Cloud-Sync, entscheidet die Hülle.
 
-Stand nach Phase 1: Hülle, Spielvertrag und Cozy Garden laufen, alles im Gastmodus und lokal. Profil, Shop, Login und
-die API fehlen noch.
+Stand nach Phase 2: Hülle, Spielvertrag und vier Spiele (Cozy Garden, Minesweeper, Solitaire, Spider) laufen, alles im
+Gastmodus und lokal. Profil, Shop, Login und die API fehlen noch.
 
 ## Repo-Aufbau
 
@@ -32,15 +32,15 @@ apps/
   api/                 Backend: Auth, Spielstände, Ranglisten, Käufe/Entitlements               (Phase 3)
 games/
   cozy-garden/         Block-Puzzle                                                             (vorhanden)
-  minesweeper/         kleinstes Spiel, prüft den Spielvertrag als Erstes                        (Phase 2)
-  solitaire/           Klondike                                                                 (Phase 2)
-  spider/              Spider Solitaire                                                         (Phase 2)
+  minesweeper/         Minesweeper mit eigenem Feld                                             (vorhanden)
+  solitaire/           Klondike                                                                 (vorhanden)
+  spider/              Spider Solitaire                                                         (vorhanden)
 packages/
   game-sdk/            Spielvertrag: defineGame(), Typen des platform-Objekts, Fake-Plattform    (vorhanden)
   i18n/                Sprachliste, Sprachwahl, Flaggen                                          (vorhanden)
-  ui/                  Theme: Farben, Schrift, Knöpfe, Karten, Regler                            (vorhanden)
-  audio/               Web-Audio-Grundlage, sobald ein zweites Spiel Ton hat
-  cards/               Kartendeck, Mischen mit Seed, Kartengrafik → Solitaire + Spider            (Phase 2)
+  ui/                  Theme: Farben, Schrift, Knöpfe, Karten, Regler; Spielrahmen für HTML-Spiele (vorhanden)
+  audio/               Web-Audio-Grundlage: Kontext, Gesamtlautstärke, Ton, Rauschen             (vorhanden)
+  cards/               Deck, Mischen mit Seed, Kartengrafik, Tisch, Rahmen für Patiencen         (vorhanden)
 infra/                 Docker, nginx, docker-compose
 docs/
 ```
@@ -57,7 +57,8 @@ Code wandert erst dann nach `packages/`, wenn **ein zweiter Nutzer** ihn braucht
 - **TypeScript** für `packages/game-sdk` (später auch `apps/api`). Nur löschbare Typ-Syntax (`erasableSyntaxOnly`),
   damit Node die Datei in Tests direkt ausführen kann. Hülle und Spiele sind JavaScript und beziehen die Typen per JSDoc
   (`@param {import('@spielesammlung/game-sdk').Platform} platform`). Prüfen: `npm run typecheck`.
-- **Spiellogik bleibt DOM-frei und läuft in Node** (`games/cozy-garden/src/logic.js`). Die API nutzt sie später zum Prüfen
+- **Spiellogik bleibt DOM-frei und läuft in Node** (`games/<id>/src/logic.js`). Minesweeper, Solitaire und Spider
+  speichern ihre Läufe als Seed + Züge; der Stand ergibt sich durch Nachspielen (bei den Kartenspielen auch „Rückgängig“). Die API nutzt sie später zum Prüfen
   von Ranglisten-Einträgen, siehe [daten-und-konten.md](daten-und-konten.md#ranglisten-fälschungssicher).
 - Spiel-CSS wird per `import './style.css'` eingebunden und hängt unter der Wurzel-Klasse des Spiels (`.cozy-garden`).
   Das gemeinsame Theme kommt aus `@spielesammlung/ui/theme.css`.

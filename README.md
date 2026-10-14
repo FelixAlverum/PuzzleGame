@@ -13,8 +13,9 @@ der Sammlung geworden: [Cozy Garden](games/cozy-garden/).
 |---|---|
 | [apps/web](apps/web/) – Plattform-Hülle | Bibliothek, Spielansicht, Einstellungen (Sprache, Gesamtlautstärke), PWA; Gastmodus, alles lokal |
 | [games/cozy-garden](games/cozy-garden/) | spielbar, in der Hülle und einzeln |
-| [games/minesweeper](games/minesweeper/) | Prototyp zum Probespielen, in der Hülle und einzeln |
-| Solitaire, Spider | in der Bibliothek als „Bald verfügbar“, siehe [Fahrplan](docs/fahrplan.md) Phase 2 |
+| [games/minesweeper](games/minesweeper/) | spielbar, mit eigenem Feld |
+| [games/solitaire](games/solitaire/) | spielbar: Klondike mit 1 oder 3 Karten |
+| [games/spider](games/spider/) | spielbar: Spider mit 1, 2 oder 4 Farben |
 | API, Konten, Cloud-Sync, Ranglisten, Shop | geplant, Phase 3 und 4 |
 
 ## Aufbau
@@ -25,11 +26,15 @@ apps/
   api/           Backend: Konten, Spielstände, Ranglisten, Käufe     (geplant, Phase 3)
 games/           ein Ordner pro Spiel, jedes Spiel hält sich an den Spielvertrag
   cozy-garden/   Block-Puzzle mit Pflanzenformen
-  minesweeper/   Minesweeper (Prototyp)
+  minesweeper/   Minesweeper
+  solitaire/     Solitaire (Klondike)
+  spider/        Spider Solitaire
 packages/
   game-sdk/      Spielvertrag (TypeScript): defineGame, Typen des platform-Objekts, Fake-Plattform
   i18n/          Sprachliste, Sprachwahl, Flaggen
-  ui/            gemeinsames Theme (Farben, Knöpfe, Karten, Regler)
+  ui/            gemeinsames Theme (Farben, Knöpfe, Karten, Regler) und Spielrahmen
+  audio/         Ton-Grundgerüst (Web Audio ohne Dateien)
+  cards/         Kartendeck, Kartengrafik, Tisch, Rahmen für Patiencen
 infra/           Docker, nginx, docker-compose für den Server
 docs/            Architektur, Daten und Konten, Betrieb, Fahrplan, Entscheidungen
 ```
@@ -47,6 +52,8 @@ npm install
 npm run dev               # Plattform-Hülle mit allen Spielen: http://localhost:5173
 npm run dev:cozy-garden   # Cozy Garden einzeln, ohne Hülle
 npm run dev:minesweeper   # Minesweeper einzeln, ohne Hülle
+npm run dev:solitaire     # Solitaire einzeln, ohne Hülle
+npm run dev:spider        # Spider einzeln, ohne Hülle
 npm test                  # Tests aller Spiele, Pakete und der Hülle (Node, ohne Browser)
 npm run test:e2e          # Browser-Tests gegen den Produktions-Build (Playwright, siehe unten)
 npm run typecheck         # TypeScript-Prüfung des Spielvertrags
@@ -57,7 +64,7 @@ npm run preview           # den Build lokal ansehen (mit Service Worker): http:/
 Für die Browser-Tests einmal `npx playwright install chromium` ausführen. Alternativ nimmt
 `PW_CHANNEL=msedge npm run test:e2e` (bzw. `chrome`) einen installierten Browser. Die Tests bauen die Hülle, starten
 `vite preview` auf Port 4174 und prüfen Bibliothek, Einstellungen, Übernahme alter Stände, Auf- und Abbau der Spiele
-und Minesweeper (Desktop und Handy). Sie liegen in [apps/web/e2e](apps/web/e2e/).
+Minesweeper, Solitaire und Spider (Desktop und Handy). Sie liegen in [apps/web/e2e](apps/web/e2e/).
 
 Docker-Image bauen und veröffentlichen: siehe [docs/betrieb.md](docs/betrieb.md).
 

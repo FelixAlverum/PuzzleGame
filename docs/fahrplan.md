@@ -7,7 +7,7 @@ Spiel festzurren.
 |---|---|---|---|
 | 0 | YouTube entfernen, Repo in die Zielstruktur bringen | Cozy Garden läuft wie bisher, ohne YouTube | **erledigt** |
 | 1 | Monorepo mit Vite, Cozy Garden auf ES-Module + `mount/unmount`, Hülle mit Bibliothek (nur Gastmodus) | Bibliothek mit einem Spiel | **erledigt** |
-| 2 | Minesweeper als zweites Spiel, dann Solitaire + Spider über `packages/cards` | Vertrag bewährt sich an vier Spielen | **läuft** – Minesweeper-Prototyp spielbar |
+| 2 | Minesweeper als zweites Spiel, dann Solitaire + Spider über `packages/cards` | Vertrag bewährt sich an vier Spielen | **erledigt** |
 | 3 | API: Konten, Cloud-Spielstände, Ranglisten mit Nachspiel-Prüfung | Profil geräteübergreifend | offen |
 | 4 | Shop, Zahlung, DLC, Rechtliches | Monetarisierung | offen |
 
@@ -47,18 +47,33 @@ Nachzuholen:
 - [ ] Spielerinnen und Spieler, die früher im Spiel eine Sprache gewählt hatten, landen zunächst bei der Browsersprache
       und müssen sie einmal in den Einstellungen der Sammlung wählen.
 
-## Phase 2 – Aufgaben
+## Phase 2 – erledigt (2026-10-14)
 
-- [x] `games/minesweeper` als Prototyp zum Probespielen (2026-10-14): Logik DOM-frei mit Seed (erster Klick öffnet
-      immer eine Fläche), Stufen Anfänger/Fortgeschritten/Profi, Flaggen per Langdruck/Rechtsklick/Flaggen-Modus, Akkord,
-      Tastatur, gedrehtes Profi-Feld auf Handys, Lauf und Statistik je Stufe, Rangliste Zeit je Stufe (`sort: 'asc'`)
+- [x] `games/minesweeper` (2026-10-14): Logik DOM-frei mit Seed (erster Klick öffnet immer eine Fläche), Stufen
+      Anfänger/Fortgeschritten/Profi, Flaggen per Langdruck/Rechtsklick/Flaggen-Modus, Akkord, Tastatur, gedrehtes
+      Profi-Feld auf Handys, Lauf und Statistik je Stufe, Rangliste Zeit je Stufe (`sort: 'asc'`)
 - [x] Minesweeper: Niederlage als Kettenreaktion mit Knall, Feuerball und Wackeln, Klick überspringt
-- [ ] Minesweeper nach dem Probespielen: weitere Töne, Animationen, eigene Feldgröße, Rückfrage vor „Neues Spiel“
+- [x] Minesweeper nach dem Probespielen: Töne für Aufdecken, Flagge und Sieg; Felder springen beim Aufdecken auf,
+      Siegeswelle; eigenes Feld (Breite, Höhe, Minen); Rückfrage vor „Neues Spiel“ bei begonnenem Lauf
 - [x] Ranglisten können einen Titel haben (`Leaderboard.title`); die Bibliothek zeigt Zeiten in Sekunden
-- [ ] Gemeinsames Audio-Grundgerüst (Kontext, Entsperren, Gesamtlautstärke, Rauschen) aus Cozy Garden und Minesweeper nach `packages/audio`
-- [ ] `packages/cards`: Deck, Mischen mit Seed, Kartengrafik, Ziehen von Stapeln
-- [ ] `games/solitaire` (Klondike), `games/spider` (1, 2, 4 Farben)
-- [ ] In der Bibliothek aus „Bald verfügbar“ echte Spiele machen (`apps/web/src/games.js`) – Minesweeper erledigt
+- [x] `packages/audio`: Kontext, Entsperren, Gesamtlautstärke, Pause, Ton, Rauschen, Kalimba, Pentatonik – genutzt von
+      Cozy Garden, Minesweeper und den Kartenspielen
+- [x] `packages/ui`: Spielrahmen für HTML-Spiele (Kopfleiste, Zähler, Ergebnis, Fußzeile), Minesweeper umgestellt
+- [x] `packages/cards`: Deck und Mischen mit Seed, Kartengrafik (SVG-Farbsymbole, Figuren), Tisch mit Ziehen und
+      Ablegen, Antippen, Tastatur-Cursor, Siegesfeier; `mountCardGame` als Rahmen für Patiencen (Zeit, Züge,
+      Rückgängig, Tipp, Zuendespielen, Speichern, Statistik, Rangliste, Ton)
+- [x] `games/solitaire` (Klondike, 1 oder 3 Karten ziehen) und `games/spider` (1, 2, 4 Farben), Rangliste Zeit je Variante
+- [x] Bibliothek: alle vier Spiele spielbar, „Bald verfügbar“ ist leer
+- [x] Tests: 85 Unit-Tests (`npm test`), 27 Browser-Tests (`npm run test:e2e`)
+
+Abweichungen vom Plan, begründet in [entscheidungen.md](entscheidungen.md):
+- Kartenspiele werten die Zeit, nicht Punkte nach Windows-Art (eine Rangliste je Variante, wie bei Minesweeper)
+- Kartenspiele speichern nur Seed und Züge; „Rückgängig“ spielt nach, statt Zwischenstände zu sichern
+
+Offen für eine spätere Runde:
+- [ ] Solitaire: nur lösbare Partien austeilen (braucht einen Löser)
+- [ ] Punkte als zweite Rangliste für Solitaire und Spider
+- [ ] Docker-Image mit den vier Spielen bauen und veröffentlichen (Version erhöhen)
 
 ## Code-Review (2026-10-14)
 
@@ -73,8 +88,8 @@ Erledigt:
 
 Offen:
 - [ ] Minesweeper für Screenreader: Felder mit Namen und Zustand, Cursor ansagen
-- [ ] Doppelte Texte: Stufennamen (Manifest und i18n), „← Spielesammlung“ in Hülle und beiden Spielen
-      (Vorschlag: Beschriftung über `platform`)
+- [ ] Doppelte Texte: „← Spielesammlung“ in Hülle, Cozy Garden, Minesweeper und `packages/cards`
+      (Vorschlag: Beschriftung über `platform`). Stufen- und Variantennamen kommen jetzt aus den Spieltexten.
 - [ ] Dockerfile: erst `package.json`-Dateien kopieren und `npm ci`, dann den Code (Layer-Cache)
 - [ ] nginx: Sicherheits-Header (`Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`)
 - [ ] Kleinkram: ungenutzter Export `NATIVE` in Cozy Garden, `cozy-garden/src/main.js` (1259 Zeilen) beim nächsten
