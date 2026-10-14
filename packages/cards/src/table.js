@@ -6,6 +6,9 @@ import { cardHTML } from './face.js';
 
 const DRAG_START = 6;     // px Bewegung, ab der aus einem Tippen ein Ziehen wird
 const LIFT_MS = 280;      // so lange fliegen bewegte Karten über allen anderen
+// Ebenen (z-index): Stapel liegen bei (Platz + 1) × 200 + Index, also höchstens rund 4000 (Spider: 19 Plätze).
+// Gleitende, gezogene und feiernde Karten liegen deutlich darüber, sonst rutschen sie unter Stapel weiter rechts.
+const Z_LIFT = 10000, Z_DRAG = 20000, Z_PARTY = 30000;
 
 /**
  * @param {HTMLElement} host
@@ -122,7 +125,7 @@ export function createTable(host, opts) {
       if (stagger && moved && !instant) el.style.transitionDelay = `${k++ * stagger}ms`;
       else if (el.style.transitionDelay) el.style.transitionDelay = '';
       place(el, p);
-      if (moved && !instant && prev) { el.style.zIndex = 1000 + p.index; lifted = true; }
+      if (moved && !instant && prev) { el.style.zIndex = Z_LIFT + p.index; lifted = true; }
       else el.style.zIndex = p.z;
       if (el.classList.contains('up') !== p.up) {
         el.classList.toggle('up', p.up);
@@ -182,10 +185,12 @@ export function createTable(host, opts) {
       const el = els.get(id), p = pos.get(id);
       el.classList.remove('drag');
       place(el, p);
-      el.style.zIndex = 1000 + p.index;
+      el.style.zIndex = Z_LIFT + p.index;
     }
     clearTimeout(liftTimer);
-    liftTimer = setTimeout(() => { for (const id of ids) els.get(id).style.zIndex = pos.get(id).z; }, LIFT_MS);
+    liftTimer = setTimeout(() => {
+      for (const id of ids) if (!els.get(id).classList.contains('drag')) els.get(id).style.zIndex = pos.get(id).z;
+    }, LIFT_MS);
   }
 
   root.addEventListener('pointerdown', e => {
@@ -208,7 +213,7 @@ export function createTable(host, opts) {
       press.ids.forEach((id, k) => {
         const el = els.get(id);
         el.classList.add('drag');
-        el.style.zIndex = 3000 + k;
+        el.style.zIndex = Z_DRAG + k;
         el.style.transitionDelay = '';
       });
       cursor = null; picked = null;
@@ -331,7 +336,7 @@ export function createTable(host, opts) {
     list.sort((a, b) => pos.get(b).z - pos.get(a).z).forEach((id, k) => {
       const el = els.get(id), p = pos.get(id);
       if (!el.animate) return;
-      el.style.zIndex = 5000 + k;
+      el.style.zIndex = Z_PARTY + k;
       const vx = (Math.random() - 0.5) * W * 0.9, up = 60 + Math.random() * H * 0.35;
       const fall = H - p.y + layout.cardH * 1.5, rot = (Math.random() - 0.5) * 540;
       el.animate([
