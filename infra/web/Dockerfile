@@ -10,8 +10,8 @@ RUN npm ci && npm run build
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 LABEL org.opencontainers.image.title="Spielesammlung" \
-      org.opencontainers.image.description="Spielesammlung im Browser – Bibliothek mit Cozy Garden und weiteren Spielen" \
-      org.opencontainers.image.version="0.6.0"
+      org.opencontainers.image.description="Spielesammlung im Browser – Cozy Garden, Minesweeper und weitere Spiele" \
+      org.opencontainers.image.version="0.7.0"
 
 COPY infra/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /src/apps/web/dist/ /usr/share/nginx/html/

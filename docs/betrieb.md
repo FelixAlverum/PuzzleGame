@@ -3,7 +3,7 @@
 ## Heute: Plattform-Hülle als statischer Webserver
 
 Öffentliches Image auf Docker Hub: [`alverum/puzzlegame`](https://hub.docker.com/r/alverum/puzzlegame) (amd64 + arm64).
-Ab 0.6.0 liefert es die Plattform-Hülle samt Cozy Garden aus (nginx ohne Root-Rechte, Port 8080).
+Ab 0.6.0 liefert es die Plattform-Hülle samt Spielen aus (nginx ohne Root-Rechte, Port 8080).
 Den Image-Namen behalten wir bei, bis die Sammlung einen Namen hat, damit bestehende Server weiterlaufen.
 
 ```
@@ -14,7 +14,7 @@ Danach `http://localhost:8080` öffnen. Auf dem Server: [infra/docker-compose.ym
 
 Neue Version veröffentlichen, **aus der Repo-Wurzel** (Version in `infra/web/Dockerfile` und im Befehl anpassen):
 ```
-docker buildx build --platform linux/amd64,linux/arm64 -f infra/web/Dockerfile -t alverum/puzzlegame:0.6.0 -t alverum/puzzlegame:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -f infra/web/Dockerfile -t alverum/puzzlegame:0.7.0 -t alverum/puzzlegame:latest --push .
 ```
 
 [infra/web/Dockerfile](../infra/web/Dockerfile) arbeitet in zwei Stufen. `node:22-alpine` führt `npm ci` und
