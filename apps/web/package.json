@@ -12,8 +12,10 @@
   "dependencies": {
     "@spielesammlung/cozy-garden": "*",
     "@spielesammlung/game-sdk": "*",
-    "@spielesammlung/minesweeper": "*",
     "@spielesammlung/i18n": "*",
+    "@spielesammlung/minesweeper": "*",
+    "@spielesammlung/solitaire": "*",
+    "@spielesammlung/spider": "*",
     "@spielesammlung/ui": "*"
   }
 }
