@@ -59,3 +59,23 @@ Nachzuholen:
 - [ ] `packages/cards`: Deck, Mischen mit Seed, Kartengrafik, Ziehen von Stapeln
 - [ ] `games/solitaire` (Klondike), `games/spider` (1, 2, 4 Farben)
 - [ ] In der Bibliothek aus „Bald verfügbar“ echte Spiele machen (`apps/web/src/games.js`) – Minesweeper erledigt
+
+## Code-Review (2026-10-14)
+
+Erledigt:
+- [x] Service Worker: nur gehashte Dateien zuerst aus dem Cache, alles andere zuerst übers Netz; räumt nicht mehr gebrauchte
+      Dateien auf, ohne Spiele zu verlieren
+- [x] Minesweeper: Knöpfe geben nach Maus/Touch den Fokus ab (Tastatur steuert wieder das Feld, Leertaste löst
+      „Neues Spiel“ nicht erneut aus); Flaggen-Modus deckt auf offenen Zahlen weiter auf; Tastatur erst mit fertigem Raster
+- [x] Einstellungen: Sprache lässt sich auf „Automatisch“ (Browsersprache) zurückstellen
+- [x] „Zuletzt gespielt“ erst, wenn das Spiel wirklich gestartet ist
+- [x] Browser-Tests im Repo (Playwright, `npm run test:e2e`, 16 Tests, Desktop + Handy)
+
+Offen:
+- [ ] Minesweeper für Screenreader: Felder mit Namen und Zustand, Cursor ansagen
+- [ ] Doppelte Texte: Stufennamen (Manifest und i18n), „← Spielesammlung“ in Hülle und beiden Spielen
+      (Vorschlag: Beschriftung über `platform`)
+- [ ] Dockerfile: erst `package.json`-Dateien kopieren und `npm ci`, dann den Code (Layer-Cache)
+- [ ] nginx: Sicherheits-Header (`Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`)
+- [ ] Kleinkram: ungenutzter Export `NATIVE` in Cozy Garden, `cozy-garden/src/main.js` (1259 Zeilen) beim nächsten
+      Umbau aufteilen, App-Titel und Manifest nur deutsch
