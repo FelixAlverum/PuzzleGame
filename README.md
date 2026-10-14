@@ -47,11 +47,17 @@ npm install
 npm run dev               # Plattform-Hülle mit allen Spielen: http://localhost:5173
 npm run dev:cozy-garden   # Cozy Garden einzeln, ohne Hülle
 npm run dev:minesweeper   # Minesweeper einzeln, ohne Hülle
-npm test                  # Tests aller Spiele, Pakete und der Hülle
+npm test                  # Tests aller Spiele, Pakete und der Hülle (Node, ohne Browser)
+npm run test:e2e          # Browser-Tests gegen den Produktions-Build (Playwright, siehe unten)
 npm run typecheck         # TypeScript-Prüfung des Spielvertrags
 npm run build             # Produktions-Build nach apps/web/dist
 npm run preview           # den Build lokal ansehen (mit Service Worker): http://localhost:4173
 ```
+
+Für die Browser-Tests einmal `npx playwright install chromium` ausführen. Alternativ nimmt
+`PW_CHANNEL=msedge npm run test:e2e` (bzw. `chrome`) einen installierten Browser. Die Tests bauen die Hülle, starten
+`vite preview` auf Port 4174 und prüfen Bibliothek, Einstellungen, Übernahme alter Stände, Auf- und Abbau der Spiele
+und Minesweeper (Desktop und Handy). Sie liegen in [apps/web/e2e](apps/web/e2e/).
 
 Docker-Image bauen und veröffentlichen: siehe [docs/betrieb.md](docs/betrieb.md).
 
