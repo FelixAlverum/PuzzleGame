@@ -1,0 +1,168 @@
+/* Plattform-Hülle: Seitenrahmen, Bibliothek, Einstellungen, Spielbühne.
+   Grundbausteine (Karten, Pillen, Segmente, Regler) kommen aus @spielesammlung/ui/theme.css. */
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--ink);
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Während ein Spiel läuft, gehört ihm der ganze Bildschirm */
+body.playing {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.page {
+  box-sizing: border-box;
+  width: min(100%, 1000px);
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+a.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+/* --- Bibliothek --- */
+
+.games {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.game .cover {
+  display: block;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  background: var(--paper-2);
+}
+
+.game .cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game .cover.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game .cover.icon svg {
+  width: 38%;
+  height: 60%;
+}
+
+.game .desc {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.game .meta {
+  margin: 2px 0 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--green-dark);
+}
+
+.game .actions {
+  margin-top: auto;
+  padding-top: 6px;
+  display: flex;
+}
+
+.game .actions .pill {
+  flex: 1 1 auto;
+}
+
+.game.soon {
+  opacity: 0.6;
+  box-shadow: none;
+  border-style: dashed;
+}
+
+.game.soon .cover {
+  aspect-ratio: 5 / 2;
+}
+
+/* --- Einstellungen: Sprachen als Raster, damit die Knöpfe gleich breit bleiben --- */
+
+.langs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.seg.lang {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.flag {
+  display: inline-flex;
+  width: 30px;
+  height: 20px;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  flex: none;
+}
+
+.flag svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* --- Spielbühne --- */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+}
+
+.load-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 360px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  font-weight: 700;
+}
