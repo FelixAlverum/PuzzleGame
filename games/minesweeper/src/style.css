@@ -115,6 +115,7 @@
 }
 
 .minesweeper .c {
+  position: relative;
   width: var(--cs);
   height: var(--cs);
   box-sizing: border-box;
@@ -175,6 +176,68 @@
 
 .minesweeper .c.boom {
   background-color: #e0573f;
+}
+
+/* --- Explosion: Feuerball über der Mine, das Feld bleibt angesengt --- */
+
+.minesweeper .c.burst {
+  background-color: #cf6a3e;
+  animation: ms-pop 0.3s ease-out;
+}
+
+.minesweeper .c.boom.burst {
+  background-color: #e0573f;
+}
+
+.minesweeper .c.burst::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--cs) * 2.8);
+  height: calc(var(--cs) * 2.8);
+  margin: calc(var(--cs) * -1.4) 0 0 calc(var(--cs) * -1.4);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe0 0%, #ffd45e 22%, #ff7a2a 48%, rgba(190, 50, 20, 0.6) 62%, rgba(190, 50, 20, 0) 72%);
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  animation: ms-blast 0.6s ease-out;
+}
+
+.minesweeper .c.boom.burst::after {
+  width: calc(var(--cs) * 4.5);
+  height: calc(var(--cs) * 4.5);
+  margin: calc(var(--cs) * -2.25) 0 0 calc(var(--cs) * -2.25);
+  animation-duration: 0.8s;
+}
+
+@keyframes ms-blast {
+  0% { transform: scale(0.15); opacity: 1; }
+  60% { opacity: 0.9; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes ms-pop {
+  0% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* Lichtblitz der ersten Explosion, ausgehend von der getroffenen Mine */
+.minesweeper .flash {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 245, 210, 0.95), rgba(255, 150, 60, 0.55) 25%, rgba(255, 120, 40, 0) 65%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minesweeper .c.burst,
+  .minesweeper .c.burst::after {
+    animation-duration: 0.01s;
+  }
 }
 
 .minesweeper .c.cursor {

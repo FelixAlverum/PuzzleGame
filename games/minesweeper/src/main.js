@@ -3,11 +3,19 @@
 // Je Stufe gibt es einen eigenen offenen Lauf und eine eigene Statistik; die Zeit läuft nur, solange gespielt wird.
 import * as Logic from './logic.js';
 import * as I18N from './i18n.js';
+import { createAudio } from './audio.js';
 import '@spielesammlung/ui/theme.css';
 import './style.css';
 
 const randSeed = () => (Math.random() * 4294967296) >>> 0;
 const LONG_PRESS = 380;   // ms bis eine Berührung als „Flagge setzen“ zählt
+// Niederlage: die getroffene Mine sofort, die übrigen danach nacheinander (nach Entfernung), dann das Menü
+const BLAST_FIRST = 450;  // ms bis zur zweiten Explosion
+const BLAST_TOTAL = 2600; // ms höchstens für die ganze Kette, egal wie viele Minen
+const BLAST_GAP = 220;    // ms höchstens zwischen zwei Explosionen (wenige Minen)
+const BLAST_AFTER = 800;  // ms Pause nach der letzten Explosion, bevor das Menü kommt
+const BANG_GAP = 45;      // ms Mindestabstand zwischen zwei Knallen, sonst wird es Klangbrei
+const rnd = (a, b) => a + Math.random() * (b - a);
 
 const ICON = {
   mine: '<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></g><circle cx="12" cy="12" r="6.5" fill="currentColor"/></svg>',
@@ -29,6 +37,7 @@ const TEMPLATE = `
       <button class="pill primary small" data-act="new"></button>
     </div>
   </header>
+  <div class="flash" aria-hidden="true"></div>
   <main class="field">
     <div class="board" role="grid"></div>
     <section class="result card" hidden>
@@ -69,6 +78,10 @@ export function mount(el, platform) {
   let runningSince = 0;                  // performance.now() seit dem die Zeit läuft, 0 = steht
   let press = null;                      // laufende Berührung { i, id, x, y, timer, long }
   let cursor = null;                     // Tastatur-Cursor in Anzeige-Koordinaten { r, c }
+  let blast = null;                      // laufende Explosionskette { timers, start, lastBang }
+  let burst = new Set();                 // schon explodierte Minen der verlorenen Runde
+  const sound = createAudio();
+  let offVolume = () => {};
   // Anzeige: Raster kann hochkant gedreht sein (breite Felder auf schmalen Bildschirmen)
   let cellEls = [], dispToIndex = [], indexToDisp = [], dispCols = 0, dispRows = 0, builtFor = '';
 
@@ -134,14 +147,93 @@ export function mount(el, platform) {
     const newBest = Logic.recordResult(statOf(level), game);
     if (game.won) platform.scores.submit(level, game.elapsed, { seed: game.seed, moves: game.moves });
     delete runs[level];
+    renderStats();
+    if (game.won) showResult(newBest);
+    else startBlast();
+  }
+
+  function showResult(newBest) {
     $('.result h2').textContent = game.won ? S.won : S.lost;
     $('.result .sub').textContent = game.won ? `${fmtTime(game.elapsed)}${newBest ? ' · ' + S.newBest : ''}` : '';
     result.classList.toggle('won', game.won);
     result.hidden = false;
-    renderStats();
+  }
+
+  // --- Niederlage: Kettenreaktion ------------------------------------------------------
+
+  function startBlast() {
+    const hit = game.exploded, hr = Math.floor(hit / game.w), hc = hit % game.w;
+    const rest = [];
+    for (let i = 0; i < game.mine.length; i++) if (game.mine[i] && i !== hit && !game.flag[i]) rest.push(i);
+    const dist = i => Math.hypot(Math.floor(i / game.w) - hr, (i % game.w) - hc);
+    rest.sort((a, b) => dist(a) - dist(b));
+    // Zeitpunkte: erst einzelne Knalle, dann immer schneller (konkave Kurve), insgesamt höchstens BLAST_TOTAL
+    const span = Math.min(BLAST_TOTAL - BLAST_FIRST, rest.length * BLAST_GAP);
+    const at = k => BLAST_FIRST + span * Math.pow(k / Math.max(1, rest.length), 0.8);
+    blast = { timers: [], start: performance.now(), lastBang: 0 };
+    explode(hit, 1);
+    rest.forEach((i, k) => {
+      const power = Math.max(0.35, 0.75 - k * 0.03);
+      blast.timers.push(setTimeout(() => explode(i, power), at(k)));
+    });
+    const last = rest.length ? at(rest.length - 1) : 300;
+    blast.timers.push(setTimeout(finishBlast, last + BLAST_AFTER));
+  }
+
+  function explode(i, power) {
+    burst.add(i);
+    paint();
+    const now = performance.now();
+    if (power >= 1 || now - blast.lastBang >= BANG_GAP) {
+      sound.bang(power);
+      blast.lastBang = now;
+    }
+    shake(power);
+    if (power >= 1) flash(i);
+    if (navigator.vibrate) navigator.vibrate(power >= 1 ? [90, 40, 140] : 30);
+  }
+
+  // Kette beenden (oder überspringen): alle Minen zeigen, Menü öffnen
+  function finishBlast() {
+    if (!blast) return;
+    blast.timers.forEach(clearTimeout);
+    blast = null;
+    paint();
+    showResult(false);
+  }
+
+  function cancelBlast() {
+    if (!blast) return;
+    blast.timers.forEach(clearTimeout);
+    blast = null;
+  }
+
+  // Ganzer Bildschirm wackelt, abklingend; bei „Bewegung reduzieren“ nur angedeutet
+  function shake(power) {
+    if (!root.animate) return;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const a = (reduce ? 2 : 18) * power, n = 9, frames = [];
+    for (let k = 0; k < n; k++) {
+      const f = 1 - k / n;
+      frames.push({ transform: `translate(${(rnd(-a, a) * f).toFixed(1)}px, ${(rnd(-a, a) * f).toFixed(1)}px)` });
+    }
+    frames.push({ transform: 'none' });
+    root.animate(frames, { duration: 320 + 260 * power, easing: 'ease-out' });
+  }
+
+  // Lichtblitz, der von der getroffenen Mine ausgeht
+  function flash(i) {
+    const fl = $('.flash'), cell = cellEls[i];
+    if (!fl.animate || !cell) return;
+    const r = cell.getBoundingClientRect(), base = root.getBoundingClientRect();
+    fl.style.setProperty('--x', `${r.left + r.width / 2 - base.left}px`);
+    fl.style.setProperty('--y', `${r.top + r.height / 2 - base.top}px`);
+    fl.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 650, easing: 'ease-out' });
   }
 
   function newGame() {
+    cancelBlast();
+    burst = new Set();
     stopTime();
     game = runs[level] = Logic.newGame(level, randSeed());
     result.hidden = true;
@@ -153,6 +245,8 @@ export function mount(el, platform) {
 
   function setLevel(l) {
     if (!Logic.LEVELS[l] || l === level) return;
+    if (blast) finishBlast();
+    burst = new Set();
     stopTime();
     runs[level] = game;
     level = l;
@@ -235,7 +329,7 @@ export function mount(el, platform) {
       const el = cellEls[i];
       let cls = 'c', text = '';
       if (game.open[i]) {
-        if (game.mine[i]) cls += ' open mine' + (i === game.exploded ? ' boom' : '');
+        if (game.mine[i]) cls += ' open mine' + (i === game.exploded ? ' boom' : '') + (burst.has(i) ? ' burst' : '');
         else {
           const n = Logic.adjacent(game, i);
           cls += ' open' + (n ? ' n' + n : '');
@@ -243,8 +337,8 @@ export function mount(el, platform) {
         }
       } else if (game.flag[i]) {
         cls += ' hidden flag' + (over && !game.won && !game.mine[i] ? ' wrong' : '');
-      } else if (over && game.mine[i]) {
-        cls += ' open mine';                    // nach der Niederlage alle Minen zeigen
+      } else if (over && game.mine[i] && (!blast || burst.has(i))) {
+        cls += ' open mine' + (burst.has(i) ? ' burst' : '');   // nach der Niederlage alle Minen zeigen
       } else {
         cls += ' hidden';
       }
@@ -282,6 +376,16 @@ export function mount(el, platform) {
   }
 
   board.addEventListener('contextmenu', e => e.preventDefault());
+  // Ton freischalten bei jeder Geste (Autoplay-Regeln)
+  root.addEventListener('pointerdown', () => sound.unlock(), { capture: true });
+  // Während der Explosionskette: ein Klick irgendwohin öffnet sofort das Menü.
+  // Der Klick, der die Mine getroffen hat, kommt kurz nach dem Start an und zählt nicht.
+  root.addEventListener('click', e => {
+    if (!blast || performance.now() - blast.start < 300) return;
+    e.stopPropagation();
+    e.preventDefault();
+    finishBlast();
+  }, { capture: true });
   board.addEventListener('pointerdown', e => {
     const i = cellIndex(e);
     if (i < 0) return;
@@ -323,6 +427,8 @@ export function mount(el, platform) {
   // Tastatur: Pfeile bewegen den Cursor, Leertaste/Enter deckt auf, F setzt Flagge, N neues Spiel
   window.addEventListener('keydown', e => {
     if (!ready || paused) return;
+    sound.unlock();
+    if (blast) { finishBlast(); e.preventDefault(); return; }
     if (e.target.closest && e.target.closest('button, input, a')) return;   // Knöpfe bedienen sich selbst
     const k = e.key;
     if (k === 'n' || k === 'N') { newGame(); return; }
@@ -353,6 +459,7 @@ export function mount(el, platform) {
       ready: () => ready, game: () => game, level: () => level, stats: () => stats,
       reveal: i => act('primary', i), flag: i => act('flag', i), newGame, setLevel,
       turned: () => builtFor.endsWith('true'), cellSize: () => parseFloat(board.style.getPropertyValue('--cs')),
+      blasting: () => !!blast, burst: () => burst.size, bangs: () => sound.played,
     };
   }
 
@@ -365,6 +472,8 @@ export function mount(el, platform) {
     if (destroyed) return;
     load(data);
     game = runs[level] || Logic.newGame(level, randSeed());
+    sound.setMaster(platform.audio.volume());
+    offVolume = platform.audio.onChange(v => sound.setMaster(v));
     ready = true;
     renderLevels();
     renderStats();
@@ -376,14 +485,17 @@ export function mount(el, platform) {
   function pause() {
     if (paused || destroyed) return;
     cancelPress();
+    if (blast) finishBlast();                   // verdeckt: Kette nicht im Hintergrund weiterknallen
     save();
     paused = true;
     stopTime();
+    sound.setPaused(true);
   }
 
   function resume() {
     if (!paused || destroyed) return;
     paused = false;
+    sound.setPaused(false);
     startTimeIfRunning();
   }
 
@@ -392,7 +504,10 @@ export function mount(el, platform) {
     save();
     destroyed = true;
     cancelPress();
+    cancelBlast();
     clearInterval(timer);
+    offVolume();
+    sound.close();
     ac.abort();
     resizer.disconnect();
     root.remove();

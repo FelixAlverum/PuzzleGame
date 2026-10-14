@@ -52,9 +52,10 @@ Nachzuholen:
 - [x] `games/minesweeper` als Prototyp zum Probespielen (2026-10-14): Logik DOM-frei mit Seed (erster Klick öffnet
       immer eine Fläche), Stufen Anfänger/Fortgeschritten/Profi, Flaggen per Langdruck/Rechtsklick/Flaggen-Modus, Akkord,
       Tastatur, gedrehtes Profi-Feld auf Handys, Lauf und Statistik je Stufe, Rangliste Zeit je Stufe (`sort: 'asc'`)
-- [ ] Minesweeper nach dem Probespielen: Ton, Animationen, eigene Feldgröße, Rückfrage vor „Neues Spiel“
+- [x] Minesweeper: Niederlage als Kettenreaktion mit Knall, Feuerball und Wackeln, Klick überspringt
+- [ ] Minesweeper nach dem Probespielen: weitere Töne, Animationen, eigene Feldgröße, Rückfrage vor „Neues Spiel“
 - [x] Ranglisten können einen Titel haben (`Leaderboard.title`); die Bibliothek zeigt Zeiten in Sekunden
-- [ ] Gemeinsames Audio nach `packages/audio`, sobald Minesweeper Ton bekommt
+- [ ] Gemeinsames Audio-Grundgerüst (Kontext, Entsperren, Gesamtlautstärke, Rauschen) aus Cozy Garden und Minesweeper nach `packages/audio`
 - [ ] `packages/cards`: Deck, Mischen mit Seed, Kartengrafik, Ziehen von Stapeln
 - [ ] `games/solitaire` (Klondike), `games/spider` (1, 2, 4 Farben)
 - [ ] In der Bibliothek aus „Bald verfügbar“ echte Spiele machen (`apps/web/src/games.js`) – Minesweeper erledigt

@@ -1,7 +1,7 @@
 # Minesweeper (Prototyp)
 
 Der Klassiker als zweites Spiel der Spielesammlung (Spiel-ID `minesweeper`). Ein Prototyp zum Probespielen: Die Regeln
-und die Bedienung sind vollständig, Ton und Animationen fehlen noch.
+und die Bedienung sind vollständig; Ton und Animation gibt es bisher nur für die Niederlage.
 
 ## Starten
 - `npm run dev` startet die Plattform-Hülle, Minesweeper steht in der Bibliothek.
@@ -24,6 +24,17 @@ und die Bedienung sind vollständig, Ton und Animationen fehlen noch.
 - Die Zeit läuft ab dem ersten Aufdecken und nur, solange das Spiel sichtbar ist.
 - **← Spielesammlung** oben links führt zurück in die Bibliothek.
 
+## Niederlage
+Die getroffene Mine explodiert sofort mit lautem Knall, Feuerball, Lichtblitz und starkem Wackeln des Bildschirms.
+Danach gehen die übrigen Minen nacheinander hoch, die nächstgelegenen zuerst, erst einzeln und dann immer schneller,
+jede mit eigenem Knall und kleinerem Wackeln. Insgesamt dauert das höchstens etwa 3,4 s, auch bei 99 Minen
+(Knalle höchstens alle 45 ms). Richtig gesetzte Flaggen bleiben stehen. Erst danach öffnet sich das Menü.
+Ein Klick irgendwohin oder ein Tastendruck überspringt die Kette und öffnet das Menü sofort.
+
+Der Knall ist synthetisch (`src/audio.js`, Web Audio mit Kompressor), folgt der Gesamtlautstärke der Spielesammlung
+und schweigt bei verdecktem Tab. Auf Handys vibriert es zusätzlich. Bei „Bewegung reduzieren“ im System wackelt der
+Bildschirm nur leicht.
+
 ## Fortschritt
 - Je Stufe ein offener Lauf: Wer die Stufe wechselt oder das Spiel verlässt, macht später genau dort weiter.
 - Statistik je Stufe: beendete Spiele, Siege, Bestzeit. Ein abgebrochenes Spiel zählt nicht.
@@ -43,11 +54,12 @@ node --test "games/minesweeper/tests/*.test.js"
 | `cover.svg` | Vorschaubild in der Bibliothek |
 | `src/logic.js` | Spiellogik (pur, deterministisch mit Seed): Minen legen, Aufdecken mit Ausbreitung, Flaggen, Akkord, Sieg/Niederlage, Statistik |
 | `src/main.js` | `mount(el, platform)`: Raster als HTML, Eingabe (Maus, Touch, Tastatur), Zeit, Speichern, Lebenszyklus |
-| `src/style.css` | Aussehen, alles unter `.minesweeper` |
+| `src/audio.js` | Knall der Minen (Web Audio, ohne Dateien) |
+| `src/style.css` | Aussehen, alles unter `.minesweeper`, Explosion als CSS-Animation |
 | `src/i18n.js` | Texte in 6 Sprachen |
 
 ## Offen für die nächste Runde
-- Ton (dann gemeinsames `packages/audio` mit Cozy Garden)
-- Kleine Animationen beim Aufdecken und bei der Explosion
+- Weitere Töne (Aufdecken, Flagge, Sieg); Grundgerüst dann mit Cozy Garden in ein gemeinsames `packages/audio`
+- Kleine Animationen beim Aufdecken und beim Sieg
 - Eigene Feldgröße und Minenzahl
 - Rückfrage, bevor „Neues Spiel“ einen begonnenen Lauf verwirft
