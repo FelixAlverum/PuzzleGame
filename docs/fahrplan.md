@@ -73,7 +73,8 @@ Abweichungen vom Plan, begründet in [entscheidungen.md](entscheidungen.md):
 Offen für eine spätere Runde:
 - [ ] Solitaire: nur lösbare Partien austeilen (braucht einen Löser)
 - [ ] Punkte als zweite Rangliste für Solitaire und Spider
-- [ ] Docker-Image mit den vier Spielen bauen und veröffentlichen (Version erhöhen)
+- [x] Docker-Image 0.8.0 mit den vier Spielen gebaut und veröffentlicht (`alverum/puzzlegame:0.8.0` und `latest`,
+      amd64 + arm64)
 
 ## Code-Review (2026-10-14)
 
