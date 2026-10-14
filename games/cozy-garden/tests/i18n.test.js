@@ -1,4 +1,4 @@
-// Ausführen: node --test prototype/tests/i18n.test.js
+// Ausführen: node --test games/cozy-garden/tests/i18n.test.js
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const I18N = require('../src/i18n.js');

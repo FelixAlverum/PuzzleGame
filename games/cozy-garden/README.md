@@ -1,7 +1,8 @@
-# PuzzleGame – Prototyp v0.1
+# Cozy Garden
 
-Block-Puzzle im Stil von Block Blast mit Pflanzenformen aus Naturmaterialien, gebaut als **YouTube Playable**.
-Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/PuzzleGame`).
+Block-Puzzle im Stil von Block Blast mit Pflanzenformen aus Naturmaterialien – das erste Spiel der Spielesammlung
+(Spiel-ID `cozy-garden`). Wie die Sammlung aufgebaut ist und wohin sie sich entwickelt: [Repo-README](../../README.md)
+und [docs/](../../docs/).
 
 ## Starten
 `index.html` im Browser öffnen. Kein Build und keine Abhängigkeiten nötig.
@@ -13,7 +14,7 @@ Planung, Konkurrenzanalyse und Anforderungen liegen im Obsidian-Vault (`vault/Pu
 | `?debug` | Zustand unter `window.__dbg` für automatisierte Tests |
 | `?lang=fr` | Sprache erzwingen, ohne sie zu speichern (`de`, `en`, `fr`, `es`, `ru`, `zh`) |
 
-Sprachen: Deutsch, Englisch, Französisch, Spanisch, Russisch, Chinesisch – in den Einstellungen wählbar; ohne Auswahl nach YouTube- bzw. Browsersprache, sonst Englisch.
+Sprachen: Deutsch, Englisch, Französisch, Spanisch, Russisch, Chinesisch – in den Einstellungen wählbar; ohne Auswahl nach Browsersprache, sonst Englisch.
 
 Steuerung: Formen ziehen (Touch/Maus) oder Tastatur `1`–`4` wählen (`4` = Reservefeld), Pfeiltasten bewegen, `Enter` legen, `H` parken, `Esc` abbrechen, `M` Menü.
 
@@ -23,7 +24,7 @@ Wird die letzte Form der Ablage geparkt, füllt sich die Ablage neu.
 
 **Zug zurücknehmen:** Knopf ↶ oben links (Zahl = verfügbare Schritte) oder Taste `Z`/`Backspace` – auch nach Game Over.
 Höchstens die letzten 3 Züge lassen sich zurücknehmen; Parken zählt als Zug. Punkte, Rekord und Garten springen mit zurück.
-Die Statistik springt mit zurück (auch ein Game Over). An YouTube geht nur der Rekord, der sich nicht mehr zurücknehmen lässt –
+Die Statistik springt mit zurück (auch ein Game Over). An die Rangliste (`Platform.scores`) geht nur der Rekord, der sich nicht mehr zurücknehmen lässt –
 endgültig wird ein Game Over bei „Neu pflanzen“, beim Gang ins Menü oder beim Moduswechsel.
 Der Verlauf wird nicht gespeichert; ein Garten-Reset ersetzt den Garten auch in den gemerkten Ständen.
 
@@ -43,7 +44,7 @@ Laden nachträglich frei.
   Als Spiel zählt nur eine Runde mit Game Over; „Zug zurück“ nimmt auch die Statistik zurück.
 - **Anleitung:** Worum es geht, wie die Punkte entstehen (mit Beispiel), die Biome mit ihren Extra-Formen, Steuerung.
 - **Einstellungen:** Musik / Soundeffekte / Atmosphäre (0–100 %), Feldgröße 6×6 / 8×8 / 10×10, Sprache (6 Sprachen, mit Flaggen).
-  Ohne Auswahl gilt die Sprache von YouTube bzw. des Browsers.
+  Ohne Auswahl gilt die Sprache des Browsers.
 
 ## Garten
 Jede aufgelöste Linie lässt eine Pflanze wachsen. Sind alle 5 erblüht, folgt der nächste Garten mit der nächsten Pflanzenart.
@@ -51,22 +52,11 @@ Jedes Biom hat seinen eigenen Garten: **Wiese** (Mohn, Sonnenblume, …), **Teic
 **Tropen** (Hibiskus, Strelitzie, Orchidee, Frangipani, Fackelingwer).
 Ab dem ersten erblühten Garten erscheint oben rechts im Garten ↻ zum Zurücksetzen des Gartens dieses Bioms (mit Rückfrage).
 
-## Docker
-Öffentliches Image auf Docker Hub: [`alverum/puzzlegame`](https://hub.docker.com/r/alverum/puzzlegame) (amd64 + arm64).
-```
-docker run -d -p 8080:8080 alverum/puzzlegame:latest
-```
-Danach im Browser `http://localhost:8080` öffnen. Ausgeliefert von nginx (unprivilegiert, Port 8080).
-
-Neue Version veröffentlichen (im Ordner `prototype`, Version anpassen):
-```
-docker buildx build --platform linux/amd64,linux/arm64 -t alverum/puzzlegame:0.4.0 -t alverum/puzzlegame:latest --push .
-```
-
 ## Tests
 ```
-node --test prototype/tests/logic.test.js prototype/tests/i18n.test.js
+node --test "games/cozy-garden/tests/*.test.js"
 ```
+oder im Repo-Wurzelordner `npm test`.
 
 ## Aufbau
 | Datei | Aufgabe |
@@ -78,9 +68,13 @@ node --test prototype/tests/logic.test.js prototype/tests/i18n.test.js
 | `src/garden.js` | Garten-Anzeige (Meta-Fortschritt), Biom-Themen |
 | `src/audio.js` | Synthetisierte Sounds, Musik und Atmosphäre je Biom (Web Audio), Kanäle Musik/Effekte/Atmosphäre |
 | `src/menu.js` | Menü, Anleitung, Statistik, Einstellungen (HTML-Overlay) |
-| `src/i18n.js` | Alle Texte in Deutsch, Englisch, Chinesisch |
-| `src/yt.js` | Hülle um das YouTube Playables SDK, lokal mit localStorage als Fallback |
+| `src/i18n.js` | Alle Texte in Deutsch, Englisch, Französisch, Spanisch, Russisch, Chinesisch |
+| `src/platform.js` | Plattform-Adapter: Spielstand, Rangliste, Sprache, Ton, Pause – heute lokal (localStorage), später von der Plattform-Hülle gestellt |
 | `src/main.js` | Layout, Eingabe, Loop, Rendering, Lebenszyklus |
 
 Die Logik liefert pro Zug Events (`placed`, `cleared`, `boardCleared`, `trayRefilled`, `gameOver`).
 Animationen und Sound reagieren nur auf diese Events.
+
+Das Spiel spricht nur über `platform.js` mit der Außenwelt. Der Spielstand liegt lokal unter dem Schlüssel
+`cozy-garden:save`; ein alter Stand unter `puzzlegame-save` (bis v0.4) wird beim ersten Laden übernommen.
+Ist der Tab verdeckt, pausiert das Spiel samt Ton und speichert.

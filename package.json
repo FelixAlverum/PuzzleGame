@@ -1,0 +1,11 @@
+{
+  "name": "spielesammlung",
+  "private": true,
+  "description": "Spielesammlung im Browser (Arbeitstitel): Bibliothek mehrerer Spiele mit gemeinsamem Konto",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"games/*/tests/*.test.js\""
+  }
+}

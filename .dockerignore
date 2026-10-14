@@ -1,0 +1,5 @@
+# Nur das ins Image, was es braucht (Build-Kontext ist die Repo-Wurzel)
+*
+!infra/web/nginx.conf
+!games/cozy-garden/index.html
+!games/cozy-garden/src/

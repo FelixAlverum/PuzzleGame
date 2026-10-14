@@ -1,3 +1,5 @@
+# Betrieb auf dem Server. Heute nur der statische Webserver; API und Datenbank kommen in Phase 3 dazu
+# (siehe docs/betrieb.md).
 services:
   puzzlegame:
     image: alverum/puzzlegame:latest

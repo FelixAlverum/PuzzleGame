@@ -25,7 +25,7 @@
       gamesShort: 'Spiele', tilesShort: 'Formen', bestScoreShort: 'Höchste', worstScoreShort: 'Niedrigste', fieldShort: 'Feld',
       resetStats: 'Statistik zurücksetzen',
       // Einstellungen
-      sound: 'Ton', music: 'Musik', sfx: 'Soundeffekte', amb: 'Atmosphäre', muted: 'Der Ton ist in YouTube gerade stummgeschaltet.',
+      sound: 'Ton', music: 'Musik', sfx: 'Soundeffekte', amb: 'Atmosphäre', muted: 'Der Ton ist in den allgemeinen Einstellungen stummgeschaltet.',
       fieldSize: 'Spielfeldgröße', sizeNote: 'Jede Größe hat eigene Rekorde, eine eigene Statistik und einen eigenen Spielstand.',
       language: 'Sprache',
       // Anleitung
@@ -72,7 +72,7 @@
       total: 'All biomes', sum: 'Total', games: 'Games played', tiles: 'Tiles placed', bestScore: 'Highest score', worstScore: 'Lowest score',
       gamesShort: 'Games', tilesShort: 'Tiles', bestScoreShort: 'Highest', worstScoreShort: 'Lowest', fieldShort: 'Field',
       resetStats: 'Reset stats',
-      sound: 'Sound', music: 'Music', sfx: 'Sound effects', amb: 'Ambience', muted: 'Sound is currently muted in YouTube.',
+      sound: 'Sound', music: 'Music', sfx: 'Sound effects', amb: 'Ambience', muted: 'Sound is muted in the general settings.',
       fieldSize: 'Field size', sizeNote: 'Each size keeps its own records, stats and saved game.',
       language: 'Language',
       g_aboutH: 'What is it about?',
@@ -118,7 +118,7 @@
       total: '所有生物群系', sum: '合计', games: '游戏局数', tiles: '已放置方块', bestScore: '最高分', worstScore: '最低分',
       gamesShort: '局数', tilesShort: '方块', bestScoreShort: '最高', worstScoreShort: '最低', fieldShort: '棋盘',
       resetStats: '重置统计',
-      sound: '声音', music: '音乐', sfx: '音效', amb: '环境音', muted: 'YouTube 当前处于静音状态。',
+      sound: '声音', music: '音乐', sfx: '音效', amb: '环境音', muted: '声音已在通用设置中静音。',
       fieldSize: '棋盘大小', sizeNote: '每种大小都有独立的纪录、统计和存档。',
       language: '语言',
       g_aboutH: '游戏玩法',
@@ -164,7 +164,7 @@
       total: 'Tous les biomes', sum: 'Total', games: 'Parties jouées', tiles: 'Pièces posées', bestScore: 'Meilleur score', worstScore: 'Score le plus bas',
       gamesShort: 'Parties', tilesShort: 'Pièces', bestScoreShort: 'Meilleur', worstScoreShort: 'Plus bas', fieldShort: 'Plateau',
       resetStats: 'Réinitialiser les statistiques',
-      sound: 'Son', music: 'Musique', sfx: 'Effets sonores', amb: 'Ambiance', muted: 'Le son est actuellement coupé dans YouTube.',
+      sound: 'Son', music: 'Musique', sfx: 'Effets sonores', amb: 'Ambiance', muted: 'Le son est coupé dans les paramètres généraux.',
       fieldSize: 'Taille du plateau', sizeNote: 'Chaque taille a ses propres records, statistiques et partie sauvegardée.',
       language: 'Langue',
       g_aboutH: 'De quoi s’agit-il\u202f?',
@@ -210,7 +210,7 @@
       total: 'Todos los biomas', sum: 'Total', games: 'Partidas jugadas', tiles: 'Piezas colocadas', bestScore: 'Puntuación más alta', worstScore: 'Puntuación más baja',
       gamesShort: 'Partidas', tilesShort: 'Piezas', bestScoreShort: 'Máxima', worstScoreShort: 'Mínima', fieldShort: 'Tablero',
       resetStats: 'Reiniciar estadísticas',
-      sound: 'Sonido', music: 'Música', sfx: 'Efectos de sonido', amb: 'Ambiente', muted: 'El sonido está silenciado en YouTube.',
+      sound: 'Sonido', music: 'Música', sfx: 'Efectos de sonido', amb: 'Ambiente', muted: 'El sonido está silenciado en los ajustes generales.',
       fieldSize: 'Tamaño del tablero', sizeNote: 'Cada tamaño tiene sus propios récords, estadísticas y partida guardada.',
       language: 'Idioma',
       g_aboutH: '¿De qué se trata?',
@@ -256,7 +256,7 @@
       total: 'Все биомы', sum: 'Итого', games: 'Сыграно игр', tiles: 'Поставлено фигур', bestScore: 'Лучший счёт', worstScore: 'Худший счёт',
       gamesShort: 'Игры', tilesShort: 'Фигуры', bestScoreShort: 'Лучший', worstScoreShort: 'Худший', fieldShort: 'Поле',
       resetStats: 'Сбросить статистику',
-      sound: 'Звук', music: 'Музыка', sfx: 'Звуковые эффекты', amb: 'Атмосфера', muted: 'Звук сейчас отключён в YouTube.',
+      sound: 'Звук', music: 'Музыка', sfx: 'Звуковые эффекты', amb: 'Атмосфера', muted: 'Звук отключён в общих настройках.',
       fieldSize: 'Размер поля', sizeNote: 'У каждого размера свои рекорды, статистика и сохранённая игра.',
       language: 'Язык',
       g_aboutH: 'О чём игра?',
@@ -296,7 +296,7 @@
   // HTML-lang-Attribut
   const HTML_LANG = { de: 'de', en: 'en', fr: 'fr', es: 'es', ru: 'ru', zh: 'zh-CN' };
 
-  // Sprachcode von YouTube/Browser (z. B. „de-AT“, „zh-Hans-CN“) → unterstützte Sprache, sonst Englisch
+  // Sprachcode von Plattform/Browser (z. B. „de-AT“, „zh-Hans-CN“) → unterstützte Sprache, sonst Englisch
   function pick(code) {
     const c = String(code || '').toLowerCase().slice(0, 2);
     return LANGS.includes(c) ? c : 'en';

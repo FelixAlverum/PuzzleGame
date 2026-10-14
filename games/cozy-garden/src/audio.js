@@ -55,7 +55,7 @@
       this.apply();
     },
 
-    // YouTube-Stummschaltung und Pause: dann darf kein Ton ausgegeben werden
+    // Globale Stummschaltung der Plattform und Pause: dann darf kein Ton ausgegeben werden
     setEnabled(on) { this.enabled = on; this.apply(); },
     setPaused(p) { this.paused = p; this.apply(); },
     apply() {

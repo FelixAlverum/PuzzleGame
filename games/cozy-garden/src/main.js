@@ -1,4 +1,4 @@
-// Einstieg: Layout, Eingabe, Spiel-Loop, Rendering, YouTube-Playables-Lebenszyklus.
+// Einstieg: Layout, Eingabe, Spiel-Loop, Rendering, Lebenszyklus (Pause/Weiter über platform.js).
 // Ein Spielmodus = Biom + Feldgröße + Schwierigkeit. Je Modus gibt es einen eigenen Spielstand und eine
 // eigene Statistik, je Biom einen eigenen Garten. Menü, Statistik und Einstellungen liegen in menu.js.
 (function () {
@@ -18,7 +18,7 @@
   let bgTheme = null, bgOld = null, bgFade = 0;   // Hintergrund folgt dem Garten-Thema, Wechsel wird überblendet
 
   // Einstellungen (gespeichert). Lautstärken 0..1, size = Kantenlänge des Felds, diff = gewählte Schwierigkeit
-  // lang: null = Sprache von YouTube/Browser übernehmen, sonst vom Spieler gewählt
+  // lang: null = Sprache der Plattform bzw. des Browsers übernehmen, sonst vom Spieler gewählt
   const settings = { music: 0.6, sfx: 1, amb: 1, size: Logic.DEFAULT_SIZE, diff: Logic.DEFAULT_DIFF, biome: Logic.BIOMES[0], lang: null };
   // Fortschritt (gespeichert): Garten je Biom, Statistik und offener Lauf je Modus („biome-size-diff“),
   // unlocked = Index der höchsten freigeschalteten Schwierigkeit (bleibt auch nach „Statistik zurücksetzen“)
@@ -37,7 +37,7 @@
   let trayPop = [0, 0, 0, 0];            // Einblendzeitpunkt je Slot (Ablage 0–2, Reservefeld 3)
   let gardenView = { biome, level: 0, plots: [0, 0, 0, 0, 0], hold: 0, holdLevel: 0 };
   // Ablauf
-  let clock = 0, last = 0, raf = 0, paused = false, ready = false, readySignalled = false;
+  let clock = 0, last = 0, raf = 0, paused = false, ready = false;
   let saveDirty = false, lastSave = 0;
 
   // --- Layout: muss in jedem Seitenverhältnis (9:32 … 32:9) spielbar sein -----------------
@@ -375,19 +375,20 @@
 
   // Rekord des aktuellen Modus, wie er im Spiel angezeigt wird (steigt live mit)
   const shownBest = () => Math.max(stat.best, game ? game.score : 0);
-  // YouTube kennt nur einen Rekord: der höchste über alle Modi. Gesendet wird nur, was sich nicht mehr
+  // Die Rangliste kennt nur einen Rekord: der höchste über alle Modi. Gemeldet wird nur, was sich nicht mehr
   // zurücknehmen lässt – für den aktuellen Modus also die Statistik aus dem ältesten Stand im Verlauf.
   function overallBest() {
     const h = modeKey && Logic.peekHistory(history, 0);
     const committed = h ? { ...stats, [modeKey]: h.stat } : stats;
     return Logic.statTotals(Object.values(committed)).best;
   }
+  const submitBest = () => Platform.scores.submit('best', overallBest());
 
   function endGame() {
     over = { t: clock, button: null, newBest: game.score > bestAtStart && bestAtStart > 0 };
     drag = null; kb = null;
     Logic.statGameOver(stat, game.score);
-    YT.sendScore(overallBest());
+    submitBest();
     Sound.gameOver();
     saveNow();
   }
@@ -396,7 +397,7 @@
     game = runs[modeKey] = Logic.newGame(randSeed(), { biome, size: N, diff: game.diff });
     over = null; dying = []; beams = []; shake = null; drops.clear(); FX.reset();
     history.length = 0;
-    YT.sendScore(overallBest());                 // das letzte Game Over ist jetzt endgültig
+    submitBest();                                // das letzte Game Over ist jetzt endgültig
     bestAtStart = stat.best; newBestShown = false; shownScore = 0;
     trayPop = [clock, clock + 0.07, clock + 0.14, clock];
     saveNow();
@@ -414,7 +415,7 @@
 
   function enterGame(b, fresh = false) {
     const n = settings.size, d = settings.diff = playDiff(), key = Logic.statKey(b, n, d);
-    if (key !== modeKey) { history.length = 0; YT.sendScore(overallBest()); }   // Verlauf gehört immer zum zuletzt gespielten Modus
+    if (key !== modeKey) { history.length = 0; submitBest(); }   // Verlauf gehört immer zum zuletzt gespielten Modus
     modeKey = key; biome = settings.biome = b; N = n;
     stat = stats[key] || (stats[key] = Logic.newStat());
     garden = gardens[b] || (gardens[b] = Logic.newGarden());
@@ -445,7 +446,7 @@
       if (game && game.over) {                   // beendete Runde: beim nächsten Mal neu pflanzen, Rekord ist endgültig
         delete runs[modeKey];
         history.length = 0;
-        YT.sendScore(overallBest());
+        submitBest();
       }
       saveNow();
     }
@@ -483,7 +484,7 @@
     settings: () => settings,
     setSetting,
     preview: k => Sound.preview(k),
-    audioEnabled: () => YT.audioEnabled(),
+    audioEnabled: () => Platform.audio.enabled(),
     resetStats,
     lang: () => lang,
     setLanguage: l => setLanguage(l, true),
@@ -571,7 +572,7 @@
   }
 
   function saveNow() {
-    YT.save(snapshot());
+    Platform.save.store(snapshot());
     saveDirty = false;
     lastSave = clock;
   }
@@ -680,8 +681,7 @@
   });
 
   window.addEventListener('resize', resize);
-  // Nur lokal: Auf YouTube übernimmt onPause das Speichern (Page-Visibility-API ist dort verboten)
-  if (!YT.inEnv) window.addEventListener('pagehide', () => { if (ready) saveNow(); });
+  window.addEventListener('pagehide', () => { if (ready) saveNow(); });
 
   // Entwickler-Hilfe: index.html?autoplay lässt einen gierigen Bot spielen (Tests, Screenshots)
   const AUTOPLAY = /[?&]autoplay\b/.test(location.search);
@@ -1163,7 +1163,6 @@
     clock += dt;
     update(dt);
     draw();
-    if (!readySignalled) { readySignalled = true; YT.gameReady(); }
   }
 
   // --- Start -----------------------------------------------------------------------------
@@ -1172,10 +1171,9 @@
     resize();
     ctx.fillStyle = '#efe6cf';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    YT.firstFrameReady();
 
     Mat.build();
-    const [data, language] = await Promise.all([YT.load(), YT.language()]);
+    const [data, language] = await Promise.all([Platform.save.load(), Platform.language()]);
     loadSave(data);
     // Entwickler-Hilfe: ?lang=fr erzwingt eine Sprache (ohne sie zu speichern)
     const forced = new URLSearchParams(location.search).get('lang');
@@ -1186,17 +1184,17 @@
     Sound.setBiome(biome);
     Menu.init({ S, ...menuApi });
 
-    Sound.setEnabled(YT.audioEnabled());
-    YT.onAudioChange(on => Sound.setEnabled(on));
-    YT.onPause(() => {
+    Sound.setEnabled(Platform.audio.enabled());
+    Platform.audio.onChange(on => Sound.setEnabled(on));
+    Platform.onPause(() => {
       paused = true;
       drag = null; returning = null;
       cancelAnimationFrame(raf);
       Sound.setPaused(true);
-      YT.sendScore(overallBest());
+      submitBest();
       saveNow();
     });
-    YT.onResume(() => {
+    Platform.onResume(() => {
       if (!paused) return;
       paused = false;
       last = 0;
@@ -1216,5 +1214,5 @@
     raf = requestAnimationFrame(frame);
   }
 
-  init().catch(e => YT.logError(e));
+  init().catch(e => Platform.logError(e));
 })();

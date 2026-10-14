@@ -1,4 +1,4 @@
-// Ausführen: node --test prototype/tests/logic.test.js
+// Ausführen: node --test games/cozy-garden/tests/logic.test.js
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Shapes = require('../src/shapes.js');
