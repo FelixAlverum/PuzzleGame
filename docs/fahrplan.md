@@ -41,8 +41,8 @@ Abweichungen vom Plan, begründet in [entscheidungen.md](entscheidungen.md):
 - `packages/audio` und `packages/storage` noch nicht angelegt: Es gibt erst einen Nutzer.
 
 Nachzuholen:
-- [ ] Docker-Image 0.6.0 bauen und veröffentlichen. Der Build ist noch nicht im Container getestet, weil Docker
-      beim Umbau nicht lief.
+- [x] Docker-Image 0.6.0 gebaut, im Container getestet und veröffentlicht (`alverum/puzzlegame:0.6.0` und `latest`,
+      amd64 + arm64)
 - [ ] PNG-Icons 192/512 px für die PWA (vor allem iOS)
 - [ ] Spielerinnen und Spieler, die früher im Spiel eine Sprache gewählt hatten, landen zunächst bei der Browsersprache
       und müssen sie einmal in den Einstellungen der Sammlung wählen.
