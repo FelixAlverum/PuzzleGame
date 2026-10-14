@@ -8,7 +8,7 @@ const DEFAULTS = { lang: null, volume: 1 };   // lang null = Sprache des Browser
 function sanitize(v, base = DEFAULTS) {
   const out = { ...base };
   if (!v || typeof v !== 'object') return out;
-  if (LANGS.includes(v.lang)) out.lang = v.lang;
+  if (LANGS.includes(v.lang) || v.lang === null) out.lang = v.lang;   // null = zurück zur Browsersprache
   if (Number.isFinite(v.volume)) out.volume = Math.max(0, Math.min(1, v.volume));
   return out;
 }

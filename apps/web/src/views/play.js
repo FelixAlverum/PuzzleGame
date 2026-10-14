@@ -11,7 +11,6 @@ export function playView(app, game, { store, settings, S }) {
 
   let handle = null, gone = false;
   const platform = createPlatform(game, { store, settings, exit: () => { location.hash = '#/'; } });
-  markPlayed(store, game.id);
 
   const onVisibility = () => {
     if (!handle) return;
@@ -24,6 +23,7 @@ export function playView(app, game, { store, settings, S }) {
     .then(h => {
       if (gone) { h.unmount(); return; }         // schon wieder verlassen, während das Spiel lud
       handle = h;
+      markPlayed(store, game.id);                // erst, wenn das Spiel wirklich läuft
       if (document.hidden) h.pause();
     })
     .catch(e => {

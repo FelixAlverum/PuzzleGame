@@ -39,11 +39,11 @@ function route() {
   else view = libraryView(app, ctx);
 }
 
-// Sprachwechsel: die offene Seite in der neuen Sprache neu aufbauen
-let lang = settings.language();
-settings.subscribe(() => {
-  if (settings.language() === lang) return;
-  lang = settings.language();
+// Sprachwechsel (auch auf „Automatisch“): die offene Seite in der neuen Sprache neu aufbauen
+let chosenLang = settings.get().lang;
+settings.subscribe(v => {
+  if (v.lang === chosenLang) return;
+  chosenLang = v.lang;
   route();
 });
 

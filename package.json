@@ -18,9 +18,11 @@
     "dev:cozy-garden": "npm run dev -w @spielesammlung/cozy-garden",
     "dev:minesweeper": "npm run dev -w @spielesammlung/minesweeper",
     "test": "node --test \"games/*/tests/*.test.js\" \"apps/*/tests/*.test.js\" \"packages/*/tests/*.test.js\"",
+    "test:e2e": "playwright test -c apps/web/playwright.config.js",
     "typecheck": "tsc -p packages/game-sdk"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "typescript": "^5.9.3",
     "vite": "^8.3.4"
   }

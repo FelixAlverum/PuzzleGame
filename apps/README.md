@@ -20,5 +20,6 @@ Anwendungen, die ausgeliefert werden.
 | `src/views/` | Bibliothek, Spielansicht (mount/pause/resume/unmount), Einstellungen |
 | `public/` | PWA: Manifest, Icon, Service Worker |
 | `tests/` | Speicher, Einstellungen, Plattform (Node, ohne Browser) |
+| `e2e/`, `playwright.config.js` | Browser-Tests gegen den Produktions-Build (`npm run test:e2e`) |
 
 Details: [docs/architektur.md](../docs/architektur.md), [docs/daten-und-konten.md](../docs/daten-und-konten.md).

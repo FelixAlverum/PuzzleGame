@@ -84,6 +84,11 @@ test('Einstellungen: Sprache gewählt oder vom Browser, Lautstärke begrenzt, un
   assert.deepEqual(s.get(), { lang: 'de', volume: 1 });
   assert.deepEqual(createSettings(store, () => 'en').get(), { lang: 'de', volume: 1 });   // gespeichert
   assert.equal(createSettings(createStore(backend()), () => 'ja-JP').language(), 'en');
+  s.set({ lang: null });
+  assert.equal(s.get().lang, null, 'zurück auf Automatisch');
+  assert.equal(s.language(), 'fr');
+  s.set({ volume: 0.5 });
+  assert.equal(s.get().lang, null, 'ein Patch ohne lang lässt die Sprache stehen');
 });
 
 test('Plattform: Spielstand, Rekord, Sprache und Lautstärke kommen aus der Hülle', async () => {

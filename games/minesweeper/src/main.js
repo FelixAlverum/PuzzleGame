@@ -410,10 +410,18 @@ export function mount(el, platform) {
     if (!press || e.pointerId !== press.id) return;
     const p = press;
     cancelPress();
-    if (!p.long) act(flagMode ? 'flag' : 'primary', p.i);
+    if (p.long) return;
+    // Im Flaggen-Modus setzt ein Tippen Flaggen – auf offenen Zahlen deckt es weiterhin die Nachbarn auf
+    act(flagMode && !game.open[p.i] ? 'flag' : 'primary', p.i);
   });
   board.addEventListener('pointercancel', cancelPress);
 
+  // Nach einem Maus- oder Touch-Klick behält kein Knopf den Fokus, sonst landen Pfeile und Leertaste dort
+  // statt auf dem Feld (Leertaste würde z. B. „Neues Spiel“ noch einmal auslösen). Tastatur-Klicks haben detail 0.
+  root.addEventListener('click', e => {
+    const btn = e.target.closest && e.target.closest('button');
+    if (btn && e.detail > 0) btn.blur();
+  });
   root.addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
@@ -432,6 +440,7 @@ export function mount(el, platform) {
     if (e.target.closest && e.target.closest('button, input, a')) return;   // Knöpfe bedienen sich selbst
     const k = e.key;
     if (k === 'n' || k === 'N') { newGame(); return; }
+    if (!dispCols || !dispRows) return;          // Raster noch nicht aufgebaut (z. B. Feld ohne Größe)
     if (k.startsWith('Arrow')) {
       if (!cursor) cursor = { r: Math.floor(dispRows / 2), c: Math.floor(dispCols / 2) };
       else if (k === 'ArrowLeft') cursor.c = Math.max(0, cursor.c - 1);
