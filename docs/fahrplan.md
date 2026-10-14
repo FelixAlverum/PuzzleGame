@@ -7,7 +7,7 @@ Spiel festzurren.
 |---|---|---|---|
 | 0 | YouTube entfernen, Repo in die Zielstruktur bringen | Cozy Garden läuft wie bisher, ohne YouTube | **erledigt** |
 | 1 | Monorepo mit Vite, Cozy Garden auf ES-Module + `mount/unmount`, Hülle mit Bibliothek (nur Gastmodus) | Bibliothek mit einem Spiel | **erledigt** |
-| 2 | Minesweeper als zweites Spiel, dann Solitaire + Spider über `packages/cards` | Vertrag bewährt sich an vier Spielen | offen |
+| 2 | Minesweeper als zweites Spiel, dann Solitaire + Spider über `packages/cards` | Vertrag bewährt sich an vier Spielen | **läuft** – Minesweeper-Prototyp spielbar |
 | 3 | API: Konten, Cloud-Spielstände, Ranglisten mit Nachspiel-Prüfung | Profil geräteübergreifend | offen |
 | 4 | Shop, Zahlung, DLC, Rechtliches | Monetarisierung | offen |
 
@@ -30,7 +30,7 @@ Spiel festzurren.
 - [x] CSS getrennt: Theme in `packages/ui`, Spiel-CSS unter `.cozy-garden` in `games/cozy-garden/src/style.css`
 - [x] `apps/web`: Routing (`#/`, `#/play/:id`, `#/settings`), Bibliothek mit Cover, eigenem Rekord und „zuletzt gespielt“,
       geplante Spiele als „Bald verfügbar“, Plattform mit Speicher in `localStorage`, Übernahme alter Spielstände
-- [x] Sprache und Gesamtlautstärke in die Hülle verlegt; im Spiel Knopf „Bibliothek“ und `Esc` im Hauptmenü
+- [x] Sprache und Gesamtlautstärke in die Hülle verlegt; im Spiel Knopf „← Spielesammlung“ und `Esc` im Hauptmenü
 - [x] PWA: Manifest, Icon, Service Worker
 - [x] `infra/web/Dockerfile` zweistufig (Vite-Build, dann nginx)
 - [x] Tests: Speicher, Einstellungen, Plattform, Spielvertrag (`npm test`, 42 Tests), `npm run typecheck`
@@ -49,9 +49,12 @@ Nachzuholen:
 
 ## Phase 2 – Aufgaben
 
-- [ ] `games/minesweeper`: Logik DOM-frei mit Seed (erstes Feld nie Mine), Größen Anfänger/Fortgeschritten/Experte,
-      Rangliste Zeit (`sort: 'asc'`)
+- [x] `games/minesweeper` als Prototyp zum Probespielen (2026-10-14): Logik DOM-frei mit Seed (erster Klick öffnet
+      immer eine Fläche), Stufen Anfänger/Fortgeschritten/Profi, Flaggen per Langdruck/Rechtsklick/Flaggen-Modus, Akkord,
+      Tastatur, gedrehtes Profi-Feld auf Handys, Lauf und Statistik je Stufe, Rangliste Zeit je Stufe (`sort: 'asc'`)
+- [ ] Minesweeper nach dem Probespielen: Ton, Animationen, eigene Feldgröße, Rückfrage vor „Neues Spiel“
+- [x] Ranglisten können einen Titel haben (`Leaderboard.title`); die Bibliothek zeigt Zeiten in Sekunden
 - [ ] Gemeinsames Audio nach `packages/audio`, sobald Minesweeper Ton bekommt
 - [ ] `packages/cards`: Deck, Mischen mit Seed, Kartengrafik, Ziehen von Stapeln
 - [ ] `games/solitaire` (Klondike), `games/spider` (1, 2, 4 Farben)
-- [ ] In der Bibliothek aus „Bald verfügbar“ echte Spiele machen (`apps/web/src/games.js`)
+- [ ] In der Bibliothek aus „Bald verfügbar“ echte Spiele machen (`apps/web/src/games.js`) – Minesweeper erledigt

@@ -7,6 +7,8 @@ export type Localized = Partial<Record<string, string>>;
 
 export interface Leaderboard {
   id: string;
+  /** Name in der Bibliothek, z. B. die Schwierigkeitsstufe. Ohne Titel heißt die Rangliste einfach „Rekord“. */
+  title?: Localized;
   /** 'desc': mehr ist besser (Punkte), 'asc': weniger ist besser (Zeit) */
   sort: 'asc' | 'desc';
   format: 'points' | 'time';

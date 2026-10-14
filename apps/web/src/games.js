@@ -1,20 +1,14 @@
 // Spiele der Bibliothek. Ein neues Spiel: Ordner unter games/, Manifest mit defineGame, hier eintragen.
 // Importiert werden nur die Manifeste – der Spielcode lädt erst beim Start (dynamischer import im Manifest).
 import cozyGarden from '@spielesammlung/cozy-garden';
+import minesweeper from '@spielesammlung/minesweeper';
 
-export const GAMES = [cozyGarden];
+export const GAMES = [cozyGarden, minesweeper];
 
 export const findGame = id => GAMES.find(g => g.id === id) || null;
 
 // Geplante Spiele (Fahrplan Phase 2): erscheinen in der Bibliothek als „Bald verfügbar“
 export const UPCOMING = [
-  {
-    id: 'minesweeper',
-    title: { de: 'Minesweeper', en: 'Minesweeper', fr: 'Démineur', es: 'Buscaminas', ru: 'Сапёр', zh: '扫雷' },
-    icon: '<svg viewBox="0 0 64 64" aria-hidden="true"><g stroke="#4a3424" stroke-width="4" stroke-linecap="round">' +
-      '<path d="M32 10v44M10 32h44M17 17l30 30M47 17L17 47"/></g><circle cx="32" cy="32" r="14" fill="#4a3424"/>' +
-      '<circle cx="27" cy="27" r="4" fill="#fbf5e6"/></svg>',
-  },
   {
     id: 'solitaire',
     title: { de: 'Solitaire', en: 'Solitaire', fr: 'Solitaire', es: 'Solitario', ru: 'Косынка', zh: '纸牌接龙' },

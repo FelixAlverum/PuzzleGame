@@ -22,10 +22,17 @@ export function libraryView(app, { store, S, lang, htmlLang }) {
     card.append(cover, el('h2', null, localized(g.title, lang)));
     if (g.description) card.append(el('p', 'desc', localized(g.description, lang)));
 
+    // Eigener Rekord je Rangliste, die schon einen Wert hat: Punkte als Zahl, Zeiten in Sekunden
     const meta = el('p', 'meta');
-    const board = g.leaderboards && g.leaderboards[0];
-    const best = board ? bestScore(store, g.id, board.id) : null;
-    if (best != null) meta.append(el('span', null, `${S.best} ${best.toLocaleString(htmlLang)}`));
+    for (const board of g.leaderboards || []) {
+      const best = bestScore(store, g.id, board.id);
+      if (best == null || (board.sort === 'desc' && best <= 0)) continue;   // 0 Punkte ist noch kein Rekord
+      const value = board.format === 'time'
+        ? (best / 1000).toLocaleString(htmlLang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' s'
+        : best.toLocaleString(htmlLang);
+      const label = board.title ? `${S.best} (${localized(board.title, lang)})` : S.best;
+      meta.append(el('span', null, `${label} ${value}`));
+    }
     const played = lastPlayed(store, g.id);
     if (played) meta.append(el('span', null, `${S.lastPlayed} ${new Date(played).toLocaleDateString(htmlLang)}`));
     if (meta.childElementCount) card.append(meta);

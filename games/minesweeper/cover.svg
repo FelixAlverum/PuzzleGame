@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6efd9"/>
+      <stop offset="1" stop-color="#e6dbbd"/>
+    </linearGradient>
+    <linearGradient id="moss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fc566"/>
+      <stop offset="1" stop-color="#6ea648"/>
+    </linearGradient>
+    <g id="h"><rect width="26" height="26" rx="5" fill="url(#moss)"/><rect x="2" y="1.5" width="22" height="3" rx="1.5" fill="#fff" opacity="0.3"/></g>
+    <g id="o"><rect width="26" height="26" rx="5" fill="#efe2c4"/></g>
+  </defs>
+  <rect width="320" height="180" fill="url(#bg)"/>
+  <!-- Holzrahmen mit 7×4 Feldern -->
+  <rect x="58" y="18" width="204" height="144" rx="12" fill="#a8743f"/>
+  <g transform="translate(66 26)" font-family="Trebuchet MS, Segoe UI, sans-serif" font-weight="800" font-size="18" text-anchor="middle">
+    <!-- Reihe 1 -->
+    <use href="#o" x="0" y="0"/><use href="#o" x="28" y="0"/><use href="#o" x="56" y="0"/>
+    <use href="#o" x="84" y="0"/><text x="97" y="19" fill="#2f6db5">1</text>
+    <use href="#h" x="112" y="0"/><use href="#h" x="140" y="0"/><use href="#h" x="168" y="0"/>
+    <!-- Reihe 2 -->
+    <use href="#o" x="0" y="32"/><use href="#o" x="28" y="32"/><text x="41" y="51" fill="#2f6db5">1</text>
+    <use href="#o" x="56" y="32"/><text x="69" y="51" fill="#2f6db5">1</text>
+    <use href="#o" x="84" y="32"/><text x="97" y="51" fill="#3f7a2a">2</text>
+    <use href="#h" x="112" y="32"/><use href="#h" x="140" y="32"/><use href="#h" x="168" y="32"/>
+    <!-- Reihe 3 -->
+    <use href="#o" x="0" y="64"/><use href="#o" x="28" y="64"/><text x="41" y="83" fill="#3f7a2a">2</text>
+    <use href="#h" x="56" y="64"/>
+    <use href="#o" x="84" y="64"/><text x="97" y="83" fill="#b8452f">3</text>
+    <use href="#h" x="112" y="64"/>
+    <use href="#h" x="140" y="64"/>
+    <use href="#h" x="168" y="64"/>
+    <!-- Reihe 4 -->
+    <use href="#o" x="0" y="96"/><use href="#o" x="28" y="96"/><text x="41" y="115" fill="#2f6db5">1</text>
+    <use href="#h" x="56" y="96"/><use href="#h" x="84" y="96"/><use href="#h" x="112" y="96"/>
+    <use href="#h" x="140" y="96"/><use href="#h" x="168" y="96"/>
+    <!-- Flaggen -->
+    <g transform="translate(56 64)"><path d="M9 4v18" stroke="#4a3424" stroke-width="2.6" stroke-linecap="round"/><path d="M10 5l11 4.5L10 14z" fill="#d94a3c"/></g>
+    <g transform="translate(112 64)"><path d="M9 4v18" stroke="#4a3424" stroke-width="2.6" stroke-linecap="round"/><path d="M10 5l11 4.5L10 14z" fill="#d94a3c"/></g>
+  </g>
+  <!-- Mine, die neben dem Brett liegt -->
+  <g transform="translate(286 132)">
+    <g stroke="#3a2a1c" stroke-width="3" stroke-linecap="round">
+      <path d="M0 -16v32M-16 0h32M-11 -11l22 22M11 -11l-22 22"/>
+    </g>
+    <circle r="10" fill="#3a2a1c"/>
+    <circle cx="-3" cy="-3" r="2.6" fill="#fbf5e6"/>
+  </g>
+  <!-- Grashalme links -->
+  <g stroke="#6aae4f" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M22 168C22 150 26 140 32 132"/>
+    <path d="M30 168C30 154 34 146 42 140"/>
+    <path d="M16 168C16 156 12 148 6 142"/>
+  </g>
+</svg>

@@ -5,7 +5,7 @@ Ein Ordner pro Spiel, benannt nach der Spiel-ID (Kleinbuchstaben, Bindestrich).
 | Ordner | Spiel | Stand |
 |---|---|---|
 | [cozy-garden](cozy-garden/) | Block-Puzzle mit Pflanzenformen | spielbar |
-| `minesweeper/` | Minesweeper | geplant (Phase 2) |
+| [minesweeper](minesweeper/) | Minesweeper | Prototyp, spielbar |
 | `solitaire/` | Solitaire (Klondike) | geplant (Phase 2) |
 | `spider/` | Spider Solitaire | geplant (Phase 2) |
 
