@@ -1,4 +1,4 @@
-/* Minesweeper: alles unter .minesweeper. Grundbausteine (Pillen, Segmente, Karten) aus @spielesammlung/ui/theme.css.
+/* Minesweeper: alles unter .minesweeper. Bilder der Felder: games/minesweeper/assets/cell-*.svg. Grundbausteine (Pillen, Segmente, Karten) aus @spielesammlung/ui/theme.css.
    Verdeckte Felder sind Moos, aufgedeckte heller Sand – passend zu Holz und Papier der Sammlung. */
 
 .minesweeper .counter.mines svg {
@@ -90,18 +90,18 @@
 .minesweeper .c.n8 { color: #7a6a58; }
 
 .minesweeper .c.flag {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v18' stroke='%234a3424' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M8 4l11 4.5L8 13z' fill='%23d94a3c'/%3E%3C/svg%3E"), linear-gradient(#8fc566, #6ea648);
+  background-image: url("../assets/cell-flag.svg"), linear-gradient(#8fc566, #6ea648);
   background-size: 72%, 100%;
 }
 
 /* Falsche Flagge nach der Niederlage: durchgestrichen */
 .minesweeper .c.flag.wrong {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 4l16 16M20 4L4 20' stroke='%23b8452f' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v18' stroke='%234a3424' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M8 4l11 4.5L8 13z' fill='%23d94a3c'/%3E%3C/svg%3E"), linear-gradient(#8fc566, #6ea648);
+  background-image: url("../assets/cell-wrong.svg"), url("../assets/cell-flag.svg"), linear-gradient(#8fc566, #6ea648);
   background-size: 80%, 72%, 100%;
 }
 
 .minesweeper .c.mine {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg stroke='%233a2a1c' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='6.5' fill='%233a2a1c'/%3E%3Ccircle cx='10' cy='10' r='1.8' fill='%23fbf5e6'/%3E%3C/svg%3E");
+  background-image: url("../assets/cell-mine.svg");
 }
 
 .minesweeper .c.boom {

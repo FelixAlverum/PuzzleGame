@@ -3,9 +3,9 @@
 import { mountCardGame } from '@spielesammlung/cards/game';
 import * as Logic from './logic.js';
 import { STR } from './i18n.js';
+import RECYCLE from '../assets/recycle.svg?raw';   // leerer Stapel: Ablage zurückdrehen
 import './style.css';
 
-const RECYCLE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M19 2.5v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 /**
  * Oben: Stapel, Ablage, Lücke, vier Zielstapel. Darunter sieben Spalten.

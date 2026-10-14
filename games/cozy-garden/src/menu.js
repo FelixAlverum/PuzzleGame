@@ -6,6 +6,7 @@ import * as Shapes from './shapes.js';
 import * as Logic from './logic.js';
 import * as Mat from './materials.js';
 import * as Garden from './garden.js';
+import LOCK from '../assets/lock.svg?raw';   // gesperrte Auswahl
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -19,9 +20,6 @@ const fmt = v => (v == null ? '–' : Number(v).toLocaleString());
 const THUMB = { meadow: ['bluete', 'tulpe'], pond: ['seerose', 'rohrkolben'], tropics: ['hibiskus', 'bambus'] };
 // Anleitung: alle Extra-Formen des Bioms
 const extrasOf = biome => Shapes.pool(biome).filter(sh => sh.biome).map(sh => sh.id);
-
-const LOCK = '<svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="7" width="11" height="8" rx="2" fill="currentColor"/>' +
-  '<path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 
 // ui: das Overlay-Element (enthält die .screen-Abschnitte aus menu.html), api: Callbacks aus main.js,
 // signal: beendet beim Abbauen des Spiels alle Listener an window.

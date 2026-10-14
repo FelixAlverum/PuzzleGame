@@ -68,6 +68,8 @@ node --test "games/minesweeper/tests/*.test.js"
 | `src/audio.js` | Klänge: Aufdecken, Flagge, Sieg, Knall der Minen (ohne Dateien) |
 | `src/style.css` | Aussehen unter `.minesweeper` (Spielrahmen aus `packages/ui`), Aufdecken, Welle, Explosion als CSS-Animation |
 | `src/i18n.js` | Texte in 6 Sprachen |
+| `assets/icon-*.svg` | Symbole der Kopfleiste (Minen, Zeit, Flaggen-Modus), eingebettet mit `currentColor` |
+| `assets/cell-*.svg` | Bilder in den Feldern: Flagge, Mine, Kreuz über falscher Flagge (feste Farben) |
 
 ## Offen
 - Screenreader: Felder mit Namen und Zustand, Cursor ansagen
