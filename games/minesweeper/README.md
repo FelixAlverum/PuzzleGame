@@ -17,7 +17,7 @@ und die Bedienung sind vollständig; Ton und Animation gibt es bisher nur für d
 - Der erste Klick ist immer sicher und öffnet eine Fläche: Die Minen werden erst danach gelegt, nie auf das erste Feld
   und seine Nachbarn.
 - **Aufdecken:** tippen oder klicken. **Flagge:** lang drücken (Touch), Rechtsklick, oder den Flaggen-Knopf oben
-  einschalten, dann setzt jedes Tippen eine Flagge.
+  einschalten, dann setzt jedes Tippen auf ein verdecktes Feld eine Flagge (auf offenen Zahlen deckt es weiter auf).
 - **Akkord:** Auf eine offene Zahl tippen, um die übrigen Nachbarn aufzudecken, wenn ringsum genauso viele Flaggen stehen.
 - **Tastatur:** Pfeile bewegen den Cursor, Leertaste/Enter deckt auf, `F` setzt eine Flagge, `N` startet ein neues Spiel.
 - Auf hochkanten Bildschirmen wird das breite Profi-Feld gedreht, damit es ohne Scrollen passt.
