@@ -1,0 +1,18 @@
+{
+  "name": "@spielesammlung/cards",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kartenspiele: Deck, Mischen mit Seed, Kartengrafik, Tisch mit Ziehen und Ablegen, Spielrahmen für Patiencen",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./table": "./src/table.js",
+    "./game": "./src/game.js",
+    "./cards.css": "./cards.css"
+  },
+  "dependencies": {
+    "@spielesammlung/audio": "*",
+    "@spielesammlung/i18n": "*",
+    "@spielesammlung/ui": "*"
+  }
+}
