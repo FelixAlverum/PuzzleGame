@@ -41,10 +41,16 @@ Ohne Docker ansehen: `npm run build && npm run preview`, dann `http://localhost:
 
 ## PWA
 
-Vorhanden seit Phase 1 (`apps/web/public/`): Manifest, Icon und Service Worker. Seiten holt er zuerst übers Netz,
-mit dem Cache als Rückfall. Gebaute Dateien holt er zuerst aus dem Cache. Damit ist die Sammlung installierbar und
-nach dem ersten Besuch offline spielbar. Der Service Worker wird nur im Produktions-Build angemeldet, nicht im Dev-Server.
-Bei grundlegenden Änderungen an der Cache-Strategie `CACHE` in `sw.js` hochzählen, dann werden alte Caches gelöscht.
+Vorhanden seit Phase 1 (`apps/web/public/`): Manifest, Icon und Service Worker
+([sw.js](../apps/web/public/sw.js)). Er wird nur im Produktions-Build angemeldet, nicht im Dev-Server.
+
+- Gehashte Dateien unter `assets/` kommen zuerst aus dem Cache, denn sie ändern sich nie.
+- Alles andere (Seite, Manifest, Icon) kommt zuerst übers Netz, mit dem Cache als Rückfall. Änderungen kommen also sofort an.
+- Nach jedem frischen Laden der Seite räumt er auf: Er liest `index.html` und die eingebundenen Skripte, die die Spiele
+  nachladen, holt fehlende Skripte nach und löscht gehashte Dateien, die der aktuelle Build nicht mehr braucht.
+  Nebenbei liegen so alle Spiele des aktuellen Builds offline bereit.
+- Bei grundlegenden Änderungen an der Strategie `CACHE` in `sw.js` hochzählen. Dann werden alte Caches beim
+  Aktivieren gelöscht.
 
 Offen: Das Icon gibt es nur als SVG. Für alle Plattformen (vor allem iOS) braucht es zusätzlich PNG-Icons in 192 und 512 px.
 Wenn nötig, lässt sich die Hülle später mit Capacitor oder Tauri als App für die Stores verpacken,
