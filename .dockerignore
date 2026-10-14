@@ -1,0 +1,12 @@
+# Nur das ins Build, was es braucht (Build-Kontext ist die Repo-Wurzel)
+*
+!package.json
+!package-lock.json
+!apps/
+!games/
+!packages/
+!infra/web/nginx.conf
+**/node_modules
+**/dist
+**/tests
+**/*.md

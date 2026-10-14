@@ -1,0 +1,13 @@
+{
+  "name": "Spielesammlung",
+  "short_name": "Spiele",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#efe6cf",
+  "theme_color": "#5d9a3e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

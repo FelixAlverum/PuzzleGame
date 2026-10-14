@@ -1,0 +1,9 @@
+# Betrieb auf dem Server. Heute nur der statische Webserver; API und Datenbank kommen in Phase 3 dazu
+# (siehe docs/betrieb.md).
+services:
+  puzzlegame:
+    image: alverum/puzzlegame:latest
+    container_name: puzzlegame_prod
+    restart: unless-stopped
+    ports:
+      - "8070:8080"

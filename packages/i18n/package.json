@@ -1,0 +1,10 @@
+{
+  "name": "@spielesammlung/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unterstützte Sprachen, Sprachwahl und Flaggen – geteilt von Plattform-Hülle und Spielen",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  }
+}

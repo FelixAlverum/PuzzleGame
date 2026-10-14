@@ -1,0 +1,69 @@
+<div class="ui" hidden>
+  <section class="screen" id="screen-menu" aria-labelledby="menu-title">
+    <div class="top">
+      <div class="brand">
+        <h1 id="menu-title" data-t="title"></h1>
+        <p data-t="choose"></p>
+      </div>
+      <div class="row">
+        <button class="pill wood" id="to-library" data-t="library" hidden></button>
+        <button class="pill ghost small" id="size-chip" data-go="settings"></button>
+        <button class="pill ghost" data-go="guide" data-t="guide"></button>
+        <button class="pill ghost" data-go="stats" data-t="stats"></button>
+        <button class="pill ghost" data-go="settings" data-t="settings"></button>
+      </div>
+    </div>
+    <div class="diffs">
+      <div class="seg-row" id="diff-seg" role="radiogroup"></div>
+      <p class="note" id="diff-note"></p>
+    </div>
+    <div class="biomes" id="biomes"></div>
+  </section>
+
+  <section class="screen" id="screen-guide" aria-labelledby="guide-title">
+    <div class="top">
+      <div class="brand">
+        <h1 id="guide-title" data-t="guide"></h1>
+      </div>
+      <button class="pill ghost" data-go="menu" data-t="back"></button>
+    </div>
+    <div class="guide" id="guide-body"></div>
+    <div class="row"><button class="pill primary" data-go="menu" data-t="back"></button></div>
+  </section>
+
+  <section class="screen" id="screen-stats" aria-labelledby="stats-title">
+    <div class="top">
+      <div class="brand">
+        <h1 id="stats-title" data-t="stats"></h1>
+      </div>
+      <button class="pill ghost" data-go="menu" data-t="back"></button>
+    </div>
+    <div class="seg-row" id="stats-diff-seg" role="radiogroup"></div>
+    <div class="stats-grid" id="stats-body"></div>
+    <div class="row"><button class="pill ghost small" id="reset-stats" data-t="resetStats"></button></div>
+  </section>
+
+  <section class="screen" id="screen-settings" aria-labelledby="settings-title">
+    <div class="top">
+      <div class="brand">
+        <h1 id="settings-title" data-t="settings"></h1>
+      </div>
+      <button class="pill ghost" data-go="menu" data-t="back"></button>
+    </div>
+    <div class="card">
+      <h2 data-t="sound"></h2>
+      <label class="setting"><span data-t="music"></span><input type="range" id="vol-music" min="0" max="100"
+          step="5"><output id="val-music"></output></label>
+      <label class="setting"><span data-t="sfx"></span><input type="range" id="vol-sfx" min="0" max="100"
+          step="5"><output id="val-sfx"></output></label>
+      <label class="setting"><span data-t="amb"></span><input type="range" id="vol-amb" min="0" max="100"
+          step="5"><output id="val-amb"></output></label>
+      <p class="note" id="muted-note" data-t="muted" hidden></p>
+    </div>
+    <div class="card">
+      <h2 data-t="fieldSize"></h2>
+      <div class="seg-row" id="size-seg" role="radiogroup"></div>
+      <p class="note" data-t="sizeNote"></p>
+    </div>
+  </section>
+</div>

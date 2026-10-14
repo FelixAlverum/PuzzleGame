@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfe8f0"/>
+      <stop offset="1" stop-color="#f4ecd2"/>
+    </linearGradient>
+    <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b4a2e"/>
+      <stop offset="1" stop-color="#4f3520"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="180" fill="url(#sky)"/>
+  <!-- Pflanzen hinter den Hügeln: die Stiele verschwinden im Boden -->
+  <!-- Mohn links -->
+  <path d="M48 160C47 130 44 104 46 78" stroke="#4f8a34" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M47 124C40 118 30 118 24 122C30 128 40 128 47 124Z" fill="#6aae4f"/>
+  <g transform="translate(46 70)">
+    <ellipse cx="-7" cy="0" rx="9" ry="8" fill="#e8584a"/>
+    <ellipse cx="7" cy="0" rx="9" ry="8" fill="#e8584a"/>
+    <ellipse cx="0" cy="-6" rx="8" ry="7" fill="#f06a5a"/>
+    <ellipse cx="0" cy="5" rx="8" ry="6" fill="#d94a3c"/>
+    <circle cx="0" cy="0" r="4" fill="#3a2a1c"/>
+  </g>
+  <!-- Blüte rechts -->
+  <path d="M262 160C263 132 265 108 262 82" stroke="#4f8a34" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M263 118C271 110 283 109 290 113C284 121 272 123 263 118Z" fill="#6aae4f"/>
+  <g transform="translate(262 72)">
+    <circle cx="0" cy="-11" r="8.5" fill="#f5a3c0"/>
+    <circle cx="10.5" cy="-3.4" r="8.5" fill="#f5a3c0"/>
+    <circle cx="6.5" cy="8.9" r="8.5" fill="#f5a3c0"/>
+    <circle cx="-6.5" cy="8.9" r="8.5" fill="#f5a3c0"/>
+    <circle cx="-10.5" cy="-3.4" r="8.5" fill="#f5a3c0"/>
+    <circle cx="0" cy="0" r="6.5" fill="#ffd56a"/>
+  </g>
+  <!-- Hügel -->
+  <ellipse cx="60" cy="182" rx="120" ry="40" fill="#9cc56f"/>
+  <ellipse cx="270" cy="186" rx="120" ry="44" fill="#86b65a"/>
+  <!-- große Blätter, die aus den Hügeln wachsen -->
+  <path d="M66 146C64 118 78 104 100 100C99 122 88 140 66 146Z" fill="#5fa548"/>
+  <path d="M66 146L95 106" stroke="#e8f5d0" stroke-width="2"/>
+  <path d="M244 146C246 120 234 106 214 102C214 124 224 140 244 146Z" fill="#6aae4f"/>
+  <path d="M244 146L218 108" stroke="#e8f5d0" stroke-width="2"/>
+  <!-- Beet mit Holzrahmen -->
+  <rect x="105" y="40" width="110" height="110" rx="10" fill="#a8743f"/>
+  <rect x="112" y="47" width="96" height="96" rx="4" fill="url(#soil)"/>
+  <g stroke="#2e1d10" stroke-opacity="0.45" stroke-width="1">
+    <path d="M136 47v96M160 47v96M184 47v96M112 71h96M112 95h96M112 119h96"/>
+  </g>
+  <!-- gelegte Formen: Moos, Stein, Holz -->
+  <g>
+    <rect x="113" y="120" width="22" height="22" rx="4" fill="#6f9a3e"/>
+    <rect x="137" y="120" width="22" height="22" rx="4" fill="#6f9a3e"/>
+    <rect x="137" y="96" width="22" height="22" rx="4" fill="#6f9a3e"/>
+    <rect x="161" y="120" width="22" height="22" rx="6" fill="#a9a59a"/>
+    <rect x="185" y="120" width="22" height="22" rx="6" fill="#a9a59a"/>
+    <rect x="185" y="72" width="22" height="46" rx="4" fill="#b98550"/>
+    <path d="M190 80h12M190 92h12M190 104h12" stroke="#8a5c33" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

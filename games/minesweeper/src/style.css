@@ -1,0 +1,312 @@
+/* Minesweeper: alles unter .minesweeper. Grundbausteine (Pillen, Segmente, Karten) aus @spielesammlung/ui/theme.css.
+   Verdeckte Felder sind Moos, aufgedeckte heller Sand – passend zu Holz und Papier der Sammlung. */
+
+.minesweeper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at top, #f6efd9, var(--bg) 70%);
+  font-family: var(--font);
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.minesweeper .bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
+}
+
+.minesweeper .title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #3d5a2a;
+}
+
+.minesweeper .levels {
+  flex: 1 1 280px;
+}
+
+.minesweeper .levels .seg {
+  min-height: 38px;
+  font-size: 14px;
+  flex: 1 1 70px;
+}
+
+.minesweeper .counters,
+.minesweeper .tools {
+  display: flex;
+  gap: 8px;
+}
+
+.minesweeper .counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 62px;
+  padding: 5px 12px;
+  box-sizing: border-box;
+  border: 2px solid var(--wood);
+  border-radius: 999px;
+  background: var(--paper);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.minesweeper .counter svg,
+.minesweeper .flag-mode svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.minesweeper .counter.mines svg {
+  color: #3a2a1c;
+}
+
+.minesweeper .counter.time svg {
+  color: var(--green-dark);
+}
+
+.minesweeper .flag-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--red);
+  min-width: 52px;
+}
+
+.minesweeper .flag-mode.on {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+/* --- Spielfeld --- */
+
+.minesweeper .field {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 8px;
+}
+
+.minesweeper .board {
+  --cs: 32px;
+  display: grid;
+  gap: 2px;
+  padding: calc(var(--cs) * 0.25);
+  margin: auto;
+  background: var(--wood);
+  border-radius: 12px;
+  box-shadow: 0 4px 0 var(--shadow);
+  touch-action: manipulation;
+}
+
+.minesweeper .c {
+  position: relative;
+  width: var(--cs);
+  height: var(--cs);
+  box-sizing: border-box;
+  border-radius: calc(var(--cs) * 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cs) * 0.62);
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 72%;
+}
+
+.minesweeper .c.hidden {
+  background-color: #7fb755;
+  background-image: linear-gradient(#8fc566, #6ea648);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+}
+
+@media (hover: hover) {
+  .minesweeper .c.hidden:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.minesweeper .c.open {
+  background-color: #efe2c4;
+  box-shadow: inset 0 1px 2px rgba(80, 50, 20, 0.25);
+  cursor: default;
+}
+
+.minesweeper .c.n1 { color: #2f6db5; }
+.minesweeper .c.n2 { color: #3f7a2a; }
+.minesweeper .c.n3 { color: #b8452f; }
+.minesweeper .c.n4 { color: #4b3a8f; }
+.minesweeper .c.n5 { color: #8a3a1f; }
+.minesweeper .c.n6 { color: #23807e; }
+.minesweeper .c.n7 { color: #3a2a1c; }
+.minesweeper .c.n8 { color: #7a6a58; }
+
+.minesweeper .c.flag {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v18' stroke='%234a3424' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M8 4l11 4.5L8 13z' fill='%23d94a3c'/%3E%3C/svg%3E"), linear-gradient(#8fc566, #6ea648);
+  background-size: 72%, 100%;
+}
+
+/* Falsche Flagge nach der Niederlage: durchgestrichen */
+.minesweeper .c.flag.wrong {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 4l16 16M20 4L4 20' stroke='%23b8452f' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 3v18' stroke='%234a3424' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M8 4l11 4.5L8 13z' fill='%23d94a3c'/%3E%3C/svg%3E"), linear-gradient(#8fc566, #6ea648);
+  background-size: 80%, 72%, 100%;
+}
+
+.minesweeper .c.mine {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg stroke='%233a2a1c' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='6.5' fill='%233a2a1c'/%3E%3Ccircle cx='10' cy='10' r='1.8' fill='%23fbf5e6'/%3E%3C/svg%3E");
+}
+
+.minesweeper .c.boom {
+  background-color: #e0573f;
+}
+
+/* --- Explosion: Feuerball über der Mine, das Feld bleibt angesengt --- */
+
+.minesweeper .c.burst {
+  background-color: #cf6a3e;
+  animation: ms-pop 0.3s ease-out;
+}
+
+.minesweeper .c.boom.burst {
+  background-color: #e0573f;
+}
+
+.minesweeper .c.burst::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--cs) * 2.8);
+  height: calc(var(--cs) * 2.8);
+  margin: calc(var(--cs) * -1.4) 0 0 calc(var(--cs) * -1.4);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe0 0%, #ffd45e 22%, #ff7a2a 48%, rgba(190, 50, 20, 0.6) 62%, rgba(190, 50, 20, 0) 72%);
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  animation: ms-blast 0.6s ease-out;
+}
+
+.minesweeper .c.boom.burst::after {
+  width: calc(var(--cs) * 4.5);
+  height: calc(var(--cs) * 4.5);
+  margin: calc(var(--cs) * -2.25) 0 0 calc(var(--cs) * -2.25);
+  animation-duration: 0.8s;
+}
+
+@keyframes ms-blast {
+  0% { transform: scale(0.15); opacity: 1; }
+  60% { opacity: 0.9; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes ms-pop {
+  0% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* Lichtblitz der ersten Explosion, ausgehend von der getroffenen Mine */
+.minesweeper .flash {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 245, 210, 0.95), rgba(255, 150, 60, 0.55) 25%, rgba(255, 120, 40, 0) 65%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minesweeper .c.burst,
+  .minesweeper .c.burst::after {
+    animation-duration: 0.01s;
+  }
+}
+
+.minesweeper .c.cursor {
+  outline: 3px solid #e8b04a;
+  outline-offset: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Ergebnis --- */
+
+.minesweeper .result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 340px);
+  text-align: center;
+  z-index: 2;
+}
+
+.minesweeper .result[hidden] {
+  display: none;
+}
+
+.minesweeper .result h2 {
+  margin: 4px 0;
+  font-size: 26px;
+  color: var(--red);
+}
+
+.minesweeper .result.won h2 {
+  color: var(--green-dark);
+}
+
+.minesweeper .result .sub {
+  margin: 0 0 12px;
+  font-weight: 700;
+  min-height: 1em;
+}
+
+.minesweeper .result .row {
+  justify-content: center;
+}
+
+/* --- Fußzeile --- */
+
+.minesweeper .help {
+  padding: 2px max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.minesweeper .help p {
+  margin: 2px 0;
+}
+
+.minesweeper .help .stats {
+  font-weight: 800;
+  color: var(--green-dark);
+}
+
+@media (max-width: 600px) {
+  .minesweeper .title {
+    font-size: 18px;
+  }
+
+  .minesweeper .help .hint {
+    display: none;
+  }
+}

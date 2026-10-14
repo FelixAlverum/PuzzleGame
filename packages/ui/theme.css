@@ -1,0 +1,186 @@
+/* Gemeinsames Aussehen der Spielesammlung: Papier, Holz, Grün. Hülle und Spiele binden diese Datei ein.
+   Spielspezifisches CSS bleibt im Spiel und hängt unter dessen Wurzel-Klasse (z. B. .cozy-garden). */
+
+:root {
+  --paper: #fbf5e6;
+  --paper-2: #f3ead2;
+  --wood: #a8743f;
+  --ink: #4a3424;
+  --ink-soft: rgba(80, 60, 35, 0.8);
+  --green: #5d9a3e;
+  --green-dark: #3f7a2a;
+  --red: #b8452f;
+  --shadow: rgba(40, 25, 10, 0.28);
+  --bg: #efe6cf;
+  --font: "Trebuchet MS", "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+}
+
+button {
+  font-family: var(--font);
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 3px solid #e8b04a;
+  outline-offset: 2px;
+}
+
+/* --- Kopfzeile einer Seite: Titel links, Knöpfe rechts --- */
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: clamp(26px, 5vw, 42px);
+  font-weight: 800;
+  color: #3d5a2a;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(255, 250, 235, 0.9);
+}
+
+.brand p {
+  margin: 4px 0 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* --- Karten --- */
+
+.card {
+  background: var(--paper);
+  border: 2px solid var(--wood);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 4px 0 var(--shadow);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.card h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.note {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* --- Pillen-Knöpfe --- */
+
+.pill {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 10px 18px;
+  min-height: 44px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--shadow);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.pill:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--shadow);
+}
+
+.pill:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pill.primary {
+  background: var(--green);
+  color: #fff;
+}
+
+.pill.ghost {
+  border-color: var(--wood);
+}
+
+/* Navigation aus einem Spiel zurück in die Spielesammlung */
+.pill.wood {
+  background: var(--wood);
+  border-color: var(--wood);
+  color: #fff;
+}
+
+.pill.small {
+  font-size: 14px;
+  padding: 8px 14px;
+}
+
+.pill.danger,
+.pill.armed {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+
+/* --- Auswahl als Segmente (role=radio) --- */
+
+.seg-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seg {
+  flex: 1 1 80px;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--wood);
+  background: var(--paper);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.seg.on {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+/* --- Regler-Zeile: Beschriftung, Regler, Wert --- */
+
+.setting {
+  display: grid;
+  grid-template-columns: minmax(110px, 160px) 1fr 52px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-weight: 700;
+}
+
+.setting output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+input[type=range] {
+  width: 100%;
+  accent-color: var(--green);
+  min-height: 32px;
+  touch-action: pan-x;
+}
