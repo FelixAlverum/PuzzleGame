@@ -1,1 +1,3 @@
 /vault
+node_modules/
+dist/

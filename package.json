@@ -2,10 +2,25 @@
   "name": "spielesammlung",
   "private": true,
   "description": "Spielesammlung im Browser (Arbeitstitel): Bibliothek mehrerer Spiele mit gemeinsamem Konto",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "games/*",
+    "packages/*"
+  ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18"
   },
   "scripts": {
-    "test": "node --test \"games/*/tests/*.test.js\""
+    "dev": "npm run dev -w @spielesammlung/web",
+    "build": "npm run build -w @spielesammlung/web",
+    "preview": "npm run preview -w @spielesammlung/web",
+    "dev:cozy-garden": "npm run dev -w @spielesammlung/cozy-garden",
+    "test": "node --test \"games/*/tests/*.test.js\" \"apps/*/tests/*.test.js\" \"packages/*/tests/*.test.js\"",
+    "typecheck": "tsc -p packages/game-sdk"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4"
   }
 }
