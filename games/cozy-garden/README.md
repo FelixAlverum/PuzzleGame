@@ -78,7 +78,7 @@ oder im Repo-Wurzelordner `npm test`.
 | `src/materials.js` | Prozedurale Texturen, Zeichnen der Formen mit Auto-Tiling |
 | `src/fx.js` | Partikel und schwebende Texte |
 | `src/garden.js` | Garten-Anzeige (Meta-Fortschritt), Biom-Themen |
-| `src/audio.js` | Synthetisierte Sounds, Musik und Atmosphäre je Biom (Web Audio), Kanäle Musik/Effekte/Atmosphäre unter der Gesamtlautstärke |
+| `src/audio.js` | Synthetisierte Sounds, Musik und Atmosphäre je Biom (Web Audio, Grundgerüst aus `@spielesammlung/audio`), Kanäle Musik/Effekte/Atmosphäre unter der Gesamtlautstärke |
 | `src/menu.js`, `src/menu.html` | Menü, Anleitung, Statistik, Einstellungen (HTML-Overlay, `createMenu`) |
 | `src/style.css` | Aussehen des Spiels, alles unter `.cozy-garden` |
 | `src/i18n.js` | Alle Spieltexte in Deutsch, Englisch, Französisch, Spanisch, Russisch, Chinesisch |

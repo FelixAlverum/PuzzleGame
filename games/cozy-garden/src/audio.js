@@ -2,12 +2,11 @@
 // Materialgeräusche aus gefiltertem Rauschen, Combo-Töne als Kalimba in Pentatonik,
 // Atmosphäre und Hintergrundmusik je Biom. Keine Audiodateien.
 // Drei getrennt regelbare Kanäle: Musik, Effekte (sfx), Atmosphäre (amb).
+// Kontext, Entsperren, Gesamtlautstärke, Ton und Rauschen kommen aus @spielesammlung/audio.
+import { createAudio, pentatonic, semi, rnd } from '@spielesammlung/audio';
 
 const PENTA = [0, 2, 4, 7, 9];
-const BASE = 392; // G4
-const note = i => BASE * Math.pow(2, (12 * Math.floor(i / 5) + PENTA[((i % 5) + 5) % 5]) / 12);
-const rnd = (a, b) => a + Math.random() * (b - a);
-const semi = (f, k) => f * Math.pow(2, k / 12);
+const note = i => pentatonic(i, 392);   // G4
 
 // Grundlautstärke je Kanal bei Regler = 100 %
 const BUS = { music: 0.32, sfx: 0.9, amb: 0.6 };
@@ -29,40 +28,32 @@ const SONGS = {
   },
 };
 
+// Ein Kontext für die ganze Sitzung: Cozy Garden behält ihn auch zwischen zwei Starts aus der Bibliothek
+const core = createAudio({
+  onStart(c) {
+    for (const k of Object.keys(BUS)) { A[k] = c.ctx.createGain(); A[k].connect(c.out); }
+    A.applyVolumes();
+    A.startWind();
+  },
+});
+
 const A = {
-  ctx: null, out: null, sfx: null, amb: null, music: null, noise: null,
-  master: 1, paused: false, ambTimer: 7, ambTimer2: 12,
+  sfx: null, amb: null, music: null,
+  ambTimer: 7, ambTimer2: 12,
   vol: { music: 0.6, sfx: 1, amb: 1 },
   biome: 'meadow',
   mus: { next: 0, step: 0, lead: 7 },
 
+  get ctx() { return core.ctx; },
+  get noise() { return core.noise; },
+
   // Muss aus einer Nutzergeste heraus aufgerufen werden (Autoplay-Regeln der Browser)
-  unlock() {
-    if (this.ctx) { this.apply(); return; }
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    const ctx = this.ctx = new AC();
-    this.out = ctx.createGain(); this.out.connect(ctx.destination);
-    for (const k of Object.keys(BUS)) { this[k] = ctx.createGain(); this[k].connect(this.out); }
-    this.applyVolumes();
-    const len = ctx.sampleRate * 2;
-    this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
-    const d = this.noise.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    this.startWind();
-    this.apply();
-  },
+  unlock() { core.unlock(); },
 
   // Gesamtlautstärke der Plattform (0..1) und Pause: bei 0 oder in der Pause darf kein Ton ausgegeben werden
-  setMaster(v) { this.master = Math.max(0, Math.min(1, v)); this.apply(); },
-  setPaused(p) { this.paused = p; this.apply(); },
-  apply() {
-    if (!this.ctx) return;
-    const on = this.master > 0 && !this.paused;
-    this.out.gain.value = on ? this.master * this.master : 0;   // quadratisch wie die Kanalregler
-    if (on) this.ctx.resume(); else this.ctx.suspend();
-  },
-  ok() { return !!this.ctx && this.master > 0 && !this.paused; },
+  setMaster(v) { core.setMaster(v); },
+  setPaused(p) { core.setPaused(p); },
+  ok() { return core.ok(); },
 
   // Regler 0..1 je Kanal; quadratisch, weil das Ohr Lautstärke logarithmisch hört
   setVolume(kind, v) {
@@ -82,39 +73,10 @@ const A = {
     this.ambTimer = rnd(2, 6);
   },
 
-  env(g, t, vol, attack, dur) {
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + attack);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + dur);
-  },
-
-  tone(freq, dur, vol, { type = 'sine', at = 0, attack = 0.004, to = 0, dest = this.sfx } = {}) {
-    const c = this.ctx, t = c.currentTime + at;
-    const o = c.createOscillator(), g = c.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    if (to) o.frequency.exponentialRampToValueAtTime(to, t + attack + dur);
-    this.env(g, t, vol, attack, dur);
-    o.connect(g); g.connect(dest);
-    o.start(t); o.stop(t + attack + dur + 0.05);
-  },
-
-  hiss(freq, q, dur, vol, { type = 'bandpass', at = 0, attack = 0.003, dest = this.sfx } = {}) {
-    const c = this.ctx, t = c.currentTime + at;
-    const s = c.createBufferSource(); s.buffer = this.noise;
-    const f = c.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
-    const g = c.createGain();
-    this.env(g, t, vol, attack, dur);
-    s.connect(f); f.connect(g); g.connect(dest);
-    s.start(t, Math.random() * 1.5); s.stop(t + attack + dur + 0.05);
-  },
-
-  kalimba(freq, vol = 0.22, at = 0, dest = this.sfx) {
-    this.tone(freq, 1.3, vol, { at, attack: 0.003, dest });
-    this.tone(freq * 2, 0.5, vol * 0.18, { at, attack: 0.003, dest });
-    this.tone(freq * 5.4, 0.12, vol * 0.08, { at, attack: 0.002, dest });
-    this.hiss(freq * 3, 3, 0.02, vol * 0.15, { at, dest });
-  },
+  // Ton und Rauschen gehen ohne Angabe auf den Effekt-Kanal
+  tone(freq, dur, vol, opts = {}) { core.tone(freq, dur, vol, { dest: this.sfx, ...opts }); },
+  hiss(freq, q, dur, vol, opts = {}) { core.hiss(freq, q, dur, vol, { dest: this.sfx, ...opts }); },
+  kalimba(freq, vol = 0.22, at = 0, dest = this.sfx) { core.kalimba(freq, vol, at, dest); },
 
   pickup() {
     if (!this.ok()) return;
