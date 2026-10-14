@@ -2,6 +2,10 @@
 import { LANGS, NATIVE, HTML_LANG, FLAGS } from '@spielesammlung/i18n';
 import { el, header, link } from '../dom.js';
 
+const GLOBE = '<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#e7f0e0"/>' +
+  '<g fill="none" stroke="#3f7a2a" stroke-width="1.4"><circle cx="15" cy="10" r="7"/><ellipse cx="15" cy="10" rx="3" ry="7"/>' +
+  '<path d="M8 10h14M9.5 6h11M9.5 14h11"/></g></svg>';
+
 export function settingsView(app, { settings, S }) {
   const page = el('main', 'page');
   page.append(header(S.settings, null, link('#/', 'pill ghost', S.back)));
@@ -32,19 +36,26 @@ export function settingsView(app, { settings, S }) {
   const seg = el('div', 'seg-row langs');
   seg.setAttribute('role', 'radiogroup');
   seg.setAttribute('aria-label', S.language);
-  const current = settings.language();
-  for (const l of LANGS) {
-    const b = el('button', 'seg lang' + (l === current ? ' on' : ''));
+  // Gewählt ist „Automatisch“ (null = Browsersprache) oder eine feste Sprache
+  const chosen = settings.get().lang;
+  const option = (value, content, langAttr) => {
+    const b = el('button', 'seg lang' + (value === chosen ? ' on' : ''));
     b.type = 'button';
     b.setAttribute('role', 'radio');
-    b.setAttribute('aria-checked', String(l === current));
-    b.setAttribute('lang', HTML_LANG[l]);
-    b.dataset.lang = l;
+    b.setAttribute('aria-checked', String(value === chosen));
+    if (langAttr) b.setAttribute('lang', langAttr);
+    b.dataset.lang = value || 'auto';
+    b.append(...content);
+    b.addEventListener('click', () => settings.set({ lang: value }));   // die Hülle baut die Seite in der neuen Sprache neu auf
+    seg.append(b);
+  };
+  const globe = el('span', 'flag auto');
+  globe.innerHTML = GLOBE;
+  option(null, [globe, el('span', null, S.auto)]);
+  for (const l of LANGS) {
     const flag = el('span', 'flag');
     flag.innerHTML = FLAGS[l];
-    b.append(flag, el('span', null, NATIVE[l]));
-    b.addEventListener('click', () => settings.set({ lang: l }));   // die Hülle baut die Seite in der neuen Sprache neu auf
-    seg.append(b);
+    option(l, [flag, el('span', null, NATIVE[l])], HTML_LANG[l]);
   }
   language.append(seg, el('p', 'note', S.langNote));
 
