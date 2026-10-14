@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6efd9"/>
+      <stop offset="1" stop-color="#e6dbbd"/>
+    </linearGradient>
+    <radialGradient id="felt" cx="0.5" cy="0" r="1">
+      <stop offset="0" stop-color="#76ad59"/>
+      <stop offset="1" stop-color="#4f8a3a"/>
+    </radialGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffcf3"/>
+      <stop offset="1" stop-color="#f8eed8"/>
+    </linearGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ea64b"/>
+      <stop offset="1" stop-color="#3f7a2a"/>
+    </linearGradient>
+    <path id="heart" d="M12 21.5C6.8 17 2.5 13.4 2.5 8.6A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 9.5 2.2c0 4.8-4.3 8.4-9.5 12.9z"/>
+    <path id="spade" d="M12 1.5C9.2 5.6 3.5 8.6 3.5 13.4a4.3 4.3 0 0 0 7.4 3L9.8 22h4.4l-1.1-5.6a4.3 4.3 0 0 0 7.4-3C20.5 8.6 14.8 5.6 12 1.5z"/>
+    <path id="diamond" d="M12 1.5L20.5 12 12 22.5 3.5 12z"/>
+    <path id="club" d="M12 2.2a4.3 4.3 0 0 0-3.6 6.7A4.3 4.3 0 1 0 10.6 16L9.8 22h4.4l-.8-6a4.3 4.3 0 1 0 2.2-7.1A4.3 4.3 0 0 0 12 2.2z"/>
+    <g id="cardback">
+      <rect width="44" height="62" rx="4" fill="#fbf5e6"/>
+      <rect x="3" y="3" width="38" height="56" rx="3" fill="url(#back)"/>
+      <rect x="7" y="7" width="30" height="48" rx="2" fill="none" stroke="#fbf5e6" stroke-opacity="0.5" stroke-width="1.2"/>
+    </g>
+  </defs>
+  <rect width="320" height="180" fill="url(#bg)"/>
+  <rect x="14" y="12" width="292" height="156" rx="14" fill="#a8743f"/>
+  <rect x="19" y="17" width="282" height="146" rx="10" fill="url(#felt)"/>
+
+  <!-- Spalten: verdeckte Karten mit offener obenauf -->
+  <g font-family="Trebuchet MS, Segoe UI, sans-serif" font-weight="800">
+    <g transform="translate(34 30)">
+      <use href="#cardback"/>
+      <g transform="translate(0 14)"><use href="#cardback"/></g>
+      <g transform="translate(0 28)">
+        <rect width="44" height="62" rx="4" fill="url(#face)" stroke="#4a3424" stroke-opacity="0.4"/>
+        <text x="5" y="16" font-size="14" fill="#2b2420">K</text>
+        <use href="#spade" x="0" y="0" transform="translate(26 4) scale(0.55)" fill="#2b2420"/>
+        <use href="#spade" transform="translate(10 22) scale(1)" fill="#2b2420"/>
+      </g>
+    </g>
+    <g transform="translate(88 30)">
+      <use href="#cardback"/>
+      <g transform="translate(0 14)"><use href="#cardback"/></g>
+      <g transform="translate(0 28)"><use href="#cardback"/></g>
+      <g transform="translate(0 42)">
+        <rect width="44" height="62" rx="4" fill="url(#face)" stroke="#4a3424" stroke-opacity="0.4"/>
+        <text x="5" y="16" font-size="14" fill="#c0392b">Q</text>
+        <use href="#heart" transform="translate(26 4) scale(0.55)" fill="#c0392b"/>
+      </g>
+      <g transform="translate(0 60)">
+        <rect width="44" height="62" rx="4" fill="url(#face)" stroke="#4a3424" stroke-opacity="0.4"/>
+        <text x="5" y="16" font-size="14" fill="#2b2420">J</text>
+        <use href="#club" transform="translate(26 4) scale(0.55)" fill="#2b2420"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Aufgefächerte Karten rechts: Ass bis 4 in Herz -->
+  <g font-family="Trebuchet MS, Segoe UI, sans-serif" font-weight="800">
+    <g transform="translate(200 98) rotate(-24)">
+      <rect x="-22" y="-62" width="44" height="62" rx="4" fill="url(#face)" stroke="#4a3424" stroke-opacity="0.45"/>
+      <text x="-17" y="-46" font-size="14" fill="#c0392b">4</text>
+    </g>
+    <g transform="translate(206 100) rotate(-8)">
+      <rect x="-22" y="-62" width="44" height="62" rx="4" fill="url(#face)" stroke="#4a3424" stroke-opacity="0.45"/>
+      <text x="-17" y="-46" font-size="14" fill="#c0392b">3</text>
+    </g>
+    <g transform="translate(212 102) rotate(8)">
+      <rect x="-22" y="-62" width="44" height="62" rx="4" fill="url(#face)" stroke="#4a3424" stroke-opacity="0.45"/>
+      <text x="-17" y="-46" font-size="14" fill="#c0392b">2</text>
+    </g>
+    <g transform="translate(218 104) rotate(24)">
+      <rect x="-22" y="-62" width="44" height="62" rx="4" fill="url(#face)" stroke="#4a3424" stroke-opacity="0.45"/>
+      <text x="-17" y="-46" font-size="14" fill="#c0392b">A</text>
+      <use href="#heart" transform="translate(-14 -42) scale(1.15)" fill="#c0392b"/>
+    </g>
+  </g>
+
+  <!-- Zielstapel unten rechts -->
+  <g transform="translate(244 112)">
+    <rect width="44" height="40" rx="4" fill="none" stroke="#fbf5e6" stroke-opacity="0.45" stroke-width="2" stroke-dasharray="5 4"/>
+    <use href="#diamond" transform="translate(13 8) scale(0.75)" fill="#fbf5e6" fill-opacity="0.55"/>
+  </g>
+</svg>
